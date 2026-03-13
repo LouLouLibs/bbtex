@@ -1,0 +1,62 @@
+#!/bin/bash
+# package.sh — Build a distributable bbtex.bbpackage for BBEdit.
+#
+# Usage: ./scripts/package.sh [--arch arm64|x86_64]
+#
+# Produces: dist/bbtex.bbpackage/  (ready to install)
+#           dist/bbtex.bbpackage.zip (for GitHub releases)
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+PROJECT_ROOT="$(pwd)"
+
+# ── Parse args ──────────────────────────────────────────────
+ARCH=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --arch) ARCH="$2"; shift 2 ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
+# ── Build ───────────────────────────────────────────────────
+echo "Building bbtex..."
+dune build
+
+BINARY="$PROJECT_ROOT/_build/default/bin/main.exe"
+[[ -x "$BINARY" ]] || { echo "Build failed: $BINARY not found"; exit 1; }
+
+BUILT_ARCH="$(file "$BINARY" | grep -o 'arm64\|x86_64')"
+if [[ -n "$ARCH" && "$BUILT_ARCH" != "$ARCH" ]]; then
+    echo "Warning: binary is $BUILT_ARCH but --arch $ARCH was requested"
+    echo "Cross-compilation requires the matching OCaml toolchain"
+    exit 1
+fi
+
+# ── Assemble package ───────────────────────────────────────
+PKG="$PROJECT_ROOT/dist/bbtex.bbpackage"
+rm -rf "$PKG"
+mkdir -p "$PKG/Contents/Resources"
+mkdir -p "$PKG/Contents/Scripts"
+
+# Binary
+cp "$BINARY" "$PKG/Contents/Resources/bbtex"
+chmod +x "$PKG/Contents/Resources/bbtex"
+
+# Scripts — copy with BBEdit menu names
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-compile.sh" "$PKG/Contents/Scripts/LaTeX — Compile.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-forward.sh" "$PKG/Contents/Scripts/LaTeX — Forward Search.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-clean.sh"   "$PKG/Contents/Scripts/LaTeX — Clean.sh"
+chmod +x "$PKG/Contents/Scripts/"*.sh
+
+echo "Package assembled: $PKG"
+echo "  Binary: $BUILT_ARCH"
+echo "  Contents:"
+find "$PKG" -type f | sort | while read -r f; do
+    echo "    ${f#$PKG/}"
+done
+
+# ── Zip for distribution ──────────────────────────────────
+(cd "$PROJECT_ROOT/dist" && zip -r -q "bbtex.bbpackage.zip" "bbtex.bbpackage")
+echo "Zip created: dist/bbtex.bbpackage.zip"

@@ -1,0 +1,51 @@
+%!TEX root = sample.tex
+%!TEX program = pdflatex
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\title{A Sample Document with Deliberate Errors}
+\author{Test Author}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This is a sample document designed to produce various kinds of
+LaTeX warnings and errors for testing the log parser.
+
+% This line has an undefined control sequence
+This text references \undefinedcommand{} which does not exist.
+
+% This paragraph is deliberately too long to cause an overfull hbox
+\noindent\hbox to 2cm{This text is way too long to fit in a 2cm box and will cause an overfull hbox warning in the log file.}
+
+\section{Math Errors}
+
+% Missing dollar sign — will cause an error
+The value of x is approximately 3.14 and $y = \sqrt{2$.
+
+% Mismatched environment
+\begin{equation}
+  E = mc^2
+\end{align}
+
+\section{References}
+
+% Undefined reference
+See Section~\ref{sec:nonexistent} for details.
+
+% Undefined citation
+As shown by \cite{nobody2024}.
+
+\section{Overfull Boxes}
+
+% Force an underfull hbox
+\hbox to 15cm{sparse}
+
+\end{document}

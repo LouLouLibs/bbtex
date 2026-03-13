@@ -1,0 +1,3 @@
+(library
+ (name bbtex)
+ (libraries unix))
