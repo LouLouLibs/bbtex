@@ -331,29 +331,31 @@ let test_clean_realistic_log () =
     0 (List.length entries)
 
 let test_line_wrapping_79_chars () =
-  (* TeX hard-wraps log output at 79 characters. This tests that the parser
-     doesn't crash on wrapped lines, even if it doesn't handle wrapping
-     perfectly yet. *)
-  let long_path = "/usr/local/texlive/2024/texmf-dist/tex/latex/some-very-long-package-name/with" in
-  let wrap_continuation = "-extra-stuff/andmore.sty" in
+  (* TeX hard-wraps log output at 79 characters.  unwrap_lines joins physical
+     lines of exactly 79 chars with the next line, so wrapped filenames are
+     reconstructed correctly. *)
+  let prefix = "(/usr/local/texlive/2024/texmf-dist/tex/latex/pgf/compatibility/pgflibrarysnake" in
+  assert_int_equal ~msg:"setup: prefix is 79 chars" 79 (String.length prefix);
+  let continuation = "s.code.tex" in
+  let full_path = "/usr/local/texlive/2024/texmf-dist/tex/latex/pgf/compatibility/pgflibrarysnakes.code.tex" in
   let lines = [
     "(./main.tex";
-    "(" ^ long_path;
-    wrap_continuation ^ ")";
+    prefix;           (* exactly 79 chars → wrapped *)
+    continuation;     (* continuation of filename; file stays on stack *)
     "! Undefined control sequence.";
     "l.5 \\broken";
-    ")";
+    ")";              (* close the inner file *)
+    ")";              (* close main.tex *)
   ] in
-  (* The main thing we test: the parser doesn't crash *)
   let entries = Log_parser.parse_lines lines in
-  (* We should get at least the error *)
-  assert_true ~msg:"parser produces at least one entry on wrapped log"
-    (List.length entries >= 1);
   let errors = List.filter
     (fun e -> e.Types.severity = Types.Error) entries in
   assert_int_equal ~msg:"one error found" 1 (List.length errors);
   let e = List.hd errors in
-  assert_option_int ~msg:"error at line 5" (Some 5) e.line
+  assert_option_int ~msg:"error at line 5" (Some 5) e.line;
+  (* After unwrapping, the error should be attributed to the full path *)
+  assert_option_equal ~msg:"error file is the full unwrapped path" Fun.id
+    (Some full_path) e.file
 
 let test_multiple_errors_same_file () =
   let lines = [

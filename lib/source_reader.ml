@@ -90,14 +90,17 @@ let build_search_entries ~root_dir entries =
     match entry.file with
     | Some rel_file ->
       let abs_file = resolve_path ~root_dir rel_file in
-      let line = match entry.line with Some n when n > 0 -> n | _ -> 0 in
-      let key = (abs_file, line) in
-      if not (Hashtbl.mem seen key) then begin
-        Hashtbl.add seen key ();
-        Log.verbose (Printf.sprintf "search entry: %s:%d" abs_file line);
-        acc := { se_file = abs_file; se_line = line;
-                 se_message = entry.message; se_severity = entry.severity } :: !acc
-      end
+      if Sys.file_exists abs_file then begin
+        let line = match entry.line with Some n when n > 0 -> n | _ -> 0 in
+        let key = (abs_file, line) in
+        if not (Hashtbl.mem seen key) then begin
+          Hashtbl.add seen key ();
+          Log.verbose (Printf.sprintf "search entry: %s:%d" abs_file line);
+          acc := { se_file = abs_file; se_line = line;
+                   se_message = entry.message; se_severity = entry.severity } :: !acc
+        end
+      end else
+        Log.verbose (Printf.sprintf "skipping non-existent file: %s" abs_file)
     | None -> ()
   ) entries;
   List.rev !acc

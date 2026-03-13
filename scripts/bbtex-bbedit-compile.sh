@@ -38,8 +38,9 @@ while IFS= read -r line; do
     esac
 done <<< "$OUTPUT"
 
-# Suppress all further output so BBEdit doesn't show "Unix Script Output"
-exec >/dev/null 2>/dev/null
+# Suppress stdout so BBEdit doesn't show "Unix Script Output".
+# Stderr goes to the debug log for troubleshooting (not /dev/null).
+exec >/dev/null 2>>"$HOME/.local/state/bbtex/last-compile.log"
 
 if [[ $EXIT -eq 2 ]]; then
     osascript -e "display alert \"bbtex error\" message \"${MESSAGE:-unknown error}\" as warning" &
@@ -51,18 +52,19 @@ if [[ -n "$PDF" && -f "$PDF" ]]; then
     open -g -a Skim "$PDF" &
 fi
 
-# Open .log file as a tab in BBEdit (not focused)
-if [[ -n "$LOG" && -f "$LOG" ]]; then
-    bbedit "$LOG" &
-fi
-
-# Results browser with errors/warnings/badboxes
-if [[ -n "$APPLESCRIPT_FILE" && -f "$APPLESCRIPT_FILE" ]]; then
-    osascript "$APPLESCRIPT_FILE"
+# Open .log file only when there are errors (no need on clean success)
+if [[ "$STATUS" != "success" && -n "$LOG" && -f "$LOG" ]]; then
+    bbedit "$LOG"
 fi
 
 # Refocus the .tex document
 bbedit "$BB_DOC_PATH"
+
+# Results browser with errors/warnings/badboxes.
+# Created last so it appears on top of the editor window.
+if [[ -n "$APPLESCRIPT_FILE" && -f "$APPLESCRIPT_FILE" ]]; then
+    osascript "$APPLESCRIPT_FILE" || true
+fi
 
 # Notification (never steals focus)
 if [[ "$STATUS" == "success" ]]; then

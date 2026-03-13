@@ -422,10 +422,39 @@ let process_line st line =
     end
     else st
 
+(* ── Line unwrapping ───────────────────────────────────────── *)
+
+(** TeX hard-wraps log output at [max_print_line] characters (79 in TeX Live).
+    A physical line of exactly 79 characters was likely wrapped; concatenate it
+    with the next physical line to reconstruct the logical line.  This is the
+    standard heuristic used by LaTeXTools, texlab, and other log parsers. *)
+let unwrap_lines lines =
+  let buf = Buffer.create 256 in
+  let rec go acc = function
+    | [] ->
+      if Buffer.length buf > 0 then
+        List.rev (Buffer.contents buf :: acc)
+      else
+        List.rev acc
+    | line :: rest ->
+      Buffer.add_string buf line;
+      if String.length line = 79 then
+        (* Physical line was wrapped — continue collecting *)
+        go acc rest
+      else begin
+        (* End of logical line *)
+        let result = Buffer.contents buf in
+        Buffer.clear buf;
+        go (result :: acc) rest
+      end
+  in
+  go [] lines
+
 (* ── Public interface ───────────────────────────────────────── *)
 
 (** Parse a list of lines, returning log entries in order. *)
 let parse_lines lines =
+  let lines = unwrap_lines lines in
   let final_state = List.fold_left process_line empty_state lines in
   let final_state = flush_error final_state in
   let final_state = flush_warning final_state in
