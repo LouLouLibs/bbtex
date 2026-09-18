@@ -80,7 +80,7 @@ let resolve_path ~root_dir path =
 
     - Resolves relative file paths against [root_dir].
     - Reads the corresponding source line and escapes it for PCRE.
-    - Deduplicates by (file, line): the first occurrence wins.
+    - Deduplicates identical diagnostics, preserving different messages/severities.
     - Skips entries that have no file or no positive line number.
     - Emits a [Log.verbose] message for each file read attempt. *)
 let build_search_entries ~root_dir entries =
@@ -92,7 +92,7 @@ let build_search_entries ~root_dir entries =
       let abs_file = resolve_path ~root_dir rel_file in
       if Sys.file_exists abs_file then begin
         let line = match entry.line with Some n when n > 0 -> n | _ -> 0 in
-        let key = (abs_file, line) in
+        let key = (abs_file, line, entry.severity, entry.message) in
         if not (Hashtbl.mem seen key) then begin
           Hashtbl.add seen key ();
           Log.verbose (Printf.sprintf "search entry: %s:%d" abs_file line);
@@ -104,4 +104,3 @@ let build_search_entries ~root_dir entries =
     | None -> ()
   ) entries;
   List.rev !acc
-

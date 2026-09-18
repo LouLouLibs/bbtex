@@ -17,7 +17,7 @@ exception Bbtex_error of string
     Raises [Bbtex_error] if:
     - the file does not exist
     - the file does not end in ".tex" *)
-let resolve_compilation path =
+let resolve_compilation ?engine:engine_override path =
   Log.info (Printf.sprintf "resolving compilation for: %s" path);
 
   (* Validate existence *)
@@ -61,13 +61,23 @@ let resolve_compilation path =
       candidate
   in
 
+  if not (Sys.file_exists abs_root) then
+    raise (Bbtex_error (Printf.sprintf "root file not found: %s" abs_root));
+  let root_directives = Directive_parser.parse_file abs_root in
+  (* An explicit choice overrides the source directive, then the root directive. *)
+  let program =
+    match Directive_parser.find_directive Program directives with
+    | Some _ as program -> program
+    | None -> Directive_parser.find_directive Program root_directives
+  in
   (* Determine engine *)
   let engine =
-    match Directive_parser.find_directive Program directives with
-    | None ->
+    match engine_override, program with
+    | Some engine, _ -> engine
+    | None, None ->
       Log.info "no program directive; defaulting to pdflatex";
       Pdflatex
-    | Some prog ->
+    | None, Some prog ->
       let e = Types.engine_of_string prog in
       Log.info (Printf.sprintf "engine: %s" (Types.string_of_engine e));
       e
@@ -102,7 +112,7 @@ let run_compilation config =
         match config.engine with
         | Tectonic ->
           let cmd = "tectonic" in
-          (cmd, [| cmd; config.root_file |])
+          (cmd, [| cmd; "--keep-logs"; "--synctex"; config.root_file |])
         | engine ->
           let cmd = "latexmk" in
           let flag = Types.latexmk_flag engine in
@@ -187,25 +197,23 @@ let clean path =
 
 (** [compile path] is the full pipeline: resolve → compile → parse log →
     build search entries → build loose warnings → assemble compile_result. *)
-let compile path =
-  let config = resolve_compilation path in
-
-  let exit_code = run_compilation config in
-  Log.info (Printf.sprintf "compiler exited with code %d" exit_code);
-
-  (* Parse log if it exists *)
+let assemble_result config ~exit_code entries =
   let entries =
-    if Sys.file_exists config.log_file then begin
-      Log.info (Printf.sprintf "parsing log: %s" config.log_file);
-      Log_parser.parse_file config.log_file
-    end else begin
-      Log.info "no log file found";
-      []
-    end
+    if exit_code <> 0 && not (List.exists (fun e -> e.severity = Error) entries) then
+      { severity = Error; file = Some config.root_file; line = None;
+        message = Printf.sprintf
+          "Compilation failed (exit %d). Use LaTeX — Open Build Log for details." exit_code;
+        context = [] } :: entries
+    else entries
   in
-
   let root_dir = Filename.dirname config.root_file in
-  let search_results = Source_reader.build_search_entries ~root_dir entries in
+  (* Preserve project-wide diagnostics and unavailable-file diagnostics too. *)
+  let located_entries = List.map (fun e ->
+    match e.file with
+    | Some file when Sys.file_exists (Source_reader.resolve_path ~root_dir file) -> e
+    | _ -> { e with file = Some config.root_file; line = None }
+  ) entries in
+  let search_results = Source_reader.build_search_entries ~root_dir located_entries in
 
   let summary = make_summary entries in
   Log.info summary;
@@ -222,3 +230,22 @@ let compile path =
     log_file       = config.log_file;
     pdf_file       = config.pdf_file;
     search_results }
+
+let inspect_log path =
+  let config = resolve_compilation path in
+  if not (Sys.file_exists config.log_file) then
+    raise (Bbtex_error "No LaTeX log yet. Compile the document first, or use Open Build Log for compiler output.");
+  assemble_result config ~exit_code:0 (Log_parser.parse_file config.log_file)
+
+let compile ?engine path =
+  let config = resolve_compilation ?engine path in
+  let exit_code = run_compilation config in
+  Log.info (Printf.sprintf "compiler exited with code %d" exit_code);
+  let entries =
+    if Sys.file_exists config.log_file then Log_parser.parse_file config.log_file
+    else []
+  in
+  let result = assemble_result config ~exit_code entries in
+  if result.status = Success && not (Sys.file_exists config.pdf_file) then
+    raise (Bbtex_error "Compiler finished without producing a PDF. Use Open Build Log for details.");
+  result

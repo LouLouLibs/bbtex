@@ -156,10 +156,30 @@ let test_make_summary_counts () =
   assert_equal ~msg:"correct counts"
     "2 error(s), 1 warning(s), 3 bad box(es)" s
 
+let test_engine_precedence () =
+  let root = Filename.temp_file "bbtex_root_" ".tex" in
+  let chapter = Filename.temp_file "bbtex_chapter_" ".tex" in
+  let write path text =
+    let oc = open_out path in output_string oc text; close_out oc
+  in
+  Fun.protect ~finally:(fun () -> Sys.remove root; Sys.remove chapter) (fun () ->
+    write root "%!TEX program = xelatex\n";
+    write chapter ("%!TEX root = " ^ root ^ "\n");
+    let engine ?engine () =
+      Types.string_of_engine
+        (Compiler.resolve_compilation ?engine chapter).Types.engine
+    in
+    assert_equal ~msg:"chapter inherits root engine" "xelatex" (engine ());
+    write chapter ("%!TEX root = " ^ root ^ "\n%!TEX program = lualatex\n");
+    assert_equal ~msg:"source overrides root engine" "lualatex" (engine ());
+    assert_equal ~msg:"explicit choice overrides directives"
+      "tectonic" (engine ~engine:Types.Tectonic ()))
+
 (* ── Runner ────────────────────────────────────────────────── *)
 
 let () =
   Printf.printf "Compiler tests:\n";
+  run_test "engine precedence" test_engine_precedence;
   run_test "resolve_compilation: engine is pdflatex" test_resolve_sample_engine;
   run_test "resolve_compilation: root_file ends with sample.tex" test_resolve_sample_root_file;
   run_test "resolve_compilation: log_file ends with sample.log" test_resolve_sample_log_file;

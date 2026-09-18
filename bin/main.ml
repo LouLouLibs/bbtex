@@ -6,6 +6,8 @@ let usage = {|Usage: bbtex <command> [options] <file>
 
 Commands:
   compile <file.tex>         Compile and report results (protocol output)
+  results <file.tex>         Show all diagnostics from the current project log
+  paths <file.tex>           Resolve project log and PDF paths without compiling
   clean <file.tex>           Remove all build artifacts (latexmk -C)
   forward-search <f> <line>  SyncTeX forward search
   parse-log <file.log>       Parse a LaTeX log file
@@ -15,17 +17,27 @@ Commands:
 Options:
   --format bbedit|text       Output format (default: text for parse-log,
                              bbedit for format-results)
+  --engine <name>            Compile once with pdflatex, xelatex, lualatex,
+                             or tectonic (overrides document directives)
   --verbose                  Enable verbose logging to stderr
   --help                     Show this help message
 |}
 
 let parse_args () =
   let args = Array.to_list Sys.argv |> List.tl in
+  let engine = ref None in
   let rec go cmd fmt verbose rest = function
-    | [] -> (cmd, fmt, verbose, List.rev rest)
+    | [] -> (cmd, fmt, verbose, !engine, List.rev rest)
     | "--help" :: _ -> print_string usage; exit 0
     | "-h" :: _ -> print_string usage; exit 0
     | "--verbose" :: tail -> go cmd fmt true rest tail
+    | "--engine" :: name :: tail ->
+      (match String.lowercase_ascii name with
+       | "pdflatex" | "xelatex" | "lualatex" | "tectonic" ->
+         engine := Some (Types.engine_of_string name);
+         go cmd fmt verbose rest tail
+       | _ -> Printf.eprintf "Unknown engine: %s\n" name; exit 2)
+    | ["--engine"] -> Printf.eprintf "--engine requires a name\n"; exit 2
     | "--format" :: f :: tail ->
       (match Types.output_format_of_string f with
        | Some fmt' -> go cmd (Some fmt') verbose rest tail
@@ -62,11 +74,14 @@ let cmd_directives filename =
   let directives = Directive_parser.parse_file filename in
   List.iter print_endline (Bbedit_format.format_directives_text directives)
 
-let cmd_compile filename =
+let cmd_compile ?engine filename =
   try
-    let result = Compiler.compile filename in
+    let result = Compiler.compile ?engine filename in
     let applescript_file =
-      Applescript.write_compile_script result.search_results
+      (* Successful builds do not open a results window. Full diagnostics remain
+         available through the explicit results command. *)
+      Applescript.write_compile_script
+        (List.filter (fun e -> e.Types.se_severity = Types.Error) result.search_results)
     in
     let lines = Bbedit_format.format_compile_result result ~applescript_file in
     List.iter print_endline lines;
@@ -75,6 +90,23 @@ let cmd_compile filename =
     | Types.Failure -> exit 1
   with Compiler.Bbtex_error msg ->
     Log.error msg;
+    List.iter print_endline (Bbedit_format.format_error_message msg);
+    exit 2
+
+let cmd_results filename =
+  try
+    let result = Compiler.inspect_log filename in
+    let applescript_file = Applescript.write_compile_script result.search_results in
+    List.iter print_endline (Bbedit_format.format_compile_result result ~applescript_file)
+  with Compiler.Bbtex_error msg ->
+    List.iter print_endline (Bbedit_format.format_error_message msg);
+    exit 2
+
+let cmd_paths filename =
+  try
+    let config = Compiler.resolve_compilation filename in
+    Printf.printf "status: success\nlog: %s\npdf: %s\n" config.log_file config.pdf_file
+  with Compiler.Bbtex_error msg ->
     List.iter print_endline (Bbedit_format.format_error_message msg);
     exit 2
 
@@ -153,7 +185,10 @@ let cmd_forward_search filename line_str =
     exit 2
 
 let () =
-  let (cmd, fmt, verbose, args) = parse_args () in
+  let (cmd, fmt, verbose, engine, args) = parse_args () in
+  if engine <> None && cmd <> Some "compile" then begin
+    Printf.eprintf "--engine is only supported by compile\n"; exit 2
+  end;
   if verbose then Log.set_verbose ();
   match cmd with
   | None ->
@@ -161,12 +196,20 @@ let () =
     exit 1
   | Some "compile" ->
     (match args with
-     | [f] -> cmd_compile f
+     | [f] -> cmd_compile ?engine f
      | _ -> Printf.eprintf "compile requires a filename\n"; exit 1)
   | Some "clean" ->
     (match args with
      | [f] -> cmd_clean f
      | _ -> Printf.eprintf "clean requires a filename\n"; exit 1)
+  | Some "results" ->
+    (match args with
+     | [f] -> cmd_results f
+     | _ -> Printf.eprintf "results requires a filename\n"; exit 1)
+  | Some "paths" ->
+    (match args with
+     | [f] -> cmd_paths f
+     | _ -> Printf.eprintf "paths requires a filename\n"; exit 1)
   | Some "forward-search" ->
     (match args with
      | [f; line] -> cmd_forward_search f line

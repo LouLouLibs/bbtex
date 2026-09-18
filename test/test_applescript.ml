@@ -67,8 +67,10 @@ let test_escape_both () =
 (* ── Tests: compile_script ──────────────────────────────────── *)
 
 let test_compile_script_both_empty () =
-  assert_equal ~msg:"empty lists returns empty string" ""
-    (Applescript.compile_script [])
+  assert_true ~msg:"clean build closes stale results"
+    (contains (Applescript.compile_script []) "close w");
+  assert_true ~msg:"empty results do not create a window"
+    (not (contains (Applescript.compile_script []) "make new results browser"))
 
 let test_compile_script_single_tell_block () =
   let e = { Types.se_file = "/path/a.tex"; se_line = 1;
@@ -110,6 +112,7 @@ let test_compile_script_badbox_entry () =
             se_severity = Types.BadBox } in
   let script = Applescript.compile_script [e] in
   assert_true ~msg:"badbox uses note_kind" (contains script "note_kind")
+  ; assert_true ~msg:"no accessibility scripting" (not (contains script "System Events"))
 
 let test_compile_script_multiple_entries () =
   let e1 = { Types.se_file = "/path/a.tex"; se_line = 1;
@@ -132,7 +135,7 @@ let test_compile_script_escapes_quotes () =
 
 let test_write_compile_script_none_when_empty () =
   let result = Applescript.write_compile_script [] in
-  assert_true ~msg:"returns None for empty input" (result = None)
+  assert_true ~msg:"clean builds emit cleanup script" (result <> None)
 
 let test_write_compile_script_some_when_entries () =
   let e = { Types.se_file = "/path/a.tex"; se_line = 1;
@@ -148,14 +151,14 @@ let () =
   run_test "escape_applescript: backslash doubled" test_escape_backslash;
   run_test "escape_applescript: double quote escaped" test_escape_double_quote;
   run_test "escape_applescript: both escaped" test_escape_both;
-  run_test "compile_script: empty lists returns empty string" test_compile_script_both_empty;
+  run_test "compile_script: clean build clears results" test_compile_script_both_empty;
   run_test "compile_script: single tell block" test_compile_script_single_tell_block;
   run_test "compile_script: closes old windows" test_compile_script_closes_old_windows;
   run_test "compile_script: error entry" test_compile_script_error_entry;
   run_test "compile_script: badbox uses note_kind" test_compile_script_badbox_entry;
   run_test "compile_script: multiple entries" test_compile_script_multiple_entries;
   run_test "compile_script: escapes quotes" test_compile_script_escapes_quotes;
-  run_test "write_compile_script: None when empty" test_write_compile_script_none_when_empty;
+  run_test "write_compile_script: cleanup when empty" test_write_compile_script_none_when_empty;
   run_test "write_compile_script: Some when entries" test_write_compile_script_some_when_entries;
   Printf.printf "\nResults: %d passed, %d failed\n" !tests_passed !tests_failed;
   if !tests_failed > 0 then exit 1

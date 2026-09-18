@@ -1,76 +1,137 @@
 #!/bin/bash
-# bbtex-bbedit-compile.sh — BBEdit wrapper for LaTeX compilation.
-#
-# Thin wrapper: saves document, calls bbtex compile, runs
-# the generated AppleScript, opens PDF, shows notification.
-# All logic is in the OCaml binary.
-
+# BBEdit compile/results/log entry point. All diagnostics are parsed by bbtex.
 set -euo pipefail
 
 REAL_SCRIPT="$(readlink "$0" 2>/dev/null || echo "$0")"
 REAL_DIR="$(cd "$(dirname "$REAL_SCRIPT")" && pwd)"
 PARENT="$(dirname "$REAL_DIR")"
-# Package layout: Contents/Resources/bbtex — Dev layout: project/_build/default/bin/main.exe
 if [[ -x "$PARENT/Resources/bbtex" ]]; then
     BBTEX="$PARENT/Resources/bbtex"
 else
     BBTEX="$PARENT/_build/default/bin/main.exe"
 fi
 
-[[ -z "${BB_DOC_PATH:-}" ]] && { osascript -e 'display alert "No document open" message "Open a .tex file first." as warning'; exit 1; }
+STATE_DIR="${BBTEX_STATE_DIR:-$HOME/.local/state/bbtex}"
+mkdir -p "$STATE_DIR"
+exec >/dev/null 2>>"$STATE_DIR/last-compile.log"
 
-mkdir -p "$HOME/.local/state/bbtex"
-osascript -e 'tell application "BBEdit" to save front document' 2>/dev/null || true
+alert() {
+    osascript - "$1" "$2" <<'APPLESCRIPT'
+on run argv
+    tell application "BBEdit" to display alert (item 1 of argv) message (item 2 of argv) as warning
+end run
+APPLESCRIPT
+}
 
-# Capture output and exit code — bbtex returns 1 for LaTeX errors, which is normal
-OUTPUT=$("$BBTEX" compile "$BB_DOC_PATH" 2>"$HOME/.local/state/bbtex/last-compile.log") && EXIT=0 || EXIT=$?
+[[ -n "${BB_DOC_PATH:-}" ]] || { alert "No document open" "Open a saved .tex file first."; exit 1; }
+SOURCE="$BB_DOC_PATH"
+SOURCE_LINE="${BB_DOC_SELSTART_LINE:-1}"
+MODE="${1:-compile}"
 
-# Parse key-value output (single pass, no external tools)
-STATUS="" SUMMARY="" LOG="" PDF="" APPLESCRIPT_FILE="" MESSAGE=""
-while IFS= read -r line; do
-    case "${line%%: *}" in
-        status)           STATUS="${line#*: }" ;;
-        summary)          SUMMARY="${line#*: }" ;;
-        log)              LOG="${line#*: }" ;;
-        pdf)              PDF="${line#*: }" ;;
-        applescript_file) APPLESCRIPT_FILE="${line#*: }" ;;
-        message)          MESSAGE="${line#*: }" ;;
-    esac
-done <<< "$OUTPUT"
+parse_output() {
+    STATUS="" SUMMARY="" LOG="" PDF="" APPLESCRIPT_FILE="" MESSAGE=""
+    while IFS= read -r line; do
+        case "${line%%: *}" in
+            status)           STATUS="${line#*: }" ;;
+            summary)          SUMMARY="${line#*: }" ;;
+            log)              LOG="${line#*: }" ;;
+            pdf)              PDF="${line#*: }" ;;
+            applescript_file) APPLESCRIPT_FILE="${line#*: }" ;;
+            message)          MESSAGE="${line#*: }" ;;
+        esac
+    done <<< "$OUTPUT"
+}
 
-# Suppress stdout so BBEdit doesn't show "Unix Script Output".
-# Stderr goes to the debug log for troubleshooting (not /dev/null).
-exec >/dev/null 2>>"$HOME/.local/state/bbtex/last-compile.log"
+show_results() {
+    if [[ -n "$APPLESCRIPT_FILE" && -f "$APPLESCRIPT_FILE" ]]; then
+        osascript "$APPLESCRIPT_FILE" || {
+            rm -f "$APPLESCRIPT_FILE"
+            alert "Could not show build results" "Use LaTeX — Open Build Log to inspect compiler output."
+            return 1
+        }
+        rm -f "$APPLESCRIPT_FILE"
+    fi
+}
 
-if [[ $EXIT -eq 2 ]]; then
-    osascript -e "display alert \"bbtex error\" message \"${MESSAGE:-unknown error}\" as warning" &
+# These actions never save or rebuild the document.
+case "$MODE" in
+    --show-results)
+        OUTPUT=$("$BBTEX" results "$SOURCE") && EXIT=0 || EXIT=$?
+        parse_output
+        if [[ $EXIT -ne 0 ]]; then
+            alert "Build results unavailable" "${MESSAGE:-Could not read the LaTeX log.}"
+            exit 1
+        fi
+        show_results
+        exit 0
+        ;;
+    --open-log)
+        OUTPUT=$("$BBTEX" paths "$SOURCE") && EXIT=0 || EXIT=$?
+        parse_output
+        if [[ $EXIT -ne 0 ]]; then
+            alert "Build log unavailable" "${MESSAGE:-Could not resolve this document.}"
+            exit 1
+        fi
+        if [[ -f "$STATE_DIR/last-compile-source" && "$(cat "$STATE_DIR/last-compile-source")" == "$SOURCE" ]]; then
+            bbedit "$STATE_DIR/last-compile.log"
+        elif [[ -f "$LOG" ]]; then
+            bbedit "$LOG"
+        else
+            # This is the most recent compiler output, including missing-tool failures.
+            bbedit "$STATE_DIR/last-compile.log"
+        fi
+        exit 0
+        ;;
+    compile|--choose-engine) ;;
+    *) alert "Unknown action" "$MODE"; exit 1 ;;
+esac
+
+COMPILE_ARGS=(compile)
+if [[ "$MODE" == "--choose-engine" ]]; then
+    ENGINE=$(osascript <<'APPLESCRIPT'
+tell application "BBEdit"
+    set choice to choose from list {"Document settings", "pdflatex", "xelatex", "lualatex", "tectonic"} with title "Compile With…" with prompt "Choose an engine for this build only. Document settings use %!TEX program, or pdflatex by default." default items {"Document settings"} OK button name "Compile" multiple selections allowed false empty selection allowed false
+    if choice is false then return ""
+    return item 1 of choice
+end tell
+APPLESCRIPT
+    ) || exit 1
+    [[ -n "$ENGINE" ]] || exit 0
+    [[ "$ENGINE" == "Document settings" ]] || COMPILE_ARGS=(compile --engine "$ENGINE")
+fi
+
+if ! osascript -e 'tell application "BBEdit" to save front document'; then
+    alert "Could not save document" "Compilation stopped. Save the document and try again."
     exit 1
 fi
 
-# Open PDF in background (don't steal focus from BBEdit)
-if [[ -n "$PDF" && -f "$PDF" ]]; then
-    open -g -a Skim "$PDF" &
+printf '%s\n' "$SOURCE" > "$STATE_DIR/last-compile-source"
+OUTPUT=$("$BBTEX" "${COMPILE_ARGS[@]}" "$SOURCE" 2>"$STATE_DIR/last-compile.log") && EXIT=0 || EXIT=$?
+parse_output
+if [[ $EXIT -gt 1 || -z "$STATUS" ]]; then
+    alert "Compilation could not finish" "${MESSAGE:-Use LaTeX — Open Build Log for details.}"
+    exit 1
 fi
 
-# Open .log file only when there are errors (no need on clean success)
-if [[ "$STATUS" != "success" && -n "$LOG" && -f "$LOG" ]]; then
-    bbedit "$LOG"
+# Automatic results contain errors only. Empty results close the previous browser.
+show_results || exit 1
+
+if [[ "$STATUS" == "success" && -n "$PDF" && -f "$PDF" ]]; then
+    SKIM="${BBTEX_SKIM_DISPLAYLINE:-/Applications/Skim.app/Contents/SharedSupport/displayline}"
+    if [[ -x "$SKIM" && ( -f "${PDF%.pdf}.synctex.gz" || -f "${PDF%.pdf}.synctex" ) ]]; then
+        "$SKIM" -r -g "$SOURCE_LINE" "$PDF" "$SOURCE" || open -g -a Skim "$PDF"
+    else
+        open -g -a Skim "$PDF"
+    fi
 fi
 
-# Refocus the .tex document
-bbedit "$BB_DOC_PATH"
-
-# Results browser with errors/warnings/badboxes.
-# Created last so it appears on top of the editor window.
-if [[ -n "$APPLESCRIPT_FILE" && -f "$APPLESCRIPT_FILE" ]]; then
-    osascript "$APPLESCRIPT_FILE" || true
-fi
-
-# Notification (never steals focus)
-if [[ "$STATUS" == "success" ]]; then
-    osascript -e "display notification \"$SUMMARY\" with title \"LaTeX: Success\" sound name \"Glass\"" &
-else
-    osascript -e "display notification \"$SUMMARY\" with title \"LaTeX: Errors\" sound name \"Basso\"" &
-fi
-
-exit 0
+# Plain arguments prevent document names/messages from becoming AppleScript code.
+osascript - "$STATUS" "$SUMMARY" <<'APPLESCRIPT'
+on run argv
+    if item 1 of argv is "success" then
+        display notification (item 2 of argv) with title "LaTeX: Compiled"
+    else
+        display notification (item 2 of argv) with title "LaTeX: Build failed"
+    end if
+end run
+APPLESCRIPT

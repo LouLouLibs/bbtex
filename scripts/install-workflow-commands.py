@@ -1,0 +1,25 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
+"""Install the two on-demand diagnostics commands without restarting BBEdit."""
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+scripts = Path.home() / "Library/Application Support/BBEdit/Scripts"
+commands = {"LaTeX — Show Build Results.sh": "bbtex-bbedit-results.sh",
+            "LaTeX — Open Build Log.sh": "bbtex-bbedit-log.sh"}
+for name, source in commands.items():
+    target = scripts / name
+    expected = ROOT / "scripts" / source
+    if target.exists() or target.is_symlink():
+        if target.is_symlink() and target.resolve() == expected.resolve():
+            continue
+        raise SystemExit(f"Refusing to overwrite an unrelated file: {target}")
+for name, source in commands.items():
+    target = scripts / name
+    if not target.is_symlink():
+        target.symlink_to(ROOT / "scripts" / source)
+    assert target.is_file()
+    print("Installed:", name)

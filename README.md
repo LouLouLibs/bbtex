@@ -5,16 +5,21 @@ source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
 
 ## What you get
 
-- **Cmd+Shift+B** compiles the current `.tex` file and shows
-  errors/warnings in BBEdit's results browser — click any entry to jump
-  to the source line.
+- **Cmd+K** compiles the current `.tex` file and shows
+  errors in BBEdit's results browser — click any entry to jump to the source line.
+  Successful builds update Skim at the source position without taking focus.
+- **LaTeX — Show Build Results** shows all errors, warnings, and bad boxes
+  from the project's log without recompiling.
+- **LaTeX — Open Build Log** opens compiler output for the latest build of
+  this source, or the project's LaTeX log when available.
 - **Cmd+Shift+J** jumps from the cursor position in BBEdit to the
   corresponding spot in Skim (forward search).
 - **Cmd+click in Skim** jumps back to BBEdit at the right line (inverse
   search).
-- **Cmd+Shift+K** removes build artifacts (`.aux`, `.log`, `.synctex.gz`,
+- **Cmd+Shift+K** opens **Compile With…** to choose a one-off engine.
+- **LaTeX — Clean** (menu only) removes build artifacts (`.aux`, `.log`, `.synctex.gz`,
   etc.).
-- A macOS notification tells you whether compilation succeeded or failed.
+- A silent macOS notification reports the build result and diagnostic counts.
 
 ## Prerequisites
 
@@ -36,7 +41,7 @@ double-click `bbtex.bbpackage`. BBEdit installs it automatically.
 
 ### From source
 
-Requires OCaml 5.0+ and dune 3.0+.
+Requires OCaml 5.0+, dune 3.0+, and uv for the editing-support build helpers.
 
 ```bash
 git clone <repo-url> ~/bbtex-ocaml
@@ -57,9 +62,14 @@ BBEdit > Settings > Menus & Shortcuts, scroll to the Scripts section:
 
 | Script                 | Shortcut    |
 |------------------------|-------------|
-| LaTeX — Compile        | Cmd+Shift+B |
+| LaTeX — Compile        | Cmd+K |
 | LaTeX — Forward Search | Cmd+Shift+J |
-| LaTeX — Clean          | Cmd+Shift+K |
+| LaTeX — Compile With…  | Cmd+Shift+K |
+| LaTeX — Clean          | None |
+
+Remove the previous Cmd+Shift+K binding from Clean before assigning it to
+Compile With…. If Cmd+K is already assigned, remove that conflicting binding too.
+Scripts can also be assigned keys in Window > Palettes > Scripts.
 
 ### 2. Skim inverse search
 
@@ -80,6 +90,12 @@ bbtex reads `%!TEX` directives from the first 50 lines of your `.tex`
 file — the same magic comments used by TeXShop, TeXworks, and Sublime
 LaTeXTools.
 
+### Compile With…
+
+Press **Cmd+Shift+K** to choose Document settings, pdfLaTeX, XeLaTeX,
+LuaLaTeX, or Tectonic in a native picker. The choice applies to that build
+only; it does not edit your source. Cancel skips compilation.
+
 ### Engine selection
 
 Add this near the top of your document:
@@ -95,7 +111,8 @@ Supported engines: `pdflatex` (default), `xelatex`, `lualatex`,
   handles multiple passes, BibTeX/Biber, and convergence automatically.
 - `tectonic` is called directly (it has its own multi-pass logic).
 
-If no `%!TEX program` directive is found, bbtex defaults to `pdflatex`.
+Engine precedence is: Compile With… / CLI override, current file directive,
+root file directive, then `pdflatex`.
 
 ### Multi-file projects
 
@@ -122,14 +139,17 @@ path is relative to the file containing the directive.
 ## Workflow
 
 1. Open a `.tex` file in BBEdit.
-2. **Cmd+Shift+B** — saves the document, compiles it, and opens the PDF
-   in Skim. Errors and warnings appear in BBEdit's results browser.
+2. **Cmd+K** — saves the document, compiles it, and opens the PDF
+   in Skim at the current source position. Errors appear automatically;
+   successful builds clear old results without opening a new window.
 3. Click an error in the results browser to jump to the source line.
-4. Fix the error, **Cmd+Shift+B** again.
+4. Fix the error, **Cmd+K** again.
 5. **Cmd+Shift+J** — jump from the cursor in BBEdit to the matching
    position in the PDF (forward search via SyncTeX).
 6. **Cmd+click in Skim** — jump from the PDF back to BBEdit (inverse
    search).
+7. Use **LaTeX — Show Build Results** to inspect warnings and bad boxes,
+   or **LaTeX — Open Build Log** for full compiler output.
 
 ## Troubleshooting
 
@@ -168,6 +188,9 @@ The `bbtex` binary also works standalone from Terminal:
 # Compile a .tex file
 bbtex compile myfile.tex
 
+# Override the engine for one build
+bbtex compile --engine tectonic myfile.tex
+
 # Parse a log file (human-readable)
 bbtex parse-log build/output.log
 
@@ -185,3 +208,18 @@ bbtex forward-search myfile.tex 42
 
 - [Architecture and design decisions](docs/architecture.md)
 - [LaTeXTools feature comparison](docs/latextools-comparison.md)
+
+## Editing support and development plan
+
+The old Latex.bbpackage's clippings, stationery, and editing helpers are now
+maintained in this repository. Its retired build scripts are archived during
+migration. See [editing commands and TexLab setup](docs/bbedit-editing.md),
+[asset attribution](support/THIRD-PARTY-NOTICES.md), and the
+[implementation plan](docs/plans/2026-09-17-bbedit-latex-workflow.md).
+
+Python build/check utilities always run through `uv run` with PEP 723 inline
+metadata and explicit dependencies. They do not install into shared environments.
+
+    uv run scripts/build-support.py
+    uv run scripts/install-support.py                 # preview migration
+    uv run scripts/install-support.py --apply --restart

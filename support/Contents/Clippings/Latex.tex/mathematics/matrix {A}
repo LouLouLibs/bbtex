@@ -1,0 +1,5 @@
+\begin{Bmatrix}
+	#SELSTART#a & b \\
+	c & d #SELEND#
+\end{Bmatrix}
+#INDENT#

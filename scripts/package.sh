@@ -45,10 +45,16 @@ cp "$BINARY" "$PKG/Contents/Resources/bbtex"
 chmod +x "$PKG/Contents/Resources/bbtex"
 
 # Scripts — copy with BBEdit menu names
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-compile-with.sh" "$PKG/Contents/Scripts/LaTeX — Compile With….sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-compile.sh" "$PKG/Contents/Scripts/LaTeX — Compile.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-forward.sh" "$PKG/Contents/Scripts/LaTeX — Forward Search.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-clean.sh"   "$PKG/Contents/Scripts/LaTeX — Clean.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-results.sh" "$PKG/Contents/Scripts/LaTeX — Show Build Results.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-log.sh" "$PKG/Contents/Scripts/LaTeX — Open Build Log.sh"
 chmod +x "$PKG/Contents/Scripts/"*.sh
+
+# Editing helpers and clippings share the main package in release builds.
+uv run "$PROJECT_ROOT/scripts/build-support.py" "$PKG"
 
 echo "Package assembled: $PKG"
 echo "  Binary: $BUILT_ARCH"

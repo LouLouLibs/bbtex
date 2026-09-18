@@ -1,0 +1,5 @@
+\begin{cases}
+	#SELSTART#0 & \text{if $n$ is odd},\\
+	n & \text{if $n$ is even}#SELEND#
+\end{cases}
+#INDENT#

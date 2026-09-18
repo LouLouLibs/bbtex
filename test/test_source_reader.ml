@@ -136,14 +136,14 @@ let test_build_search_entries_basic () =
   assert_equal ~msg:"se_severity" "error" (Types.string_of_severity r.Types.se_severity)
 
 let test_build_search_entries_dedup () =
-  (* Two error entries pointing to the same (file, line) → only one result *)
+  (* Different diagnostics on the same line must survive. Exact repeats collapse. *)
   let e1 = make_entry Types.Error (Some source_lines_path) (Some 3)
     "First error on line 3." in
   let e2 = make_entry Types.Error (Some source_lines_path) (Some 3)
     "Second error on line 3." in
-  let results = Source_reader.build_search_entries ~root_dir:testdata_dir [e1; e2] in
-  assert_int_equal ~msg:"dedup: only one result for same file+line"
-    1 (List.length results)
+  let results = Source_reader.build_search_entries ~root_dir:testdata_dir [e1; e2; e1] in
+  assert_int_equal ~msg:"dedup: preserve different messages, collapse exact repeats"
+    2 (List.length results)
 
 let test_build_search_entries_includes_warnings () =
   (* Warnings with valid file+line now become search entries *)

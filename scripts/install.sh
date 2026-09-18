@@ -58,7 +58,7 @@ echo "  Created: $HOME/.local/state/bbtex"
 mkdir -p "$BBEDIT_SCRIPTS"
 
 # Remove old symlinks if they exist
-for name in "LaTeX — Compile.sh" "LaTeX — Forward Search.sh" "LaTeX — Clean.sh"; do
+for name in "LaTeX — Compile.sh" "LaTeX — Compile With….sh" "LaTeX — Forward Search.sh" "LaTeX — Clean.sh" "LaTeX — Show Build Results.sh" "LaTeX — Open Build Log.sh"; do
     if [[ -L "$BBEDIT_SCRIPTS/$name" ]]; then
         rm "$BBEDIT_SCRIPTS/$name"
     fi
@@ -66,14 +66,26 @@ done
 
 ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-compile.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Compile.sh"
+ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-compile-with.sh" \
+      "$BBEDIT_SCRIPTS/LaTeX — Compile With….sh"
 ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-forward.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Forward Search.sh"
 ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-clean.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Clean.sh"
+ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-results.sh" \
+      "$BBEDIT_SCRIPTS/LaTeX — Show Build Results.sh"
+ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-log.sh" \
+      "$BBEDIT_SCRIPTS/LaTeX — Open Build Log.sh"
 
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Compile.sh"
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Forward Search.sh"
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Clean.sh"
+
+# Build editing support locally. Installation is explicit because it migrates
+# the older Latex.bbpackage and requires BBEdit to be closed.
+uv run "$PROJECT_DIR/scripts/build-support.py"
+echo "  Editing assets built. Install with:"
+echo "    uv run scripts/install-support.py --apply --restart"
 
 # ── Done ─────────────────────────────────────────────────────
 
@@ -87,7 +99,9 @@ echo ""
 echo "1. SET KEYBOARD SHORTCUTS IN BBEDIT"
 echo "   BBEdit > Settings > Menus & Shortcuts"
 echo "   Scroll to the Scripts section, find:"
-echo "     • LaTeX — Compile     → assign Shift+Cmd+B"
+echo "     • LaTeX — Compile     → assign Cmd+K"
+echo "     • LaTeX — Compile With… → assign Shift+Cmd+K"
+echo "     • LaTeX — Clean → remove its old Shift+Cmd+K shortcut"
 echo "     • LaTeX — Forward Search → assign Shift+Cmd+J"
 echo ""
 echo "2. CONFIGURE SKIM FOR INVERSE SEARCH (PDF → source)"
@@ -98,7 +112,7 @@ echo "     Arguments: --line %line \"%file\""
 echo ""
 echo "3. TEST IT"
 echo "   Open a .tex file in BBEdit, then:"
-echo "     • Shift+Cmd+B to compile"
+echo "     • Cmd+K to compile"
 echo "     • Click errors in the results to jump to source"
 echo "     • Shift+Cmd+J to jump from source to PDF in Skim"
 echo "     • Cmd+click in Skim to jump back to source in BBEdit"
