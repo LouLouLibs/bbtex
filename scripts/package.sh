@@ -42,6 +42,7 @@ mkdir -p "$PKG/Contents/Scripts"
 
 # Binary
 cp "$BINARY" "$PKG/Contents/Resources/bbtex"
+cp "$PROJECT_ROOT/scripts/configure-document.applescript" "$PKG/Contents/Resources/configure-document.applescript"
 chmod +x "$PKG/Contents/Resources/bbtex"
 
 # Scripts — copy with BBEdit menu names
@@ -51,6 +52,8 @@ cp "$PROJECT_ROOT/scripts/bbtex-bbedit-forward.sh" "$PKG/Contents/Scripts/LaTeX 
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-clean.sh"   "$PKG/Contents/Scripts/LaTeX — Clean.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-results.sh" "$PKG/Contents/Scripts/LaTeX — Show Build Results.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-log.sh" "$PKG/Contents/Scripts/LaTeX — Open Build Log.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-cancel.sh" "$PKG/Contents/Scripts/LaTeX — Cancel Build.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-clean-all.sh" "$PKG/Contents/Scripts/LaTeX — Clean All Build Output.sh"
 chmod +x "$PKG/Contents/Scripts/"*.sh
 
 # Editing helpers and clippings share the main package in release builds.

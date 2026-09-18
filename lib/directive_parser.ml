@@ -15,13 +15,16 @@ let max_lines = 50
     Returns [None] if the line is not a directive. *)
 let parse_directive_line line =
   let line = String.trim line in
-  (* Must start with %!TEX (case-insensitive) *)
-  if String.length line < 5 then None
+  (* TeXShop accepts whitespace between the comment marker and !TEX. *)
+  let line = if String.starts_with ~prefix:"%" line then
+      String.sub line 1 (String.length line - 1) |> String.trim
+    else "" in
+  if String.length line < 4 then None
   else
-    let prefix = String.sub line 0 5 in
-    if String.lowercase_ascii prefix <> "%!tex" then None
+    let prefix = String.sub line 0 4 in
+    if String.lowercase_ascii prefix <> "!tex" then None
     else
-      let rest = String.trim (String.sub line 5 (String.length line - 5)) in
+      let rest = String.trim (String.sub line 4 (String.length line - 4)) in
       (* Find the '=' *)
       match String.index_opt rest '=' with
       | None -> None

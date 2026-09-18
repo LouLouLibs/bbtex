@@ -11,6 +11,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 BINARY = ROOT / "_build/default/bin/main.exe"
+WRAPPER = Path(os.environ.get("BBTEX_TEST_WRAPPER", ROOT / "scripts/bbtex-bbedit-compile.sh"))
 
 with tempfile.TemporaryDirectory(prefix="bbtex-workflow-") as directory:
     root = Path(directory)
@@ -44,7 +45,9 @@ if [[ "$1" == "-e" ]]; then
     printf '%s\\n' "$2" >> "$BBTEX_TEST_TRACE"
 elif [[ "$1" == "-" ]]; then
     printf '%s\\n' "$@" >> "$BBTEX_TEST_TRACE"
-    cat >> "$BBTEX_TEST_TRACE"
+    script=$(cat)
+    printf '%s\\n' "$script" >> "$BBTEX_TEST_TRACE"
+    if [[ "$script" == *"choose from list"* ]]; then printf '%s\\n' "${BBTEX_TEST_CHOICE:-}"; fi
 else
     cat "$1" >> "$BBTEX_TEST_TRACE"
 fi
@@ -61,7 +64,7 @@ fi
            "BBTEX_TEST_TRACE": str(trace), "BBTEX_TEST_FIXTURE": str(fixture)}
     def run(mode=None, **settings):
         trace.write_text("")
-        result = subprocess.run(["/bin/bash", str(ROOT / "scripts/bbtex-bbedit-compile.sh")] +
+        result = subprocess.run(["/bin/bash", str(WRAPPER)] +
                                 ([mode] if mode else []),
                                 env={**env, **settings}, capture_output=True, text=True)
         assert not result.stdout, result.stdout
@@ -97,13 +100,27 @@ fi
     code, output = run(BBTEX_TEST_EXIT="12")
     assert code == 0 and "Compilation failed (exit 12)" in output, output
     code, output = run("--open-log")
-    assert code == 0 and str(root / "state/last-compile.log") in output, output
+    build_logs = list((root / "state").glob("build-*.log"))
+    assert code == 0 and len(build_logs) == 1 and str(build_logs[0]) in output, output
     assert "compiler\n" not in output
     print("Unparsed compiler failure: actionable diagnostic and compiler log")
 
     code, output = run(BBTEX_TEST_SAVE_FAIL="1")
     assert code == 1 and "compiler\n" not in output, output
     print("Failed save: compilation stopped")
+
+    (root / ".bbtex").write_text("[profile Draft]\nengine = xelatex\n")
+    code, output = run("--choose-engine", BBTEX_TEST_CHOICE="Profile: Draft")
+    assert code == 0 and "xelatex" in output and "Profile: Draft" in output, output
+    code, output = run("--choose-engine", BBTEX_TEST_CHOICE="")
+    assert code == 0 and "compiler\n" not in output
+    code, output = run("--cancel")
+    assert code == 0 and "No build is running" in output and "compiler\n" not in output
+    print("Profile picker, picker cancellation, and Cancel Build action verified")
+
+    code, output = run("--choose-engine", BBTEX_TEST_CHOICE="Configure Document…")
+    assert code == 0 and "compiler\n" not in output and "Apply Document Settings" in output, output
+    print("Document configuration opens without compiling")
 
     compiler.unlink()
     code, output = run()

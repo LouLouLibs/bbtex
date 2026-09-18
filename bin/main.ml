@@ -8,7 +8,13 @@ Commands:
   compile <file.tex>         Compile and report results (protocol output)
   results <file.tex>         Show all diagnostics from the current project log
   paths <file.tex>           Resolve project log and PDF paths without compiling
-  clean <file.tex>           Remove all build artifacts (latexmk -C)
+  clean <file.tex>           Remove auxiliary files, keep PDF
+  clean-all <file.tex>       Remove all build output including PDF
+  cancel <file.tex>          Cancel the running build for this project
+  profiles <file.tex>        List named profiles from .bbtex
+  save-project <file.tex>    Emit AppleScript to save open project files
+  document-settings <file> <engine|inherit> <root|->
+                            Emit AppleScript to update document directives
   forward-search <f> <line>  SyncTeX forward search
   parse-log <file.log>       Parse a LaTeX log file
   directives <file.tex>      Extract %!TEX directives
@@ -19,18 +25,21 @@ Options:
                              bbedit for format-results)
   --engine <name>            Compile once with pdflatex, xelatex, lualatex,
                              or tectonic (overrides document directives)
+  --profile <name>           Use a named project build profile
   --verbose                  Enable verbose logging to stderr
   --help                     Show this help message
 |}
 
 let parse_args () =
   let args = Array.to_list Sys.argv |> List.tl in
-  let engine = ref None in
+  let engine = ref None and profile = ref None in
   let rec go cmd fmt verbose rest = function
-    | [] -> (cmd, fmt, verbose, !engine, List.rev rest)
+    | [] -> (cmd, fmt, verbose, !engine, !profile, List.rev rest)
     | "--help" :: _ -> print_string usage; exit 0
     | "-h" :: _ -> print_string usage; exit 0
     | "--verbose" :: tail -> go cmd fmt true rest tail
+    | "--profile" :: name :: tail -> profile := Some name; go cmd fmt verbose rest tail
+    | ["--profile"] -> Printf.eprintf "--profile requires a name\n"; exit 2
     | "--engine" :: name :: tail ->
       (match String.lowercase_ascii name with
        | "pdflatex" | "xelatex" | "lualatex" | "tectonic" ->
@@ -74,9 +83,14 @@ let cmd_directives filename =
   let directives = Directive_parser.parse_file filename in
   List.iter print_endline (Bbedit_format.format_directives_text directives)
 
-let cmd_compile ?engine filename =
+let cmd_compile ?engine ?profile filename =
+  let started = Unix.gettimeofday () in
   try
-    let result = Compiler.compile ?engine filename in
+    let config = Compiler.resolve_compilation ?engine ?profile filename in
+    let result = Compiler.compile ?engine ?profile filename in
+    Printf.printf "root: %s\nengine: %s\nduration: %.1f\nbuild_log: %s\n"
+      config.root_file (Types.string_of_engine config.engine)
+      (Unix.gettimeofday () -. started) (Build_job.log_path config.root_file);
     let applescript_file =
       (* Successful builds do not open a results window. Full diagnostics remain
          available through the explicit results command. *)
@@ -88,7 +102,12 @@ let cmd_compile ?engine filename =
     match result.status with
     | Types.Success -> exit 0
     | Types.Failure -> exit 1
-  with Compiler.Bbtex_error msg ->
+  with
+  | Build_job.Cancelled ->
+    print_endline "status: cancelled";
+    print_endline "summary: Build cancelled";
+    exit 3
+  | Compiler.Bbtex_error msg ->
     Log.error msg;
     List.iter print_endline (Bbedit_format.format_error_message msg);
     exit 2
@@ -102,23 +121,31 @@ let cmd_results filename =
     List.iter print_endline (Bbedit_format.format_error_message msg);
     exit 2
 
-let cmd_paths filename =
+let cmd_paths ?engine ?profile filename =
   try
-    let config = Compiler.resolve_compilation filename in
-    Printf.printf "status: success\nlog: %s\npdf: %s\n" config.log_file config.pdf_file
+    let config = Compiler.resolve_compilation ?engine ?profile filename in
+    Printf.printf "status: success\nlog: %s\npdf: %s\nroot: %s\nengine: %s\nproject: %s\nbuild_log: %s\n"
+      config.log_file config.pdf_file config.root_file (Types.string_of_engine config.engine)
+      config.project_dir (Build_job.log_path config.root_file)
   with Compiler.Bbtex_error msg ->
     List.iter print_endline (Bbedit_format.format_error_message msg);
     exit 2
 
-let cmd_clean filename =
+let cmd_clean ?(full=false) filename =
   try
-    let exit_code = Compiler.clean filename in
+    let exit_code = Compiler.clean ~full filename in
     if exit_code = 0 then
-      Printf.printf "status: success\nsummary: build artifacts removed\n"
+      Printf.printf "status: success\nsummary: %s\n"
+        (if full then "All build output removed" else "Auxiliary files removed; PDF preserved")
     else
-      Printf.printf "status: error\nmessage: latexmk -C exited with code %d\n" exit_code;
+      Printf.printf "status: error\nmessage: Cleanup exited with code %d\n" exit_code;
     exit (if exit_code = 0 then 0 else 2)
-  with Compiler.Bbtex_error msg ->
+  with
+  | Build_job.Cancelled ->
+    print_endline "status: cancelled";
+    print_endline "summary: Build cancelled";
+    exit 3
+  | Compiler.Bbtex_error msg ->
     Log.error msg;
     List.iter print_endline (Bbedit_format.format_error_message msg);
     exit 2
@@ -179,15 +206,20 @@ let cmd_forward_search filename line_str =
      with Unix.Unix_error (Unix.ENOENT, _, _) ->
        Unix.close r_fd;
        raise (Compiler.Bbtex_error "synctex not found in PATH"))
-  with Compiler.Bbtex_error msg ->
+  with
+  | Build_job.Cancelled ->
+    print_endline "status: cancelled";
+    print_endline "summary: Build cancelled";
+    exit 3
+  | Compiler.Bbtex_error msg ->
     Log.error msg;
     List.iter print_endline (Bbedit_format.format_error_message msg);
     exit 2
 
 let () =
-  let (cmd, fmt, verbose, engine, args) = parse_args () in
-  if engine <> None && cmd <> Some "compile" then begin
-    Printf.eprintf "--engine is only supported by compile\n"; exit 2
+  let (cmd, fmt, verbose, engine, profile, args) = parse_args () in
+  if (engine <> None || profile <> None) && cmd <> Some "compile" && cmd <> Some "paths" then begin
+    Printf.eprintf "--engine/--profile are only supported by compile and paths\n"; exit 2
   end;
   if verbose then Log.set_verbose ();
   match cmd with
@@ -196,19 +228,50 @@ let () =
     exit 1
   | Some "compile" ->
     (match args with
-     | [f] -> cmd_compile ?engine f
+     | [f] -> cmd_compile ?engine ?profile f
      | _ -> Printf.eprintf "compile requires a filename\n"; exit 1)
   | Some "clean" ->
     (match args with
      | [f] -> cmd_clean f
      | _ -> Printf.eprintf "clean requires a filename\n"; exit 1)
+  | Some "clean-all" ->
+    (match args with
+     | [f] -> cmd_clean ~full:true f
+     | _ -> Printf.eprintf "clean-all requires a filename\n"; exit 1)
+  | Some "cancel" ->
+    (match args with
+     | [f] -> (try
+         let cancelled = Compiler.cancel f in
+         Printf.printf "status: success\nsummary: %s\n"
+           (if cancelled then "Cancellation requested" else "No build is running for this project")
+       with Compiler.Bbtex_error msg ->
+         List.iter print_endline (Bbedit_format.format_error_message msg); exit 2)
+     | _ -> Printf.eprintf "cancel requires a filename\n"; exit 1)
+  | Some "profiles" ->
+    (match args with
+     | [f] -> (try
+         List.iter (fun (name, _) -> Printf.printf "profile: %s\n" name)
+           (Compiler.settings_for f).Project.profiles
+       with Compiler.Bbtex_error msg ->
+         List.iter print_endline (Bbedit_format.format_error_message msg); exit 2)
+     | _ -> Printf.eprintf "profiles requires a filename\n"; exit 1)
+  | Some "save-project" ->
+    (match args with
+     | [f] -> (try print_string (Applescript.save_project_script (Compiler.resolve_compilation f))
+       with Compiler.Bbtex_error msg -> Printf.eprintf "%s\n" msg; exit 2)
+     | _ -> Printf.eprintf "save-project requires a filename\n"; exit 1)
+  | Some "document-settings" ->
+    (match args with
+     | [f; engine; root] -> (try print_string (Document_settings.script f engine root)
+       with Project.Error msg -> Printf.eprintf "%s\n" msg; exit 2)
+     | _ -> Printf.eprintf "document-settings requires file, engine, and root (or -)\n"; exit 2)
   | Some "results" ->
     (match args with
      | [f] -> cmd_results f
      | _ -> Printf.eprintf "results requires a filename\n"; exit 1)
   | Some "paths" ->
     (match args with
-     | [f] -> cmd_paths f
+     | [f] -> cmd_paths ?engine ?profile f
      | _ -> Printf.eprintf "paths requires a filename\n"; exit 1)
   | Some "forward-search" ->
     (match args with

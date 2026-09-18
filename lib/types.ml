@@ -57,7 +57,7 @@ let string_of_directive_key = function
 let directive_key_of_string s =
   match String.lowercase_ascii s with
   | "root"     -> Root
-  | "program"  -> Program
+  | "program" | "ts-program" -> Program
   | "encoding" -> Encoding
   | other      -> Other other
 
@@ -98,6 +98,10 @@ type compilation_config = {
   source_file : string;
   root_file : string;
   engine : engine;
+  project_dir : string;
+  output_directory : string;
+  options : string list;
+  profile : string option;
   log_file : string;
   pdf_file : string;
 }

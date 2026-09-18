@@ -175,6 +175,13 @@ let test_find_directive () =
 let () =
   Printf.printf "Directive parser tests:\n";
   run_test "basic root directive" test_basic_root;
+  run_test "TeXShop spacing and engine alias" (fun () ->
+    List.iter (fun line ->
+      match Directive_parser.parse_directive_line line with
+      | Some d -> assert_true ~msg:"program alias" (d.key = Types.Program);
+          assert_equal ~msg:"engine" "xelatex" d.value
+      | None -> assert_true ~msg:"directive recognized" false)
+      ["% !TEX TS-program = xelatex"; "%\t!TeX program = xelatex"; "%!tex ts-program = xelatex"]);
   run_test "basic program directive" test_basic_program;
   run_test "case insensitivity" test_case_insensitivity;
   run_test "missing equals sign" test_missing_equals;

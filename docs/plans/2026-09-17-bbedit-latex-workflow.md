@@ -54,7 +54,7 @@ diagnostic commands are installed; the existing compile symlink uses the new
 workflow. Diagnostic deduplication now preserves different messages/severities
 on the same line. No System Events scripting is required for results.
 
-## 4. Project-aware builds — queued
+## 4. Project-aware builds — implemented and installed
 
 - Resolve and validate root chains, including cycles and missing files.
 - Save modified files belonging to the current project before compiling.
@@ -65,7 +65,33 @@ on the same line. No System Events scripting is required for results.
 - Make ordinary Clean preserve PDFs; offer a separate full cleanup action.
 - Test multi-file projects, overlapping builds, cancellation, and engine switches.
 
-## Later
+Implemented `.bbtex` configuration and named profiles in Compile With…,
+canonical root resolution, per-root locks and logs, and process-group cancellation.
+Overlapping requests report a busy project. Ordinary Clean preserves PDFs;
+the separate full-clean command asks for confirmation. Both commands are installed.
+Native checks verified saving the root, chapter, and bibliography while leaving
+an unrelated document unsaved, then compiling a real project into an output
+directory containing spaces with PDF and SyncTeX available in Skim.
+Process tests cover overlapping builds/cleanup and cancellation of both normal
+and signal-resistant compiler children. See docs/project-builds.md for settings.
+
+## 5. Guided document setup — implemented; final UI walkthrough pending
+
+Compile With… now includes Configure Document… with engine guidance and a
+main-file chooser. It writes TeXShop-style root/program comments for review,
+including relative paths to external main files. Unit and native editor-edit
+checks cover content preservation and inherited engines. The complete sequence
+of interactive picker dialogs still needs a hands-on walkthrough.
+
+## Remaining verification and release work
+
+- Walk through setup, cancellation, and compilation in a representative project.
+- Exercise citation/reference completion and navigation in BBEdit's actual UI.
+- TeXShop `% !TEX` spacing and `TS-program` aliases are implemented and tested.
+- Release package assembled with the new setup resource; packaged wrapper checked.
+- Interactive UI checks remain pending: Computer Use permissions are unavailable.
+
+## Optional later features
 
 Selected-equation preview; richer citation picker if native completion is insufficient.
 Do not rebuild editor features until the native integration has been exercised.

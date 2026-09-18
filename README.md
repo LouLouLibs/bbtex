@@ -5,7 +5,7 @@ source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
 
 ## What you get
 
-- **Cmd+K** compiles the current `.tex` file and shows
+- **Cmd+K** saves open project inputs, compiles the resolved root, and shows
   errors in BBEdit's results browser — click any entry to jump to the source line.
   Successful builds update Skim at the source position without taking focus.
 - **LaTeX — Show Build Results** shows all errors, warnings, and bad boxes
@@ -16,10 +16,12 @@ source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
   corresponding spot in Skim (forward search).
 - **Cmd+click in Skim** jumps back to BBEdit at the right line (inverse
   search).
-- **Cmd+Shift+K** opens **Compile With…** to choose a one-off engine.
+- **Cmd+Shift+K** opens **Compile With…** to choose a one-off engine or project profile.
+- **LaTeX — Cancel Build** stops the current project's compiler and its children.
 - **LaTeX — Clean** (menu only) removes build artifacts (`.aux`, `.log`, `.synctex.gz`,
-  etc.).
-- A silent macOS notification reports the build result and diagnostic counts.
+  etc.), preserving the PDF. **Clean All Build Output** also removes the PDF,
+  after confirmation.
+- A silent macOS notification reports the root, engine, duration, and diagnostic counts.
 
 ## Prerequisites
 
@@ -90,11 +92,23 @@ bbtex reads `%!TEX` directives from the first 50 lines of your `.tex`
 file — the same magic comments used by TeXShop, TeXworks, and Sublime
 LaTeXTools.
 
+These “magic comments” come from the **TeXShop editor convention**: the editor
+reads them as build instructions, while LaTeX ignores them as ordinary comments.
+They are not an official LaTeX standard or AUCTeX's Emacs local-variable format.
+See [TeXShop](https://pages.uoregon.edu/koch/texshop/) and
+[LaTeXTools' documented support](https://latextools.readthedocs.io/en/latest/features/).
+bbtex's generated syntax is shown below; editor-specific variations are not
+necessarily interchangeable.
+
 ### Compile With…
 
 Press **Cmd+Shift+K** to choose Document settings, pdfLaTeX, XeLaTeX,
-LuaLaTeX, or Tectonic in a native picker. The choice applies to that build
+LuaLaTeX, Tectonic, or a named project profile in a native picker. The choice applies to that build
 only; it does not edit your source. Cancel skips compilation.
+
+Choose **Configure Document…** in the same picker for engine guidance and a
+main-file chooser. It writes `%!TEX` settings into the current document for
+review, including relative root paths for included tables and chapters.
 
 ### Engine selection
 
@@ -111,8 +125,8 @@ Supported engines: `pdflatex` (default), `xelatex`, `lualatex`,
   handles multiple passes, BibTeX/Biber, and convergence automatically.
 - `tectonic` is called directly (it has its own multi-pass logic).
 
-Engine precedence is: Compile With… / CLI override, current file directive,
-root file directive, then `pdflatex`.
+Engine precedence is: explicit engine override, selected/default profile engine,
+first directive in the source-to-root chain, project engine, then `pdflatex`.
 
 ### Multi-file projects
 
@@ -125,6 +139,20 @@ add this to each chapter file:
 
 Now compiling from any chapter file will compile `main.tex` instead. The
 path is relative to the file containing the directive.
+
+For shared defaults, add a `.bbtex` file in the project directory:
+
+```ini
+root = main.tex
+engine = pdflatex
+output_directory = build
+
+[profile XeLaTeX]
+engine = xelatex
+```
+
+See [project settings, profiles, and cancellation](docs/project-builds.md) for
+the full format and saving behavior. Only one build or cleanup runs per root.
 
 ### Example preamble
 
@@ -139,7 +167,7 @@ path is relative to the file containing the directive.
 ## Workflow
 
 1. Open a `.tex` file in BBEdit.
-2. **Cmd+K** — saves the document, compiles it, and opens the PDF
+2. **Cmd+K** — saves the document and modified project inputs, compiles the root, and opens the PDF
    in Skim at the current source position. Errors appear automatically;
    successful builds clear old results without opening a new window.
 3. Click an error in the results browser to jump to the source line.
@@ -190,6 +218,12 @@ bbtex compile myfile.tex
 
 # Override the engine for one build
 bbtex compile --engine tectonic myfile.tex
+
+# Use a named project profile
+bbtex compile --profile Draft myfile.tex
+
+# Stop this project's active build
+bbtex cancel myfile.tex
 
 # Parse a log file (human-readable)
 bbtex parse-log build/output.log

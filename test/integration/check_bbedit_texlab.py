@@ -37,7 +37,8 @@ on run argv
     tell application "BBEdit"
         repeat with d in text documents
             try
-                if POSIX path of (file of d) is item 1 of argv then close d saving no
+                set documentFile to get file of d
+                if POSIX path of documentFile is item 1 of argv then close d saving no
             end try
         end repeat
     end tell

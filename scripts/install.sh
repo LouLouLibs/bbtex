@@ -58,7 +58,7 @@ echo "  Created: $HOME/.local/state/bbtex"
 mkdir -p "$BBEDIT_SCRIPTS"
 
 # Remove old symlinks if they exist
-for name in "LaTeX — Compile.sh" "LaTeX — Compile With….sh" "LaTeX — Forward Search.sh" "LaTeX — Clean.sh" "LaTeX — Show Build Results.sh" "LaTeX — Open Build Log.sh"; do
+for name in "LaTeX — Compile.sh" "LaTeX — Compile With….sh" "LaTeX — Forward Search.sh" "LaTeX — Clean.sh" "LaTeX — Show Build Results.sh" "LaTeX — Open Build Log.sh" "LaTeX — Cancel Build.sh" "LaTeX — Clean All Build Output.sh"; do
     if [[ -L "$BBEDIT_SCRIPTS/$name" ]]; then
         rm "$BBEDIT_SCRIPTS/$name"
     fi
@@ -76,6 +76,10 @@ ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-results.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Show Build Results.sh"
 ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-log.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Open Build Log.sh"
+ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-cancel.sh" \
+      "$BBEDIT_SCRIPTS/LaTeX — Cancel Build.sh"
+ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-clean-all.sh" \
+      "$BBEDIT_SCRIPTS/LaTeX — Clean All Build Output.sh"
 
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Compile.sh"
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Forward Search.sh"

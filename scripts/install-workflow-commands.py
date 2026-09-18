@@ -3,13 +3,15 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""Install the two on-demand diagnostics commands without restarting BBEdit."""
+"""Install on-demand build commands without restarting BBEdit."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 scripts = Path.home() / "Library/Application Support/BBEdit/Scripts"
 commands = {"LaTeX — Show Build Results.sh": "bbtex-bbedit-results.sh",
-            "LaTeX — Open Build Log.sh": "bbtex-bbedit-log.sh"}
+            "LaTeX — Open Build Log.sh": "bbtex-bbedit-log.sh",
+            "LaTeX — Cancel Build.sh": "bbtex-bbedit-cancel.sh",
+            "LaTeX — Clean All Build Output.sh": "bbtex-bbedit-clean-all.sh"}
 for name, source in commands.items():
     target = scripts / name
     expected = ROOT / "scripts" / source

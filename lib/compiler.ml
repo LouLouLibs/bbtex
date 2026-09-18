@@ -7,7 +7,7 @@ open Types
 
 (** Raised for all bbtex-internal failures: file not found, wrong extension,
     missing external tools, etc. *)
-exception Bbtex_error of string
+exception Bbtex_error = Project.Error
 
 (* ── resolve_compilation ─────────────────────────────────────── *)
 
@@ -17,135 +17,81 @@ exception Bbtex_error of string
     Raises [Bbtex_error] if:
     - the file does not exist
     - the file does not end in ".tex" *)
-let resolve_compilation ?engine:engine_override path =
-  Log.info (Printf.sprintf "resolving compilation for: %s" path);
+let strict_engine name =
+  match String.lowercase_ascii name with
+  | "pdflatex" | "xelatex" | "lualatex" | "tectonic" -> Types.engine_of_string name
+  | _ -> raise (Bbtex_error ("Unknown LaTeX engine: " ^ name))
 
-  (* Validate existence *)
-  if not (Sys.file_exists path) then
-    raise (Bbtex_error (Printf.sprintf "file not found: %s" path));
+let canonical path =
+  if not (Sys.file_exists path) then raise (Bbtex_error ("file not found: " ^ path));
+  if Filename.extension path <> ".tex" || Sys.is_directory path then
+    raise (Bbtex_error ("not a .tex file: " ^ path));
+  Unix.realpath path
 
-  (* Validate extension *)
-  if Filename.extension path <> ".tex" then
-    raise (Bbtex_error
-      (Printf.sprintf "not a .tex file: %s" path));
-
-  (* Resolve to absolute path *)
-  let abs_source =
-    if Filename.is_relative path then
-      Filename.concat (Sys.getcwd ()) path
-    else
-      path
+let resolve_compilation ?engine:engine_override ?profile path =
+  let source_file = canonical path in
+  let initial = Project.load (Filename.dirname source_file) in
+  let rec follow visited program file =
+    if List.mem file visited then raise (Bbtex_error ("Cyclic %!TEX root directives: " ^ file));
+    let directives = Directive_parser.parse_file file in
+    let program = match program with Some _ -> program | None ->
+      Directive_parser.find_directive Program directives in
+    let root = match Directive_parser.find_directive Root directives with
+      | Some value -> Some (Filename.dirname file, value)
+      | None when visited = [] -> Option.map (fun value ->
+          Filename.dirname (Option.get initial.file), value) (Project.get "root" initial.defaults)
+      | None -> None
+    in
+    match root with
+    | None -> file, program
+    | Some (dir, root) ->
+      let next = canonical (if Filename.is_relative root then Filename.concat dir root else root) in
+      if next = file then file, program (* Conventional self-root directive. *)
+      else follow (file :: visited) program next
   in
-  Log.info (Printf.sprintf "absolute source: %s" abs_source);
-
-  let source_dir = Filename.dirname abs_source in
-
-  (* Read directives *)
-  let directives = Directive_parser.parse_file abs_source in
-  Log.info (Printf.sprintf "found %d directive(s)" (List.length directives));
-
-  (* Resolve root file: relative to source_dir *)
-  let abs_root =
-    match Directive_parser.find_directive Root directives with
+  let root_file, program = follow [] None source_file in
+  let settings = if initial.file = None then Project.load (Filename.dirname root_file) else initial in
+  let profile = match profile with Some _ -> profile | None -> Project.get "default_profile" settings.defaults in
+  let fields = match profile with
+    | None -> []
+    | Some name -> (match List.assoc_opt name settings.profiles with
+       | Some fields -> fields | None -> raise (Bbtex_error ("Unknown build profile: " ^ name)))
+  in
+  let engine = match engine_override with
+    | Some e -> e
     | None ->
-      Log.info "no root directive; using source file as root";
-      abs_source
-    | Some rel_root ->
-      let candidate =
-        if Filename.is_relative rel_root then
-          Filename.concat source_dir rel_root
-        else
-          rel_root
-      in
-      Log.info (Printf.sprintf "root directive -> %s" candidate);
-      candidate
+      let name = match Project.get "engine" fields with
+        | Some e -> e
+        | None -> Option.value ~default:(Option.value ~default:"pdflatex"
+            (Project.get "engine" settings.defaults)) program
+      in strict_engine name
   in
-
-  if not (Sys.file_exists abs_root) then
-    raise (Bbtex_error (Printf.sprintf "root file not found: %s" abs_root));
-  let root_directives = Directive_parser.parse_file abs_root in
-  (* An explicit choice overrides the source directive, then the root directive. *)
-  let program =
-    match Directive_parser.find_directive Program directives with
-    | Some _ as program -> program
-    | None -> Directive_parser.find_directive Program root_directives
+  let root_dir = Filename.dirname root_file in
+  let output_directory = match Project.get "output_directory" settings.defaults with
+    | None -> root_dir
+    | Some "" -> raise (Bbtex_error "output_directory cannot be empty")
+    | Some dir -> Source_reader.resolve_path ~root_dir dir
   in
-  (* Determine engine *)
-  let engine =
-    match engine_override, program with
-    | Some engine, _ -> engine
-    | None, None ->
-      Log.info "no program directive; defaulting to pdflatex";
-      Pdflatex
-    | None, Some prog ->
-      let e = Types.engine_of_string prog in
-      Log.info (Printf.sprintf "engine: %s" (Types.string_of_engine e));
-      e
+  let options = Project.options (Option.value ~default:"" (Project.get "options" settings.defaults)) @
+    Project.options (Option.value ~default:"" (Project.get "options" fields)) in
+  let base = Filename.concat output_directory (Filename.remove_extension (Filename.basename root_file)) in
+  let project_dir = match settings.file with None -> root_dir | Some f -> Filename.dirname f in
+  { source_file; root_file; engine; project_dir; output_directory; options; profile;
+    log_file = base ^ ".log"; pdf_file = base ^ ".pdf" }
+
+let settings_for path =
+  let config = resolve_compilation path in
+  Project.load config.project_dir
+
+let run_compilation job config =
+  Build_job.mkdir config.output_directory;
+  let command, args = match config.engine with
+    | Tectonic -> "tectonic", ["--keep-logs"; "--synctex"; "--outdir"; config.output_directory]
+    | engine -> "latexmk", [Types.latexmk_flag engine; "-interaction=nonstopmode";
+        "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory]
   in
-
-  (* Derive log and pdf paths from root base *)
-  let root_base = Filename.remove_extension abs_root in
-  let log_file = root_base ^ ".log" in
-  let pdf_file = root_base ^ ".pdf" in
-
-  Log.info (Printf.sprintf "log_file: %s" log_file);
-  Log.info (Printf.sprintf "pdf_file: %s" pdf_file);
-
-  { source_file = abs_source;
-    root_file   = abs_root;
-    engine;
-    log_file;
-    pdf_file }
-
-(* ── run_compilation ─────────────────────────────────────────── *)
-
-(** [run_compilation config] executes latexmk or tectonic and returns the
-    exit code.  stdout and stderr from the child process are forwarded to
-    Unix.stderr (which the shell wrapper redirects to the log). *)
-let run_compilation config =
-  let dev_null =
-    Unix.openfile "/dev/null" [Unix.O_RDONLY] 0
-  in
-  let exit_code =
-    try
-      let (cmd, argv) =
-        match config.engine with
-        | Tectonic ->
-          let cmd = "tectonic" in
-          (cmd, [| cmd; "--keep-logs"; "--synctex"; config.root_file |])
-        | engine ->
-          let cmd = "latexmk" in
-          let flag = Types.latexmk_flag engine in
-          (cmd, [| cmd;
-                   flag;
-                   "-interaction=nonstopmode";
-                   "-file-line-error";
-                   "-synctex=1";
-                   "-cd";
-                   config.root_file |])
-      in
-      Log.info (Printf.sprintf "running: %s %s"
-                  cmd (String.concat " " (Array.to_list (Array.sub argv 1 (Array.length argv - 1)))));
-      let pid =
-        Unix.create_process cmd argv dev_null Unix.stderr Unix.stderr
-      in
-      let (_, status) = Unix.waitpid [] pid in
-      (match status with
-       | Unix.WEXITED n   -> n
-       | Unix.WSIGNALED _ -> 1
-       | Unix.WSTOPPED _  -> 1)
-    with
-    | Unix.Unix_error (Unix.ENOENT, _, _) ->
-      let cmd =
-        match config.engine with
-        | Tectonic -> "tectonic"
-        | _        -> "latexmk"
-      in
-      Unix.close dev_null;
-      raise (Bbtex_error (Printf.sprintf "%s not found in PATH" cmd))
-  in
-  Unix.close dev_null;
-  exit_code
+  Build_job.run job ~cwd:(Filename.dirname config.root_file) command
+    (args @ config.options @ [config.root_file])
 
 (* ── make_summary ────────────────────────────────────────────── *)
 
@@ -169,29 +115,15 @@ let make_summary entries =
 (** [clean path] resolves directives to find the root file, then runs
     [latexmk -C] to remove all build artifacts (.aux, .log, .pdf, .synctex.gz,
     etc.).  Works regardless of which engine was used to compile. *)
-let clean path =
+let clean ?(full=false) path =
   let config = resolve_compilation path in
-  Log.info (Printf.sprintf "cleaning build artifacts for: %s" config.root_file);
-  let cmd = "latexmk" in
-  let argv = [| cmd; "-C"; "-cd"; config.root_file |] in
-  Log.info (Printf.sprintf "running: %s %s" cmd
-    (String.concat " " (Array.to_list (Array.sub argv 1 (Array.length argv - 1)))));
-  let dev_null = Unix.openfile "/dev/null" [Unix.O_RDONLY] 0 in
-  let exit_code =
-    try
-      let pid = Unix.create_process cmd argv dev_null Unix.stderr Unix.stderr in
-      Unix.close dev_null;
-      let (_, status) = Unix.waitpid [] pid in
-      (match status with
-       | Unix.WEXITED n   -> n
-       | Unix.WSIGNALED _ -> 1
-       | Unix.WSTOPPED _  -> 1)
-    with Unix.Unix_error (Unix.ENOENT, _, _) ->
-      Unix.close dev_null;
-      raise (Bbtex_error "latexmk not found in PATH")
-  in
-  Log.info (Printf.sprintf "latexmk -C exited with code %d" exit_code);
-  exit_code
+  Build_job.with_job config.root_file (fun job ->
+    Build_job.run job ~cwd:(Filename.dirname config.root_file) "latexmk"
+      [ (if full then "-C" else "-c"); "-cd"; "-outdir=" ^ config.output_directory; config.root_file ])
+
+let cancel path =
+  let config = resolve_compilation path in
+  Build_job.cancel config.root_file
 
 (* ── compile ─────────────────────────────────────────────────── *)
 
@@ -237,9 +169,10 @@ let inspect_log path =
     raise (Bbtex_error "No LaTeX log yet. Compile the document first, or use Open Build Log for compiler output.");
   assemble_result config ~exit_code:0 (Log_parser.parse_file config.log_file)
 
-let compile ?engine path =
-  let config = resolve_compilation ?engine path in
-  let exit_code = run_compilation config in
+let compile ?engine ?profile path =
+  let config = resolve_compilation ?engine ?profile path in
+  Build_job.with_job config.root_file (fun job ->
+  let exit_code = run_compilation job config in
   Log.info (Printf.sprintf "compiler exited with code %d" exit_code);
   let entries =
     if Sys.file_exists config.log_file then Log_parser.parse_file config.log_file
@@ -248,4 +181,4 @@ let compile ?engine path =
   let result = assemble_result config ~exit_code entries in
   if result.status = Success && not (Sys.file_exists config.pdf_file) then
     raise (Bbtex_error "Compiler finished without producing a PDF. Use Open Build Log for details.");
-  result
+  result)

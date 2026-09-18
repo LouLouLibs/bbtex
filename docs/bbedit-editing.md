@@ -3,17 +3,23 @@
 ## Compile and view
 
 - ⌘K: compile using document settings and sync Skim in the background.
-- ⇧⌘K: choose an engine for this build.
+- ⇧⌘K: choose an engine or named project profile for this build.
+- LaTeX — Cancel Build stops the project's active compiler and its children.
+- LaTeX — Clean preserves the PDF; Clean All Build Output removes it after confirmation.
 - Use LaTeX — Forward Search to locate the source position in Skim.
   Existing personal key assignments are preserved.
 - Cmd-click in Skim returns to BBEdit when Skim inverse search is configured.
 - Errors appear automatically in LaTeX Results. Warnings and bad boxes are
   available through LaTeX — Show Build Results without rebuilding.
-- LaTeX — Open Build Log opens the last compiler output for this source, or
+- LaTeX — Open Build Log opens the current root's compiler output, or
   its project's LaTeX log. If no project log exists, it shows the latest global
   compiler output (which may belong to another document).
 - Successful builds do not open a results window or play a sound. If SyncTeX
   is unavailable, the PDF still opens in Skim without taking focus.
+
+Compilation saves modified `.tex`, `.bib`, `.sty`, and `.cls` documents open
+under the project directory, plus the explicit root. Configure roots, output
+directories, and profiles in [a project `.bbtex` file](project-builds.md).
 
 ## Native completion and navigation
 
@@ -72,6 +78,8 @@ Python utilities must run with uv and PEP 723 script metadata:
     uv run scripts/build-support.py
     uv run test/integration/check_texlab.py
     uv run test/integration/check_build_workflow.py
+    uv run test/integration/check_project_builds.py
+    uv run test/integration/check_project_saving.py
     uv run test/integration/check_bbedit_texlab.py
     uv run test/integration/check_results_browser.py
     uv run test/integration/check_live_compile.py

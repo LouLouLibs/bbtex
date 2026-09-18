@@ -11,9 +11,10 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 with tempfile.TemporaryDirectory(prefix="bbtex-live-") as directory:
-    root = Path(directory)
+    root = Path(directory).resolve()
     source = root / "main.tex"
-    pdf = root / "main.pdf"
+    pdf = root / "build output/main.pdf"
+    (root / ".bbtex").write_text("root = main.tex\noutput_directory = build output\n")
     original = "%!TEX program = pdflatex\n\\documentclass{article}\n\\begin{document}\nA live bbtex compilation check.\n\\end{document}\n"
     source.write_text(original)
     def applescript(text):
@@ -35,7 +36,7 @@ end run
         assert result.returncode == 0, (result.stderr, (root / "state/last-compile.log").read_text())
         assert result.stdout == ""
         assert pdf.is_file() and pdf.stat().st_size > 0
-        assert (root / "main.synctex.gz").is_file()
+        assert (root / "build output/main.synctex.gz").is_file()
         assert source.read_text() == original
         # Inspect only the PDF created by this test, without UI scripting.
         page = applescript("""
@@ -49,7 +50,7 @@ on run argv
 end run
 """)
         assert page == "1", page
-        print("Live compile passed: PDF and SyncTeX produced; Skim opened page 1; source unchanged")
+        print("Live compile passed: configured output directory, PDF and SyncTeX produced; Skim opened page 1; source unchanged")
     finally:
         applescript("""
 on run argv
@@ -61,7 +62,8 @@ on run argv
     tell application "BBEdit"
         repeat with d in (get text documents)
             try
-                if POSIX path of (file of d) is item 1 of argv then close d saving no
+                set documentFile to get file of d
+                if POSIX path of documentFile is item 1 of argv then close d saving no
             end try
         end repeat
     end tell

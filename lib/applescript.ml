@@ -49,3 +49,26 @@ let write_compile_script entries =
   Fun.protect ~finally:(fun () -> close_out oc)
     (fun () -> output_string oc (compile_script entries));
   Some path
+
+(** Save modified TeX inputs in the project directory, plus the explicit root.
+    Unsaved untitled documents have no project identity and are not included. *)
+let save_project_script config =
+  Printf.sprintf
+    {|tell application "BBEdit"
+    repeat with d in (get text documents)
+        set documentPath to ""
+        try
+            set documentFile to get file of d
+            set documentPath to POSIX path of documentFile
+        end try
+        if documentPath is not "" and modified of d then
+            if documentPath is "%s" or documentPath starts with "%s" then
+                if documentPath ends with ".tex" or documentPath ends with ".bib" or documentPath ends with ".sty" or documentPath ends with ".cls" then
+                    save d
+                end if
+            end if
+        end if
+    end repeat
+end tell
+|} (escape_applescript config.root_file)
+    (escape_applescript (config.project_dir ^ "/"))
