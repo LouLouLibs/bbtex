@@ -27,6 +27,7 @@ normalizes these variants when replacing settings, avoiding duplicate directives
 
 For guided setup, press ⇧⌘K and choose **Configure Document…**. Choose whether
 this file is the main document or select a main `.tex` file anywhere on disk.
+The file chooser starts in the current source document's directory.
 The engine picker explains the usual use cases; included files can inherit the
 main document's engine. The helper saves your current edits, replaces the
 root/program comments, and leaves the result unsaved for review. Press ⌘K to
@@ -142,3 +143,16 @@ uv run test/integration/check_live_compile.py
 
 The cancellation check needs permission to signal its own compiler process group.
 The last two checks create disposable documents and require BBEdit/Skim scripting.
+# Experimental RaTeX placeholder
+
+`ratex` is accepted in the compiler picker, Configure Document, `.bbtex`
+engine settings, and `% !TEX program = ratex`. It refers to
+[leoliu0/ratex](https://github.com/leoliu0/ratex), the full-document compiler.
+This is an optional experimental integration; bbtex does not install RaTeX or
+change the default engine. Its documented command is invoked directly with
+`-pdf -interaction=nonstopmode -output-directory=…`.
+
+Actual RaTeX rendering, package compatibility, diagnostics and SyncTeX remain
+unverified. Keep using your established engine for normal work until RaTeX
+matures. The placeholder can also render snippets if a compatible `ratex`
+executable is installed; its snippet results are not cached.

@@ -113,7 +113,7 @@ esac
 
 COMPILE_ARGS=(compile)
 if [[ "$MODE" == "--choose-engine" ]]; then
-    CHOICES=("Document settings" "Configure Document…" "pdflatex" "xelatex" "lualatex" "tectonic")
+    CHOICES=("Document settings" "Configure Document…" "pdflatex" "xelatex" "lualatex" "tectonic" "ratex")
     PROFILE_OUTPUT=$("$BBTEX" profiles "$SOURCE") || {
         PROFILE_OUTPUT=""
     }
@@ -144,6 +144,9 @@ APPLESCRIPT
     esac
 fi
 
+# The save attachment must not start a competing preview during this build.
+printf '%s' "$$" > "$STATE_DIR/suppress-save-preview"
+trap 'if [[ "$(cat "$STATE_DIR/suppress-save-preview" 2>/dev/null)" == "$$" ]]; then rm -f "$STATE_DIR/suppress-save-preview"; fi' EXIT
 if ! osascript -e 'tell application "BBEdit" to save front document'; then
     alert "Could not save document" "Compilation stopped. Save the document and try again."
     exit 1
@@ -170,7 +173,10 @@ end run
 APPLESCRIPT
 
 printf '%s\n' "$SOURCE" > "$STATE_DIR/last-compile-source"
-OUTPUT=$("$BBTEX" "${COMPILE_ARGS[@]}" "$SOURCE" 2>"$STATE_DIR/last-compile.log") && EXIT=0 || EXIT=$?
+LOCK_SCRIPT="$REAL_DIR/with-preview-lock.pl"
+[[ -f "$LOCK_SCRIPT" ]] || LOCK_SCRIPT="$PARENT/Resources/with-preview-lock.pl"
+# Let an existing save preview finish before taking the project's build lock.
+OUTPUT=$(/usr/bin/perl "$LOCK_SCRIPT" "$STATE_DIR/preview-on-save.lock" "$BBTEX" "${COMPILE_ARGS[@]}" "$SOURCE" 2>"$STATE_DIR/last-compile.log") && EXIT=0 || EXIT=$?
 parse_output
 if [[ "$STATUS" == "cancelled" ]]; then
     osascript -e 'display notification "Build cancelled" with title "LaTeX"'

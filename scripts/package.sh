@@ -43,6 +43,12 @@ mkdir -p "$PKG/Contents/Scripts"
 # Binary
 cp "$BINARY" "$PKG/Contents/Resources/bbtex"
 cp "$PROJECT_ROOT/scripts/configure-document.applescript" "$PKG/Contents/Resources/configure-document.applescript"
+cp "$PROJECT_ROOT/scripts/snippet-window.applescript" "$PKG/Contents/Resources/snippet-window.applescript"
+cp "$PROJECT_ROOT/scripts/preview-save-hook.applescript" "$PKG/Contents/Resources/preview-save-hook.applescript"
+cp "$PROJECT_ROOT/scripts/with-preview-lock.pl" "$PKG/Contents/Resources/with-preview-lock.pl"
+cp "$PROJECT_ROOT/scripts/install-preview-save-hook.py" "$PKG/Contents/Resources/install-preview-save-hook.py"
+cp "$PROJECT_ROOT/scripts/install-preview-service.py" "$PKG/Contents/Resources/install-preview-service.py"
+cp "$PROJECT_ROOT/docs/selection-preview.md" "$PKG/Contents/Resources/selection-preview.md"
 chmod +x "$PKG/Contents/Resources/bbtex"
 
 # Scripts — copy with BBEdit menu names
@@ -53,6 +59,8 @@ cp "$PROJECT_ROOT/scripts/bbtex-bbedit-clean.sh"   "$PKG/Contents/Scripts/LaTeX 
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-results.sh" "$PKG/Contents/Scripts/LaTeX — Show Build Results.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-log.sh" "$PKG/Contents/Scripts/LaTeX — Open Build Log.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-cancel.sh" "$PKG/Contents/Scripts/LaTeX — Cancel Build.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-preview.sh" "$PKG/Contents/Scripts/LaTeX — Preview Selection.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-preview-on-save.sh" "$PKG/Contents/Scripts/LaTeX — Toggle Preview on Save.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-clean-all.sh" "$PKG/Contents/Scripts/LaTeX — Clean All Build Output.sh"
 chmod +x "$PKG/Contents/Scripts/"*.sh
 
@@ -67,5 +75,5 @@ find "$PKG" -type f | sort | while read -r f; do
 done
 
 # ── Zip for distribution ──────────────────────────────────
-(cd "$PROJECT_ROOT/dist" && zip -r -q "bbtex.bbpackage.zip" "bbtex.bbpackage")
+(cd "$PROJECT_ROOT/dist" && zip -r -q "bbtex.bbpackage-new.zip" "bbtex.bbpackage" && mv "bbtex.bbpackage-new.zip" "bbtex.bbpackage.zip")
 echo "Zip created: dist/bbtex.bbpackage.zip"

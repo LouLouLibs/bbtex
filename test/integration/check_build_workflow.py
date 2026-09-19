@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 
 ROOT = Path(__file__).resolve().parents[2]
 BINARY = ROOT / "_build/default/bin/main.exe"
@@ -76,6 +77,34 @@ fi
     assert str(source) in output and "make new results browser" not in output
     assert "bbedit\n" not in output and "sound name" not in output
     print("Clean build: quiet, background sync, quoted paths preserved")
+
+    trace.write_text("")
+    ready = root / "preview-ready"
+    gate = root / "preview-gate"
+    gate.touch()
+    preview = subprocess.Popen(["/usr/bin/perl", str(ROOT / "scripts/with-preview-lock.pl"),
+        str(root / "state/preview-on-save.lock"), "/bin/bash", "-c",
+        'touch "$1"; while [[ -f "$2" ]]; do sleep 0.02; done', "bash", str(ready), str(gate)])
+    build = None
+    try:
+        deadline = time.monotonic() + 5
+        while not ready.exists():
+            assert time.monotonic() < deadline
+            time.sleep(0.02)
+        build = subprocess.Popen(["/bin/bash", str(WRAPPER)], env=env)
+        deadline = time.monotonic() + 5
+        while "LaTeX: Building" not in trace.read_text():
+            assert time.monotonic() < deadline
+            time.sleep(0.02)
+        time.sleep(0.1)
+        assert build.poll() is None and "compiler\n" not in trace.read_text()
+    finally:
+        gate.unlink(missing_ok=True)
+        preview.wait(timeout=5)
+        if build is not None:
+            assert build.wait(timeout=10) == 0
+    assert "compiler\n" in trace.read_text()
+    print("Full build waits for active save preview before starting compiler")
 
     source.with_suffix(".synctex.gz").unlink()
     code, output = run(BBTEX_TEST_SYNCTEX="0")

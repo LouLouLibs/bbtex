@@ -19,7 +19,7 @@ exception Bbtex_error = Project.Error
     - the file does not end in ".tex" *)
 let strict_engine name =
   match String.lowercase_ascii name with
-  | "pdflatex" | "xelatex" | "lualatex" | "tectonic" -> Types.engine_of_string name
+  | "pdflatex" | "xelatex" | "lualatex" | "tectonic" | "ratex" -> Types.engine_of_string name
   | _ -> raise (Bbtex_error ("Unknown LaTeX engine: " ^ name))
 
 let canonical path =
@@ -86,6 +86,7 @@ let settings_for path =
 let run_compilation job config =
   Build_job.mkdir config.output_directory;
   let command, args = match config.engine with
+    | Ratex -> "ratex", ["-pdf"; "-interaction=nonstopmode"; "-output-directory=" ^ config.output_directory]
     | Tectonic -> "tectonic", ["--keep-logs"; "--synctex"; "--outdir"; config.output_directory]
     | engine -> "latexmk", [Types.latexmk_flag engine; "-interaction=nonstopmode";
         "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory]
@@ -165,6 +166,7 @@ let assemble_result config ~exit_code entries =
 
 let inspect_log path =
   let config = resolve_compilation path in
+  let config = if config.engine = Ratex then { config with log_file = Build_job.log_path config.root_file } else config in
   if not (Sys.file_exists config.log_file) then
     raise (Bbtex_error "No LaTeX log yet. Compile the document first, or use Open Build Log for compiler output.");
   assemble_result config ~exit_code:0 (Log_parser.parse_file config.log_file)
@@ -175,10 +177,12 @@ let compile ?engine ?profile path =
   let exit_code = run_compilation job config in
   Log.info (Printf.sprintf "compiler exited with code %d" exit_code);
   let entries =
-    if Sys.file_exists config.log_file then Log_parser.parse_file config.log_file
+    if config.engine = Ratex then Log_parser.parse_file job.log
+    else if Sys.file_exists config.log_file then Log_parser.parse_file config.log_file
     else []
   in
-  let result = assemble_result config ~exit_code entries in
+  let result_config = if config.engine = Ratex then { config with log_file = job.log } else config in
+  let result = assemble_result result_config ~exit_code entries in
   if result.status = Success && not (Sys.file_exists config.pdf_file) then
     raise (Bbtex_error "Compiler finished without producing a PDF. Use Open Build Log for details.");
   result)

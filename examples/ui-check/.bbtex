@@ -1,0 +1,9 @@
+root = main.tex
+output_directory = build
+
+[profile Draft]
+engine = pdflatex
+options = -halt-on-error
+
+[profile XeLaTeX]
+engine = xelatex

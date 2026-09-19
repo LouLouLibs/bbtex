@@ -69,13 +69,14 @@ let output_format_of_string s =
 
 (* ── Compilation types ─────────────────────────────────────── *)
 
-type engine = Pdflatex | Xelatex | Lualatex | Tectonic
+type engine = Pdflatex | Xelatex | Lualatex | Tectonic | Ratex
 
 let string_of_engine = function
   | Pdflatex -> "pdflatex"
   | Xelatex  -> "xelatex"
   | Lualatex -> "lualatex"
   | Tectonic -> "tectonic"
+  | Ratex -> "ratex"
 
 let engine_of_string s =
   match String.lowercase_ascii s with
@@ -83,6 +84,7 @@ let engine_of_string s =
   | "xelatex"  -> Xelatex
   | "lualatex" -> Lualatex
   | "tectonic" -> Tectonic
+  | "ratex" -> Ratex
   | other ->
     if other <> "" then
       Log.info (Printf.sprintf "unknown engine '%s', defaulting to pdflatex" other);
@@ -92,7 +94,7 @@ let latexmk_flag = function
   | Pdflatex -> "-pdflatex"
   | Xelatex  -> "-pdfxelatex"
   | Lualatex -> "-pdflualatex"
-  | Tectonic -> "-pdflatex"
+  | Tectonic | Ratex -> "-pdflatex"
 
 type compilation_config = {
   source_file : string;

@@ -18,6 +18,8 @@ source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
   search).
 - **Cmd+Shift+K** opens **Compile With…** to choose a one-off engine or project profile.
 - **LaTeX — Cancel Build** stops the current project's compiler and its children.
+- **LaTeX — Preview Selection** renders selected math using the project's preamble
+  in a compact BBEdit image window. See [selection preview](docs/selection-preview.md).
 - **LaTeX — Clean** (menu only) removes build artifacts (`.aux`, `.log`, `.synctex.gz`,
   etc.), preserving the PDF. **Clean All Build Output** also removes the PDF,
   after confirmation.
@@ -257,3 +259,10 @@ metadata and explicit dependencies. They do not install into shared environments
     uv run scripts/build-support.py
     uv run scripts/install-support.py                 # preview migration
     uv run scripts/install-support.py --apply --restart
+# Optional preview refresh
+
+**LaTeX — Toggle Preview on Save** enables equation preview updates on ⌘S for
+the current file. See [selection preview](docs/selection-preview.md#refresh-on-save)
+for supported equation environments and attachment installation.
+RaTeX is available as an **experimental placeholder** in the compiler picker;
+it is not installed automatically or selected by default.

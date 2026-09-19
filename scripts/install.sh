@@ -81,6 +81,18 @@ ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-cancel.sh" \
 ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-clean-all.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Clean All Build Output.sh"
 
+if [[ -L "$BBEDIT_SCRIPTS/LaTeX — Preview Selection.sh" ]]; then
+    rm "$BBEDIT_SCRIPTS/LaTeX — Preview Selection.sh"
+fi
+ln -s "$PROJECT_DIR/scripts/bbtex-bbedit-preview.sh" \
+      "$BBEDIT_SCRIPTS/LaTeX — Preview Selection.sh"
+if [[ -L "$BBEDIT_SCRIPTS/LaTeX — Toggle Preview on Save.sh" ]]; then
+    rm "$BBEDIT_SCRIPTS/LaTeX — Toggle Preview on Save.sh"
+fi
+ln -s "$PROJECT_DIR/scripts/bbtex-preview-on-save.sh" \
+      "$BBEDIT_SCRIPTS/LaTeX — Toggle Preview on Save.sh"
+uv run "$PROJECT_DIR/scripts/install-preview-save-hook.py" --apply
+
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Compile.sh"
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Forward Search.sh"
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Clean.sh"

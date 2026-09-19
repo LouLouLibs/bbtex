@@ -33,7 +33,7 @@ TexLab 5.26.0 passed label completion, citation completion, and definition reque
 in test/integration/check_texlab.py. Installed a direct BBEdit Language Servers
 symlink to the existing executable. Historical BBEdit logs showed discovery
 failures. check_bbedit_texlab.py now confirms BBEdit launches TexLab for a saved
-TeX document. Completion-popup interaction is not UI-tested. Native completion
+TeX document. The user subsequently verified completion and Go to Definition. Native completion
 and navigation instructions are in docs/bbedit-editing.md.
 
 ## 3. Compile–fix–preview loop — implemented and installed
@@ -75,25 +75,41 @@ directory containing spaces with PDF and SyncTeX available in Skim.
 Process tests cover overlapping builds/cleanup and cancellation of both normal
 and signal-resistant compiler children. See docs/project-builds.md for settings.
 
-## 5. Guided document setup — implemented; final UI walkthrough pending
+## 5. Guided document setup — implemented and user verified
 
 Compile With… now includes Configure Document… with engine guidance and a
 main-file chooser. It writes TeXShop-style root/program comments for review,
 including relative paths to external main files. Unit and native editor-edit
-checks cover content preservation and inherited engines. The complete sequence
-of interactive picker dialogs still needs a hands-on walkthrough.
+checks cover content preservation and inherited engines. The user verified the
+interactive Configure Document workflow; the chooser starts in the source directory.
 
 ## Remaining verification and release work
 
-- Walk through setup, cancellation, and compilation in a representative project.
-- Exercise citation/reference completion and navigation in BBEdit's actual UI.
+- Setup, compilation, cancellation, completion, and navigation checks are complete.
 - TeXShop `% !TEX` spacing and `TS-program` aliases are implemented and tested.
 - Release package assembled with the new setup resource; packaged wrapper checked.
-- Interactive UI checks remain pending: Computer Use permissions are unavailable.
+- User verified Configure Document, completion on ⇧⌘C, and Go to Definition.
+  These checks no longer require follow-up. Direct Computer Use remains unavailable.
+
+## 6. Selected-equation preview — implemented and installed
+
+Preview Selection reuses the resolved root preamble and engine, with AUCTeX's
+standalone preview.sty package for cropped PDF converted to PNG in a reusable
+BBEdit HTML preview window. Skim remains the full-document viewer. Output/logs stay
+in a separate per-root state directory. Project locks and cancellation are shared
+with full builds. Tests cover all four engines, external preamble macros, output
+isolation, invalid input, and failure logs. See docs/selection-preview.md.
+The user accepted the compact HTML surface. Native checks cover selection/focus,
+window reuse, and image publication. Direct-engine caching and opt-in preview on
+save are implemented; actual BBEdit saves published distinct equations in tests.
+The contextual service is installed; its exact right-click placement and the
+user's save-preview experience remain optional feedback, not acceptance blockers.
+See [Fast selection preview](2026-09-18-fast-selection-preview.md) for measured
+latency, current constraints, and deferred work. RaTeX remains experimental.
 
 ## Optional later features
 
-Selected-equation preview; richer citation picker if native completion is insufficient.
+Richer citation picker if native completion is insufficient.
 Do not rebuild editor features until the native integration has been exercised.
 
 ## Verification and rollback

@@ -5,6 +5,8 @@
 - ⌘K: compile using document settings and sync Skim in the background.
 - ⇧⌘K: choose an engine or named project profile for this build.
 - LaTeX — Cancel Build stops the project's active compiler and its children.
+- LaTeX — Preview Selection renders selected math in a compact BBEdit window using the main-file
+  preamble. Select a complete equation or raw math first; see [preview details](selection-preview.md).
 - LaTeX — Clean preserves the PDF; Clean All Build Output removes it after confirmation.
 - Use LaTeX — Forward Search to locate the source position in Skim.
   Existing personal key assignments are preserved.
@@ -31,7 +33,11 @@ This does not test every completion-popup interaction in the editor.
 
 In a TeX document:
 
-- Use BBEdit's completion command inside \ref{...} and \cite{...}.
+- Choose **Edit → Complete** inside \ref{...} and \cite{...}. This installation
+  uses **⇧⌘C**, reassigned from Copy & Append (which remains available in the
+  Edit menu). BBEdit's factory shortcut is F5, possibly Fn-F5. For example, type
+  `\ref{eq:` and invoke Complete. The current shortcut is shown in the Edit menu
+  and can be changed in Settings → Menus & Shortcuts.
 - Command-double-click a reference, or use Go > Go to Definition.
 - Use Search > Find References to Selected Symbol for references.
 - Use Search > Find Symbol in Workspace to navigate project symbols.

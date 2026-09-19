@@ -1,0 +1,34 @@
+% !TEX program = pdflatex
+% BBEdit workflow sample: open sections/equations.tex to start the UI checks.
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=1in]{geometry}
+\usepackage[colorlinks=true]{hyperref}
+
+% The selection preview should inherit this macro from the main preamble.
+\newcommand{\energy}{E}
+
+\title{A small BBEdit LaTeX test}
+\author{Compile, navigate, and preview}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Getting started}
+Press Command--K in either this file or the included equations file.
+The resulting PDF should appear in Skim. Auxiliary files and the PDF are
+written to the \texttt{build} directory.
+
+\input{sections/equations}
+
+\section{References}
+Equation~\ref{eq:energy} uses a command defined in the main preamble.
+Equation~\ref{eq:pythagoras} is a second navigation target.
+For background on mathematical typesetting, see Knuth~\cite{knuth1984texbook}
+and Lamport~\cite{lamport1994latex}.
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

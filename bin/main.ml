@@ -12,6 +12,7 @@ Commands:
   clean-all <file.tex>       Remove all build output including PDF
   cancel <file.tex>          Cancel the running build for this project
   profiles <file.tex>        List named profiles from .bbtex
+  preview <file.tex>         Preview selected math read from stdin
   save-project <file.tex>    Emit AppleScript to save open project files
   document-settings <file> <engine|inherit> <root|->
                             Emit AppleScript to update document directives
@@ -24,7 +25,7 @@ Options:
   --format bbedit|text       Output format (default: text for parse-log,
                              bbedit for format-results)
   --engine <name>            Compile once with pdflatex, xelatex, lualatex,
-                             or tectonic (overrides document directives)
+                             tectonic, or ratex (overrides document directives)
   --profile <name>           Use a named project build profile
   --verbose                  Enable verbose logging to stderr
   --help                     Show this help message
@@ -42,7 +43,7 @@ let parse_args () =
     | ["--profile"] -> Printf.eprintf "--profile requires a name\n"; exit 2
     | "--engine" :: name :: tail ->
       (match String.lowercase_ascii name with
-       | "pdflatex" | "xelatex" | "lualatex" | "tectonic" ->
+       | "pdflatex" | "xelatex" | "lualatex" | "tectonic" | "ratex" ->
          engine := Some (Types.engine_of_string name);
          go cmd fmt verbose rest tail
        | _ -> Printf.eprintf "Unknown engine: %s\n" name; exit 2)
@@ -230,6 +231,26 @@ let () =
     (match args with
      | [f] -> cmd_compile ?engine ?profile f
      | _ -> Printf.eprintf "compile requires a filename\n"; exit 1)
+  | Some "preview" ->
+    (match args with
+     | [f] -> (try
+         let selection = Buffer.create 256 in
+         (try while true do Buffer.add_string selection (input_line stdin); Buffer.add_char selection '\n' done
+          with End_of_file -> ());
+         exit (Preview.compile f (Buffer.contents selection))
+       with
+       | Project.Error message -> Printf.printf "status: error\nmessage: %s\n" message; exit 2
+       | Build_job.Cancelled -> print_endline "status: cancelled"; exit 3)
+     | _ -> Printf.eprintf "preview requires a filename and selection on stdin\n"; exit 2)
+  | Some "snippet-page" ->
+    (match args with
+     | [png] -> print_endline (Snippet_page.publish png)
+     | _ -> Printf.eprintf "snippet-page requires a PNG filename\n"; exit 2)
+  | Some "equation-at" ->
+    (match args with
+     | [file; line] -> (try print_endline (Equation.at_line (Preview.read_file file) (int_of_string line))
+       with Project.Error message -> Printf.eprintf "%s\n" message; exit 2)
+     | _ -> Printf.eprintf "equation-at requires a filename and line\n"; exit 2)
   | Some "clean" ->
     (match args with
      | [f] -> cmd_clean f

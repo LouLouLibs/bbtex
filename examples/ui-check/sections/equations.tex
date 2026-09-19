@@ -1,0 +1,48 @@
+% !TEX root = ../main.tex
+%
+% START HERE -- BBEdit UI checks
+%
+% 1. Press Cmd-K. It should compile ../main.tex and open its PDF in Skim.
+% 2. Select ONLY the formula on the next line (without the comment marker),
+%    then choose Scripts > LaTeX -- Preview Selection:
+%   x^2 + y^2 = z^2
+% 3. Select the entire equation* environment below and preview it.
+%    The energy macro comes from main.tex, so this also tests preamble reuse.
+% 4. Press Shift-Cmd-K > Configure Document... > Choose a main .tex file...
+%    Select ../main.tex, then Inherit, then Apply Settings.
+%    Inspect the root comment at the top. Cmd-K saves and compiles it.
+% 5. For completion, add a temporary line at the END of this file. Type
+%    \ref{eq:  or  \cite{knuth  and invoke BBEdit's completion command.
+%    Finish the command or Undo before compiling again.
+% 6. Try Go > Go to Definition on eq:energy in the reference near the end.
+%    It should locate the matching label below.
+%
+\section{Equations from an included file}
+
+% Select this complete environment for preview:
+\begin{equation*}
+  \energy = mc^2
+\end{equation*}
+
+\begin{equation}
+  \energy^2 = p^2c^2 + m^2c^4
+  \label{eq:energy}
+\end{equation}
+
+\begin{equation}
+  a^2 + b^2 = c^2
+  \label{eq:pythagoras}
+\end{equation}
+
+% Select the entire align* block to preview several lines together:
+\begin{align*}
+  (a+b)^2 &= a^2 + 2ab + b^2 \\
+  \int_0^1 x^2\,dx &= \frac{1}{3}
+\end{align*}
+
+The energy relation is Equation~\ref{eq:energy}.
+This included file shares the main document's bibliography: \cite{knuth1984texbook}.
+
+\cite{knuth1984texbook} \ref{eq:pythagoras}
+
+\ref{eq:energy}
