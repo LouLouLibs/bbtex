@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 with tempfile.TemporaryDirectory(prefix="bbtex-archive-") as directory:
     subprocess.run(["ditto", "-x", "-k", str(ROOT / "dist/bbtex.bbpackage.zip"), directory], check=True)
     package = Path(directory) / "bbtex.bbpackage/Contents"
+    assert (package.parent / "LICENSE").read_bytes() == (ROOT / "LICENSE").read_bytes()
     assert os.access(package / "Resources/bbtex", os.X_OK)
     for script in (package / "Scripts").glob("*.sh"):
         assert os.access(script, os.X_OK), script

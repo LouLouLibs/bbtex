@@ -39,6 +39,7 @@ PKG="$PROJECT_ROOT/dist/bbtex.bbpackage"
 rm -rf "$PKG"
 mkdir -p "$PKG/Contents/Resources"
 mkdir -p "$PKG/Contents/Scripts"
+cp "$PROJECT_ROOT/LICENSE" "$PKG/LICENSE"
 
 # Binary
 cp "$BINARY" "$PKG/Contents/Resources/bbtex"
