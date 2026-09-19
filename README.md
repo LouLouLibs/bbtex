@@ -266,3 +266,10 @@ the current file. See [selection preview](docs/selection-preview.md#refresh-on-s
 for supported equation environments and attachment installation.
 RaTeX is available as an **experimental placeholder** in the compiler picker;
 it is not installed automatically or selected by default.
+
+## CI builds and releases
+
+GitHub Actions builds tested packages for Apple Silicon and Intel Macs. Successful
+runs provide ZIP artifacts and checksums. Pushing a version tag creates a draft
+release after both architectures pass; publishing is manual. See
+[CI and release instructions](docs/releases.md).

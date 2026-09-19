@@ -1,0 +1,104 @@
+name: Build and package
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  package:
+    name: macOS / ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      UV_PYTHON: '3.13'
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install build tools and BBEdit scripting dictionary
+        run: |
+          brew install ocaml dune uv
+          brew install --cask bbedit
+          /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/BBEdit.app
+          uv python install 3.13
+      - name: Build and test
+        run: |
+          dune build
+          dune runtest
+          uv run test/integration/check_project_builds.py
+          uv run test/integration/check_draft_release.py
+          for script in scripts/*.sh test/integration/*.sh; do bash -n "$script"; done
+          perl -c scripts/with-preview-lock.pl
+          git diff --check
+      - name: Build and verify package
+        run: |
+          bash test/integration/check_preview_release.sh
+          file _build/default/bin/main.exe | grep -F "$ARCH"
+          # Packages must not require the CI runner's Homebrew libraries.
+          otool -L _build/default/bin/main.exe | tail -n +2 | awk '{print $1}' > dist/linked-libraries.txt
+          if grep -Ev '^(/usr/lib/|/System/Library/)' dist/linked-libraries.txt; then
+            echo 'Unexpected non-system dynamic library dependency' >&2
+            exit 1
+          fi
+          mkdir -p dist/release
+          cp dist/bbtex.bbpackage.zip "dist/release/bbtex-macos-$ARCH.bbpackage.zip"
+          {
+            echo "Commit: $GITHUB_SHA"
+            echo "Architecture: $ARCH"
+            sw_vers
+            ocamlc -version
+            dune --version
+            uv --version
+          } > "dist/release/build-info-$ARCH.txt"
+          cd dist/release
+          shasum -a 256 "bbtex-macos-$ARCH.bbpackage.zip" > "SHA256SUMS-$ARCH.txt"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bbtex-macos-${{ matrix.arch }}
+          path: dist/release/*
+          if-no-files-found: error
+          retention-days: 14
+
+  draft-release:
+    name: Prepare draft release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: bbtex-macos-*
+          path: release
+          merge-multiple: true
+      - name: Create or update draft with verified artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash scripts/draft-release.sh release

@@ -9,6 +9,7 @@ for resource in with-preview-lock.pl preview-save-hook.applescript snippet-windo
     unzip -p dist/bbtex.bbpackage.zip "bbtex.bbpackage/Contents/Resources/$resource" | cmp - "scripts/$resource"
 done
 unzip -tq dist/bbtex.bbpackage.zip
+uv run test/integration/check_package_archive.py
 uv run "$PKG/Contents/Resources/install-preview-save-hook.py"
 uv run "$PKG/Contents/Resources/install-preview-service.py"
 BBTEX_TEST_WRAPPER="$PKG/Contents/Scripts/LaTeX — Compile.sh" uv run test/integration/check_build_workflow.py

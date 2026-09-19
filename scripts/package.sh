@@ -75,5 +75,7 @@ find "$PKG" -type f | sort | while read -r f; do
 done
 
 # ── Zip for distribution ──────────────────────────────────
-(cd "$PROJECT_ROOT/dist" && zip -r -q "bbtex.bbpackage-new.zip" "bbtex.bbpackage" && mv "bbtex.bbpackage-new.zip" "bbtex.bbpackage.zip")
+# Preserve Finder's stationery flags and executable permissions in the release.
+ditto -c -k --sequesterRsrc --keepParent "$PKG" "$PROJECT_ROOT/dist/bbtex.bbpackage-new.zip"
+mv "$PROJECT_ROOT/dist/bbtex.bbpackage-new.zip" "$PROJECT_ROOT/dist/bbtex.bbpackage.zip"
 echo "Zip created: dist/bbtex.bbpackage.zip"

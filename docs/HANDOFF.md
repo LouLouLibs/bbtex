@@ -4,8 +4,8 @@
 
 The documentation, save-worker lifecycle, and release-installation work below
 has been completed. Existing changes and example documents were preserved;
-RaTeX is still an experimental placeholder. The continuation work is ready for
-the user's requested commit; subsequent work adds CI release packaging.
+RaTeX is still an experimental placeholder. The continuation work was committed
+as `db810ee`. CI and draft-release packaging are documented in `docs/releases.md`.
 
 - Both historical plans now distinguish accepted/completed work from optional
   future improvements. Do not repeat the already accepted UI walkthroughs.
