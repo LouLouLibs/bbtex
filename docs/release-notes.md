@@ -3,6 +3,10 @@ single-pass rendering for pdfLaTeX, XeLaTeX, and LuaLaTeX. Tectonic is also
 supported. Full-document PDFs continue to use Skim.
 
 - Optional preview on save follows the complete display equation at the cursor.
+- Saving a known macro/preamble input refreshes the tracked equation, including
+  background document saves, while preserving editor focus. Changed source
+  locations require a fresh equation save. Recorder-less engines have limited
+  dependency discovery; unsaved buffers remain outside the preview contract.
 - The preview shows rendering/current/stale/error/busy status and source context.
   Previous images are clearly marked out of date; Open Preview Log exposes errors.
 - Rapid saves coalesce; superseded previews cancel their own compiler children.

@@ -112,8 +112,22 @@ The initial implementation recognizes `\[...\]`, equation, align, gather,
 multline, flalign (including starred forms), and displaymath environments.
 Inline math and `$$...$$` are not recognized. Place the cursor inside a complete
 block; saves elsewhere mark the previous preview out of date. Included files use the existing main-file
-resolver and the main file’s **saved** preamble. Save changed macros/preamble
-files first. Saving a different dependency does not trigger the tracked source.
+resolver and the main file’s **saved** preamble.
+
+After an equation save, saving its resolved main file or a known input (such as
+an included macro file) refreshes that equation using its retained source and
+line. Foreground and background document saves work; unrelated saves are ignored.
+Dependency refresh updates an existing preview without opening a new window or
+moving focus. If the tracked source has changed on disk, save it with the cursor
+inside the intended equation to establish a fresh location. A manual selection
+preview replaces the automatic anchor; save an equation to resume tracking.
+
+Known inputs come from the TeX recorder and survive cache invalidation and failed
+renders. pdfLaTeX, XeLaTeX, and LuaLaTeX supply them, including the latexmk path
+for custom options when recording remains enabled. For engines without recorder
+output, including Tectonic, only resolved-main-file refresh is guaranteed.
+Unsaved buffers and edits made outside BBEdit do not trigger the save attachment.
+
 Rapid saves are coalesced and superseded renders are cancelled. Normal compilation
 suppresses the hook, interrupts the matching automatic preview, and waits for its
 compiler cleanup before starting the full build. The old preview is marked out
@@ -147,10 +161,12 @@ The serialization helper uses macOS's `/usr/bin/perl`; optional installers use
 `uv` with dependencies declared inline.
 
 `test/integration/check_save_preview_worker.py` covers rapid saves, source
-switching, disabling tracking, saves during publication, build suppression, and
-failure status without native automation. `check_preview_cancellation.py` checks
+switching, disabling tracking, saves during publication, build suppression,
+dependency routing, invalidated source locations, and failure status without
+native automation. `check_preview_cancellation.py` checks
 process-group cleanup and isolation from full builds. `check_snippet_page.mjs`
 checks the browser's ordering and safe text rendering with controlled image loads.
-`check_save_preview.py` checks real BBEdit saves and a rendering error with a
-disposable document, retains a temporary recovery backup, and restores the prior
+`check_save_preview.py` checks real BBEdit equation saves, foreground/background
+macro saves, focus preservation, and a rendering error with disposable documents.
+It retains a temporary recovery backup and restores the prior
 tracking flag/image with a fresh publication revision.

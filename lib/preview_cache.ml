@@ -25,16 +25,19 @@ let valid manifest expected =
     | _ -> false
   with Sys_error _ | Unix.Unix_error _ -> false
 
-let record ~manifest ~key ~cwd ~dir ~root ~engine =
+let inputs ~cwd ~dir =
   let fls = Filename.concat dir "selection.fls" in
-  try
-    let dependencies = read fls |> String.split_on_char '\n'
+  read fls |> String.split_on_char '\n'
       |> List.filter_map (fun line ->
         if not (String.starts_with ~prefix:"INPUT " line) then None else
         let path = String.sub line 6 (String.length line - 6) |> String.trim in
         let path = if Filename.is_relative path then Filename.concat cwd path else path in
         let path = Unix.realpath path in
         if String.starts_with ~prefix:(dir ^ "/") path then None else Some path)
+
+let record ~manifest ~key ~cwd ~dir ~root ~engine =
+  try
+    let dependencies = inputs ~cwd ~dir
       |> fun paths -> cwd :: root :: Build_job.executable engine :: Build_job.executable "pdftoppm" :: paths
       |> List.sort_uniq String.compare in
     let fields = key :: List.concat_map (fun path -> [digest path; path]) dependencies in

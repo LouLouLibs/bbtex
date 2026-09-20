@@ -1,6 +1,6 @@
 # BBEdit LaTeX writing-workflow roadmap
 
-Status: Phase 1 in progress, updated 2026-09-20.
+Status: Phase 1 implemented and locally verified, updated 2026-09-20.
 
 Completed in the first implementation slice: rendering/current/stale/error/busy
 status, source/line context, old-image labeling, HTML migration, serialized
@@ -8,7 +8,14 @@ generation-aware publication, delayed-image guards, Open Preview Log, and
 ownership-aware supersession/full-build interruption. Unit, worker, browser,
 process-cancellation, four-engine rendering/cache, and native BBEdit checks cover
 this slice. Native timing: 1.506 s first open, 0.321 s cached reuse on the fixture.
-Dependency-save refresh is the next Phase 1 task; unsaved snapshots remain deferred.
+Dependency-save refresh is implemented: resolved roots and recorder inputs route
+foreground/background saves to the retained equation anchor. Changed source
+contents require a fresh equation save; unrelated saves are ignored. Recorder
+inputs persist separately from the cache, including after failed renders.
+Deterministic routing and native macro-save/focus checks pass. Unsaved snapshots
+remain deferred; engines without recorder output guarantee only root refresh.
+Latest packaged native timings: 1.478 s first open, 0.336 s cached reuse.
+Next planned phase: project-wide navigation.
 
 The user's priority order is **3 → 4 → 1 → 2 → 5 → 6** from the feature
 comparison: preview polish, project navigation, citation/reference selection,

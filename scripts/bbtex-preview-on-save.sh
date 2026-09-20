@@ -25,13 +25,23 @@ if [[ "${1:-}" != "--saved" && "${1:-}" != "--locked" ]]; then
     osascript -e 'display notification "Enabled for this file. Save with the cursor inside an equation to refresh its preview." with title "LaTeX"'
     exit 0
 fi
-[[ -f "$FLAG" && "$(cat "$FLAG")" == "$SOURCE" ]] || exit 0
+[[ -f "$FLAG" ]] || exit 0
 LINE="${3:-1}"
 SOURCE_ID="${4:-0}"
 REQUEST="$BBTEX_STATE_DIR/preview-on-save-request"
 if [[ "${1:-}" == "--saved" ]]; then
+    TRACKED=$(cat "$FLAG")
+    if [[ "$SOURCE" != "$TRACKED" || "$LINE" == 0 ]]; then
+        ROUTE=$("$BBTEX" snippet-refresh "$SOURCE") || exit 0
+        TOKEN="${ROUTE%%$'\n'*}"
+        ROUTE="${ROUTE#*$'\n'}"
+        LINE="${ROUTE%%$'\n'*}"
+        SOURCE="${ROUTE#*$'\n'}"
+        SOURCE_ID=0
+    else
+        TOKEN=$("$BBTEX" snippet-begin "$SOURCE" "$LINE" auto)
+    fi
     TEMP=$(mktemp "$BBTEX_STATE_DIR/request.XXXXXX")
-    TOKEN=$("$BBTEX" snippet-begin "$SOURCE" "$LINE" auto)
     printf '%s' "$TOKEN" > "$TEMP"
     mv "$TEMP" "$REQUEST"
     LOCK_SCRIPT="$REAL_DIR/with-preview-lock.pl"

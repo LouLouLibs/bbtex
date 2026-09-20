@@ -59,6 +59,33 @@ let () =
     assert (Snippet_page.is_current auto);
     Snippet_page.stop_auto ~matches:(fun _ -> true) ~message:"full build";
     assert (not (Snippet_page.is_current auto));
+    (* Dependency saves retain the source anchor and supersede queued work. *)
+    let root = Filename.concat dir "main.tex" in
+    let macros = Filename.concat dir "macros.tex" in
+    Build_job.write root "\\documentclass{article}\n\\begin{document}\n\\end{document}";
+    Build_job.write source "% !TEX root = main.tex\n\\[x=1\\]\n";
+    Build_job.write macros "macros";
+    let render_dir = Preview_inputs.directory root in
+    Build_job.mkdir render_dir;
+    Build_job.write (Filename.concat render_dir "selection.fls") ("INPUT " ^ macros ^ "\n");
+    Preview_inputs.record ~root ~dir:render_dir ~success:true;
+    let auto = Snippet_page.begin_request ~source ~line:2 ~mode:"auto" in
+    assert (Snippet_page.refresh_dependency png = None);
+    assert (Snippet_page.is_current auto);
+    let refreshed = Option.get (Snippet_page.refresh_dependency macros) in
+    let generation, line, tracked = refreshed in
+    assert (line = 2 && tracked = source && Snippet_page.is_current generation);
+    assert (not (Snippet_page.is_current auto));
+    (* Cache invalidation and a partial failed recorder cannot lose old inputs. *)
+    Build_job.write (Filename.concat render_dir "selection.fls") "";
+    Preview_inputs.record ~root ~dir:render_dir ~success:false;
+    assert (Preview_inputs.relevant ~root macros);
+    assert (Option.is_some (Snippet_page.refresh_dependency root));
+    Build_job.write source "% !TEX root = main.tex\nchanged equation";
+    assert (Snippet_page.refresh_dependency macros = None);
+    assert ((Snippet_page.load folder).status = "stale");
+    Sys.remove flag;
+    assert (Snippet_page.refresh_dependency root = None);
     let other = Filename.concat dir "other.tex" in
     Build_job.write other "other source";
     ignore (Snippet_page.begin_request ~source:other ~line:1 ~mode:"manual");

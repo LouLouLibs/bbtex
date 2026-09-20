@@ -249,10 +249,14 @@ let () =
     (match args with
      | [png] -> print_endline (Snippet_page.publish png)
      | _ -> Printf.eprintf "snippet-page requires a PNG filename\n"; exit 2)
-  | Some ("snippet-begin" | "snippet-finish" | "snippet-current" | "snippet-stop" | "snippet-log" as command) ->
+  | Some ("snippet-begin" | "snippet-refresh" | "snippet-finish" | "snippet-current" | "snippet-stop" | "snippet-log" as command) ->
     (try match command, args with
      | "snippet-begin", [source; line; mode] ->
        print_endline (Snippet_page.begin_request ~source ~line:(int_of_string line) ~mode)
+     | "snippet-refresh", [saved] ->
+       (match Snippet_page.refresh_dependency saved with
+        | Some (generation, line, source) -> Printf.printf "%s\n%d\n%s\n" generation line source
+        | None -> exit 4)
      | "snippet-finish", [generation; status; png; log; message] ->
        (match Snippet_page.finish generation ~status ~png ~log ~message with
         | Some page -> print_endline page | None -> exit 4)

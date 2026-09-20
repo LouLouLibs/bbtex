@@ -137,17 +137,34 @@ let is_current generation =
   generation = s.generation && tracking s && s.fingerprint = fingerprint s.source
   with Sys_error _ | Unix.Unix_error _ -> false
 
-let begin_request ~source ~line ~mode =
-  if not (List.mem mode ["auto"; "manual"]) || line < 0 then
-    raise (Project.Error "Invalid preview request.");
-  with_state (fun dir previous ->
+let begin_locked dir previous ~source ~line ~mode =
     let generation = token dir in
     let s = { generation; revision = previous.revision + 1;
       source; line; mode; status = "rendering"; fingerprint = fingerprint source;
       image = (if source = previous.source then previous.image else "");
       image_line = (if source = previous.source then previous.image_line else 0);
       message = "Rendering saved source…"; log = "" } in
-    ignore (save dir s); generation)
+    ignore (save dir s); generation
+
+let begin_request ~source ~line ~mode =
+  if not (List.mem mode ["auto"; "manual"]) || line < 0 then
+    raise (Project.Error "Invalid preview request.");
+  with_state (fun dir previous -> begin_locked dir previous ~source ~line ~mode)
+
+(* A dependency's cursor must never replace the equation's saved anchor. Check
+   and start under the publication lock so a concurrent source save wins cleanly. *)
+let refresh_dependency saved = with_state (fun dir s ->
+  if s.mode <> "auto" || not (tracking s) || s.line < 1 then None else
+  let root = (Compiler.resolve_compilation s.source).root_file in
+  if Preview_inputs.canonical saved <> Preview_inputs.canonical s.source &&
+     not (Preview_inputs.relevant ~root saved) then None else
+  if s.fingerprint <> fingerprint s.source then begin
+    ignore (save dir { s with generation = token dir; revision = s.revision + 1;
+      status = "stale"; message = "Equation source changed. Save with the cursor inside the equation to resume." });
+    None
+  end else
+    let generation = begin_locked dir s ~source:s.source ~line:s.line ~mode:"auto" in
+    Some (generation, s.line, s.source))
 
 let finish generation ~status ~png ~log ~message =
   if not (List.mem status ["current"; "stale"; "error"; "busy"]) then

@@ -83,12 +83,8 @@ with tempfile.TemporaryDirectory(prefix="bbtex-live-preview-") as directory:
         print("Live preview passed: one BBEdit window reused; PNG published; source and selection preserved")
         # Simulate a completed render after the user has switched documents.
         source_id = apple('tell application "BBEdit" to get ID of front window')
-        other = folder / "other.tex"
-        other.write_text("Disposable focus check\n")
-        subprocess.run(["osascript", "-", str(other)], input='''on run argv
-            tell application "BBEdit" to open (POSIX file (item 1 of argv))
-        end run''', text=True, check=True)
-        other_id = apple('tell application "BBEdit" to get ID of front window')
+        # Closing a preview can reorder BBEdit windows. Establish the target
+        # document/focus after that setup operation, before invoking the helper.
         apple('''on run argv
             tell application "BBEdit"
                 repeat with w in (get web_preview_windows)
@@ -96,6 +92,22 @@ with tempfile.TemporaryDirectory(prefix="bbtex-live-preview-") as directory:
                 end repeat
             end tell
         end run''')
+        other = folder / "other.tex"
+        other.write_text("Disposable focus check\n")
+        subprocess.run(["osascript", "-", str(other)], input='''on run argv
+            tell application "BBEdit"
+                set d to open (POSIX file (item 1 of argv))
+                select insertion point before character 1 of d
+                set index of window of d to 1
+            end tell
+        end run''', text=True, check=True)
+        other_id = apple('tell application "BBEdit" to get ID of front window')
+        assert apple('''on run argv
+            tell application "BBEdit"
+                set f to get file of front window
+                return POSIX path of f
+            end tell
+        end run''') == str(other)
         helper = Path(wrapper).resolve().parent / "snippet-window.applescript"
         if not helper.exists():
             helper = Path(wrapper).resolve().parents[1] / "Resources/snippet-window.applescript"

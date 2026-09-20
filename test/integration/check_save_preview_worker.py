@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import hashlib
 
 ROOT = Path(__file__).resolve().parents[2]
 with tempfile.TemporaryDirectory(prefix="bbtex-worker-") as directory:
@@ -155,6 +156,34 @@ esac
         finish()
         assert lines("published")[-1] == "b.tex:14"
         print("Killed lock owner: queued save proceeds without stale-lock cleanup")
+
+        # Known dependencies route back to the tracked source, never their cursor.
+        main = root / "main.tex"
+        macros = root / "macros.tex"
+        main.write_text("\\documentclass{article}\n\\begin{document}\n\\end{document}\n")
+        macros.write_text("macros")
+        other.write_text("% !TEX root = main.tex\n\\[x=1\\]\n")
+        render = state / ("preview-" + hashlib.md5(str(main.resolve()).encode()).hexdigest())
+        render.mkdir()
+        (render / "tracked.inputs").write_text(str(macros.resolve()))
+        save(other, 2)
+        finish()
+        (state / "render-gate").touch()
+        save(macros, 99)
+        wait_for(lambda: lines("started")[-1] == "b.tex:2")
+        save(main, 80)
+        (state / "render-gate").unlink()
+        finish()
+        assert lines("published")[-1] == "b.tex:2"
+        started = lines("started")
+        for file, line in ((source, 70), (other, 0)):
+            if file == other:
+                other.write_text("% !TEX root = main.tex\nchanged equation\n")
+            subprocess.run(["/bin/bash", str(worker), "--saved", str(file), str(line), "0"],
+                           env=env, check=True, timeout=10)
+        assert lines("started") == started
+        assert (state / "snippet-window/state-v2").read_text().split("\0")[2] == "stale"
+        print("Dependency saves retain the equation anchor; unrelated saves and changed source do not render")
     finally:
         for name in ("render-gate", "publish-gate"):
             (state / name).unlink(missing_ok=True)

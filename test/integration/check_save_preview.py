@@ -21,33 +21,38 @@ for path, data in backups.items():
         (recovery / path.name).write_bytes(data)
 with tempfile.TemporaryDirectory(prefix="bbtex-save-preview-") as directory:
     source = Path(directory).resolve() / "main.tex"
-    source.write_text("\\documentclass{article}\n\\begin{document}\n\\[x=1\\]\n\\end{document}\n")
-    def apple(script):
-        return subprocess.check_output(["osascript", "-", str(source)], input=script, text=True)
+    macros = source.parent / "macros.tex"
+    macros.write_text("\\newcommand{\\savedvalue}{1}\n")
+    source.write_text("\\documentclass{article}\\input{macros.tex}\n\\begin{document}\n\\[x=1\\]\n\\end{document}\n")
+    def apple(script, document=source):
+        return subprocess.check_output(["osascript", "-", str(document)], input=script, text=True)
+
+    def wait_preview(before, expected_status):
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            if image.exists() and image.stat().st_mtime_ns > before:
+                published = json.loads(image.read_text().split("window.bbtexSnippet(", 1)[1].split(");}else", 1)[0])
+                if published["status"] == expected_status:
+                    assert published["source"] == str(source) and published["line"] == 3
+                    return published
+            time.sleep(0.1)
+        log = state / "preview-on-save.log"
+        raise AssertionError("Save did not publish preview: " + (log.read_text() if log.exists() else "hook did not launch worker"))
     try:
         flag.write_text(str(source))
         previous = None
-        for expression, expected_status in (("x=2", "current"), ("x=345", "current"), (r"\undefinedBbtexPreviewCommand", "error")):
+        for expression, expected_status in (("x=2", "current"), (r"x=\savedvalue", "current"), (r"\undefinedBbtexPreviewCommand", "error")):
             expression = expression.replace("\\", "\\\\").replace('"', '\\"')
             before = image.stat().st_mtime_ns if image.exists() else 0
             apple('''on run argv
                 tell application "BBEdit"
                     set d to open (POSIX file (item 1 of argv))
                     set contents of line 3 of d to "\\\\[''' + expression + '''\\\\]" & linefeed
-                    select insertion point before character 44 of d
+                    select insertion point before character 1 of line 3 of d
                     save d
                 end tell
             end run''')
-            deadline = time.monotonic() + 15
-            while time.monotonic() < deadline:
-                if image.exists() and image.stat().st_mtime_ns > before:
-                    published = json.loads(image.read_text().split("window.bbtexSnippet(", 1)[1].split(");}else", 1)[0])
-                    if published["status"] == expected_status:
-                        break
-                time.sleep(0.1)
-            else:
-                log = state / "preview-on-save.log"
-                raise AssertionError("Save did not publish preview: " + (log.read_text() if log.exists() else "hook did not launch worker"))
+            published = wait_preview(before, expected_status)
             current = image.read_bytes()
             assert published["source"] == str(source) and published["line"] == 3
             assert published["image"].startswith("data:image/png;base64,")
@@ -58,10 +63,45 @@ with tempfile.TemporaryDirectory(prefix="bbtex-save-preview-") as directory:
                 assert published["image"] == previous
                 assert Path(published["log"]).is_file()
             time.sleep(1)
+            if "savedvalue" in expression:
+                # Saving the foreground dependency must retain the equation's
+                # anchor and leave focus in the dependency editor.
+                before = image.stat().st_mtime_ns
+                apple('''on run argv
+                    tell application "BBEdit"
+                        set d to open (POSIX file (item 1 of argv))
+                        set contents of d to "\\\\newcommand{\\\\savedvalue}{999}" & linefeed
+                        select insertion point before character 1 of d
+                        save d
+                    end tell
+                end run''', macros)
+                published = wait_preview(before, "current")
+                assert published["image"] != previous
+                previous = published["image"]
+                focused = apple('''tell application "BBEdit"
+                    set f to get file of front window
+                    return POSIX path of f
+                end tell''')
+                assert focused.strip() == str(macros), focused
+                # Save a non-front dependency while the equation is frontmost.
+                before = image.stat().st_mtime_ns
+                apple('''on run argv
+                    tell application "BBEdit"
+                        set dependency to front text document
+                        open (POSIX file (item 1 of argv))
+                        set contents of dependency to "\\\\newcommand{\\\\savedvalue}{777777}" & linefeed
+                        save dependency
+                    end tell
+                end run''')
+                published = wait_preview(before, "current")
+                assert published["image"] != previous
+                previous = published["image"]
+                print("Foreground and background macro saves refresh the tracked equation without stealing focus.")
         print("Actual BBEdit saves published distinct previews, then marked the old image stale on a rendering error with its log.")
     finally:
         flag.unlink(missing_ok=True)
-        apple('''on run argv
+        for document in (source, macros):
+            apple('''on run argv
             tell application "BBEdit"
                 repeat with d in (get text documents)
                     try
@@ -70,7 +110,7 @@ with tempfile.TemporaryDirectory(prefix="bbtex-save-preview-") as directory:
                     end try
                 end repeat
             end tell
-        end run''')
+        end run''', document)
         if backups[flag] is None:
             flag.unlink(missing_ok=True)
         else:

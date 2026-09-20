@@ -1,5 +1,28 @@
 # BBEdit LaTeX handoff — updated 2026-09-20
 
+## Dependency-save refresh — 2026-09-20
+
+The next Phase 1 item is implemented. Saving a resolved root or recorded TeX
+input refreshes the active automatic equation at its retained source/line.
+Unrelated saves are ignored; changed source fingerprints mark the preview stale
+and ask for a fresh equation save. Manual preview replaces the automatic anchor.
+The save attachment now handles non-front documents and dependency refresh uses
+window ID 0 so it cannot open a new preview or move focus.
+
+`Preview_inputs` persists recorder paths in each root's `tracked.inputs`, separate
+from `cache.inputs`; failed renders retain prior inputs for recovery. Root refresh
+works without a recorder; Tectonic/RaTeX do not promise arbitrary dependency
+discovery. No unsaved snapshots or RaTeX adoption work was added.
+
+Unit and worker tests cover routing, source invalidation, unrelated saves and
+generation supersession. Four-engine rendering checks and native foreground/
+background macro-save checks pass. The installed save attachment is updated;
+native checks restored the user's tracking and previous image.
+Package/archive, mocked build workflows, cancellation ownership and browser
+ordering checks pass. Packaged native preview: 1.478 s first open, 0.336 s reuse;
+tab-switch checks establish their focus baseline after closing the old preview.
+Phase 1 is locally verified; next roadmap item is project-wide navigation.
+
 ## Preview-polish continuation — 2026-09-20
 
 Phase 1 is now partly implemented; see
@@ -22,8 +45,8 @@ Tests cover state migration, publication races, browser load ordering, compiler
 children, full-build isolation, four real engines, cached reuse, actual BBEdit
 saves and error feedback. Native test cleanup now keeps a temporary recovery
 backup and restores old previews with a fresh revision, including legacy payloads.
-Dependency saves do not yet trigger preview; unsaved snapshots and richer scanning
-remain deferred. RaTeX remains an experimental placeholder.
+Dependency-save refresh is covered by the newer section above; unsaved snapshots
+and richer scanning remain deferred. RaTeX remains an experimental placeholder.
 
 ## Continuation results — 2026-09-19
 

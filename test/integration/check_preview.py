@@ -36,6 +36,10 @@ with tempfile.TemporaryDirectory(prefix="bbtex-preview-") as directory:
         assert result.returncode == 0, (result.stdout, result.stderr, Path(fields["log"]).read_text() if "log" in fields else "")
         pdf = Path(fields["pdf"])
         assert Path(fields["png"]).read_bytes().startswith(b"\x89PNG")
+        if engine != "tectonic":
+            tracked = (Path(fields["png"]).parent / "tracked.inputs").read_text().split("\0")
+            assert str(project / "macros.tex") in tracked
+            assert str(main) in tracked
         print(f"{engine} render {fields['render_duration']}s; PNG {fields['conversion_duration']}s")
         assert pdf.read_bytes().startswith(b"%PDF")
         info = subprocess.check_output(["pdfinfo", str(pdf)], text=True)

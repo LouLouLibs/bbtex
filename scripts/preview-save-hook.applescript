@@ -3,10 +3,15 @@ on documentDidSave(myDoc)
         tell application "BBEdit"
             set f to get file of myDoc
             set sourcePath to POSIX path of f
-            set frontFile to get file of front text document
-            if sourcePath is not POSIX path of frontFile then return
-            set cursorLine to startLine of selection
-            set sourceID to ID of front window
+            set cursorLine to 0
+            set sourceID to 0
+            try
+                set frontFile to get file of front text document
+                if sourcePath is POSIX path of frontFile then
+                    set cursorLine to startLine of selection
+                    set sourceID to ID of front window
+                end if
+            end try
         end tell
         set stateDirectory to POSIX path of (path to home folder) & ".local/state/bbtex/"
         set workerPath to POSIX path of (path to home folder) & "Library/Application Support/BBEdit/Scripts/LaTeX — Toggle Preview on Save.sh"

@@ -49,6 +49,7 @@ let compile ?(current = fun () -> true) source selection =
     let key = Preview_cache.key text engine config.options in
     let cacheable = config.engine <> Types.Tectonic && config.engine <> Types.Ratex && config.options = [] in
     if cacheable && Sys.file_exists png && Sys.file_exists pdf && Preview_cache.valid manifest key then begin
+      Preview_inputs.record ~root:config.root_file ~dir ~success:true;
       Printf.printf "status: success\npdf: %s\npng: %s\nlog: %s\nengine: %s\ncache: hit\nrender_duration: %.3f\nconversion_duration: 0.000\n"
         pdf png log engine (Unix.gettimeofday () -. started);
       0
@@ -56,6 +57,7 @@ let compile ?(current = fun () -> true) source selection =
     Build_job.remove manifest;
     Build_job.write tex text;
     Build_job.remove pdf;
+    Build_job.remove (Filename.concat dir "selection.fls");
     let job = { job with Build_job.log = log } in
     let command, args = match config.engine with
       | Types.Ratex -> "ratex", ["-pdf"; "-interaction=nonstopmode"; "-output-directory=" ^ dir]
@@ -65,12 +67,13 @@ let compile ?(current = fun () -> true) source selection =
           ["-interaction=nonstopmode"; "-halt-on-error"; "-file-line-error";
            "-recorder"; "-output-directory=" ^ dir]
       | engine -> "latexmk", [Types.latexmk_flag engine; "-interaction=nonstopmode";
-          "-halt-on-error"; "-file-line-error"; "-outdir=" ^ dir]
+          "-halt-on-error"; "-file-line-error"; "-recorder"; "-outdir=" ^ dir]
     in
     (* Keep relative preamble inputs anchored at the real main document. *)
     let exit_code = Build_job.run job ~cwd:(Filename.dirname config.root_file)
       command (args @ config.options @ [tex]) in
     let success = exit_code = 0 && Sys.file_exists pdf in
+    Preview_inputs.record ~root:config.root_file ~dir ~success;
     if success then begin
       let png_started = Unix.gettimeofday () in
       let convert_job = { job with Build_job.log = Filename.concat dir "conversion.log" } in
