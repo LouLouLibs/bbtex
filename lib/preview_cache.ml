@@ -9,7 +9,9 @@ let read path =
 let key text engine options =
   Digest.to_hex (Digest.string (String.concat "\000"
     ("png-1400-v1" :: text :: engine :: options @
-     (Array.to_list (Unix.environment ()) |> List.sort String.compare))))
+     (Array.to_list (Unix.environment ())
+      |> List.filter (fun value -> not (String.starts_with ~prefix:"BBTEX_PREVIEW_TOKEN=" value))
+      |> List.sort String.compare))))
 
 let valid manifest expected =
   try

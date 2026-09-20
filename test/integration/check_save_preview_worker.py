@@ -38,16 +38,21 @@ preview)
     [[ ! -f "$s/fail" ]] || { echo 'message: test failure'; exit 2; }
     printf '%s' "$value" > "$s/result.png"
     printf 'png: %s/result.png\\n' "$s" ;;
-snippet-page)
-    touch "$s/publishing"
-    while [[ -f "$s/publish-gate" ]]; do sleep 0.02; done
-    if [[ "$2" == - ]]; then echo failed >> "$s/published";
-    else cat "$2" >> "$s/published"; echo >> "$s/published"; fi
-    echo "$s/page.html" ;;
+snippet-finish)
+    if [[ "$3" == current ]]; then
+        touch "$s/publishing"
+        while [[ -f "$s/publish-gate" ]]; do sleep 0.02; done
+    fi
+    output=$("$BBTEX_TEST_BINARY" "$@") || exit $?
+    if [[ "$3" == error ]]; then echo failed >> "$s/published";
+    elif [[ "$3" == current ]] && "$BBTEX_TEST_BINARY" snippet-current "$2"; then cat "$4" >> "$s/published"; echo >> "$s/published"; fi
+    printf '%s\\n' "$output" ;;
+snippet-*) exec "$BBTEX_TEST_BINARY" "$@" ;;
 esac
 ''')
     binary.chmod(0o755)
     env = {**os.environ, "BBTEX_STATE_DIR": str(state),
+           "BBTEX_TEST_BINARY": str(ROOT / "_build/default/bin/main.exe"),
            "PATH": str(commands) + ":/usr/bin:/bin"}
     source = root / "a.tex"
     other = root / "b.tex"
@@ -110,8 +115,8 @@ esac
         save(other, 10)
         (state / "publish-gate").unlink()
         finish()
-        assert lines("published")[-2:] == ["b.tex:9", "b.tex:10"]
-        print("Save during publication: newest request is eventually published")
+        assert lines("published")[-2:] == ["b.tex:8", "b.tex:10"]
+        print("Save during publication: obsolete result rejected at the publication lock")
 
         (state / "render-gate").touch()
         save(other, 11)

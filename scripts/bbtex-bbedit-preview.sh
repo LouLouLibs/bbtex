@@ -37,14 +37,18 @@ on run argv
                 end if
             end if
         end repeat
-        return (ID of front window as text) & linefeed & (contents of selection as text)
+        return (ID of front window as text) & linefeed & (startLine of selection as text) & linefeed & (contents of selection as text)
     end tell
 end run
 APPLESCRIPT
 ) || { alert "Save modified project inputs before previewing, then select the snippet again."; exit 1; }
 SOURCE_ID="${CAPTURE%%$'\n'*}"
 SELECTION="${CAPTURE#*$'\n'}"
+SOURCE_LINE="${SELECTION%%$'\n'*}"
+SELECTION="${SELECTION#*$'\n'}"
 [[ -n "${SELECTION//[[:space:]]/}" ]] || { alert "Select an equation or a complete math environment first."; exit 0; }
+TOKEN=$("$BBTEX" snippet-begin "$BB_DOC_PATH" "$SOURCE_LINE" manual)
+export BBTEX_PREVIEW_TOKEN="$TOKEN"
 OUTPUT=$(printf '%s\n' "$SELECTION" | "$BBTEX" preview "$BB_DOC_PATH") && EXIT=0 || EXIT=$?
 STATUS="" PDF="" PNG="" LOG="" MESSAGE=""
 while IFS= read -r line; do
@@ -56,14 +60,17 @@ while IFS= read -r line; do
         message:*) MESSAGE="${line#message: }" ;;
     esac
 done <<< "$OUTPUT"
-[[ "$STATUS" != "cancelled" ]] || exit 0
 if [[ $EXIT -eq 0 && "$STATUS" == "success" && -f "$PNG" ]]; then
-    PAGE=$("$BBTEX" snippet-page "$PNG")
+    PAGE=$("$BBTEX" snippet-finish "$TOKEN" current "$PNG" "$LOG" "") || exit 0
     WINDOW_SCRIPT="$REAL_DIR/snippet-window.applescript"
     [[ -f "$WINDOW_SCRIPT" ]] || WINDOW_SCRIPT="$PARENT/Resources/snippet-window.applescript"
     osascript "$WINDOW_SCRIPT" "$PAGE" "$SOURCE_ID" "${PAGE##*/}" "$BB_DOC_PATH"
 else
-    "$BBTEX" snippet-page - >/dev/null
+    DISPLAY_STATUS=error
+    [[ "$MESSAGE" != *"already building"* ]] || DISPLAY_STATUS=busy
+    [[ "$STATUS" != cancelled ]] || { DISPLAY_STATUS=stale; MESSAGE="Preview cancelled. Select an equation to retry."; }
+    "$BBTEX" snippet-finish "$TOKEN" "$DISPLAY_STATUS" "" "$LOG" "${MESSAGE:-Could not create the preview.}" >/dev/null || exit 0
+    [[ "$STATUS" != cancelled ]] || exit 0
     [[ ! -f "$LOG" ]] || bbedit "$LOG"
     alert "${MESSAGE:-Could not create the preview.}"
     exit 1

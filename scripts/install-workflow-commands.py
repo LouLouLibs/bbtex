@@ -13,6 +13,7 @@ commands = {"LaTeX — Show Build Results.sh": "bbtex-bbedit-results.sh",
             "LaTeX — Cancel Build.sh": "bbtex-bbedit-cancel.sh",
             "LaTeX — Clean All Build Output.sh": "bbtex-bbedit-clean-all.sh",
             "LaTeX — Preview Selection.sh": "bbtex-bbedit-preview.sh",
+            "LaTeX — Open Preview Log.sh": "bbtex-bbedit-preview-log.sh",
             "LaTeX — Toggle Preview on Save.sh": "bbtex-preview-on-save.sh"}
 for name, source in commands.items():
     target = scripts / name

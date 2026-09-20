@@ -1,6 +1,6 @@
 # Fast selection preview in BBEdit
 
-Status updated 2026-09-19. The compact BBEdit HTML window was accepted by the
+Status updated 2026-09-20. The compact BBEdit HTML window was accepted by the
 user and replaced the original PDF-in-Skim selection prototype. Skim remains
 the viewer for full documents. No additional prototype approval is pending.
 
@@ -23,7 +23,12 @@ the viewer for full documents. No additional prototype approval is pending.
 - Save workers serialize with a kernel lock, coalesce queued saves, discard
   superseded render results, and preserve requests arriving during publication.
   Changing the tracked file or disabling tracking invalidates the old result.
-  Full builds suppress their save events and wait for an active save preview.
+  Superseded previews cancel their own compiler children. Full builds suppress
+  their save events and interrupt a matching automatic preview before waiting
+  for its cleanup. Generation checks and publication are serialized in OCaml.
+- The preview shows source/line and rendering/current/stale/error/busy status.
+  Retained old images are dimmed and marked out of date. Open Preview Log exposes
+  the current request's log. Existing HTML pages migrate on their next update.
 - Release resources include standalone installers for the optional attachment
   and service. Both support the standard package path without development links.
 
@@ -38,19 +43,16 @@ Manual preview requires explicitly saving modified project inputs. Save preview
 uses saved dependencies; changing a different dependency does not trigger the
 tracked source. It never silently saves unrelated documents. Inline math,
 `$$`, verbatim-aware scanning, and custom display environments are outside the
-save extractor's scope. Saves outside a recognized equation do nothing.
+save extractor's scope. Saves outside a recognized equation mark the image stale.
 
-An in-flight render finishes before its superseded result is discarded; it is
-not automatically cancelled. A save arriving during atomic publication can
-briefly show the preceding image before its own queued update. Cancellation is
-available through Cancel Build. The preview shares the root lock with other
+In-flight renders detect supersession and cancel their own process groups.
+Cancellation is also available through Cancel Build. The preview shares the root lock with other
 build operations. Tectonic, custom options, and experimental RaTeX are uncached;
 time/random-dependent macros can require explicit cache removal.
 
 ## Optional future work
 
 - User feedback on save-preview ergonomics and contextual-menu discoverability.
-- Cancellation of superseded renders and richer busy/rendering status.
 - Unsaved dependency snapshots and dependency-save triggers.
 - Keystroke-live preview, alternative web renderers, or richer citation UI.
 - Native inline/popover display only if a supported BBEdit API is established.

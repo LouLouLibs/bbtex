@@ -1,4 +1,29 @@
-# BBEdit LaTeX handoff — updated 2026-09-19
+# BBEdit LaTeX handoff — updated 2026-09-20
+
+## Preview-polish continuation — 2026-09-20
+
+Phase 1 is now partly implemented; see
+`docs/plans/2026-09-19-writing-workflow-roadmap.md` for the user's ordered roadmap.
+The preview uses generation-aware OCaml state (`snippet-window/state-v2`) and a
+short publication lock. `snippet-begin` starts a request, `snippet-finish` rejects
+obsolete generations, and `snippet-current` checks tracking/source freshness.
+The browser rejects obsolete payloads and delayed image loads. Existing HTML
+pages reload into the new status UI through their existing image poller.
+
+Rendering/current/stale/error/busy status includes source and cursor line. Old
+images remain only for the same source and are explicitly marked out of date.
+**LaTeX — Open Preview Log** is installed. Superseded previews detect invalidation
+inside their own Build_job and cancel their own process groups; no generic root
+cancellation is used for supersession. Full compile invalidates only matching
+automatic preview requests before acquiring the existing preview serialization
+lock. Request tokens are excluded from the render cache key.
+
+Tests cover state migration, publication races, browser load ordering, compiler
+children, full-build isolation, four real engines, cached reuse, actual BBEdit
+saves and error feedback. Native test cleanup now keeps a temporary recovery
+backup and restores old previews with a fresh revision, including legacy payloads.
+Dependency saves do not yet trigger preview; unsaved snapshots and richer scanning
+remain deferred. RaTeX remains an experimental placeholder.
 
 ## Continuation results — 2026-09-19
 

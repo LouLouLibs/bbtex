@@ -237,15 +237,38 @@ let () =
          let selection = Buffer.create 256 in
          (try while true do Buffer.add_string selection (input_line stdin); Buffer.add_char selection '\n' done
           with End_of_file -> ());
-         exit (Preview.compile f (Buffer.contents selection))
+         let current = match Sys.getenv_opt "BBTEX_PREVIEW_TOKEN" with
+           | None -> (fun () -> true)
+           | Some generation -> (fun () -> Snippet_page.is_current generation) in
+         exit (Preview.compile ~current f (Buffer.contents selection))
        with
-       | Project.Error message -> Printf.printf "status: error\nmessage: %s\n" message; exit 2
+       | Project.Error message | Sys_error message -> Printf.printf "status: error\nmessage: %s\n" message; exit 2
        | Build_job.Cancelled -> print_endline "status: cancelled"; exit 3)
      | _ -> Printf.eprintf "preview requires a filename and selection on stdin\n"; exit 2)
   | Some "snippet-page" ->
     (match args with
      | [png] -> print_endline (Snippet_page.publish png)
      | _ -> Printf.eprintf "snippet-page requires a PNG filename\n"; exit 2)
+  | Some ("snippet-begin" | "snippet-finish" | "snippet-current" | "snippet-stop" | "snippet-log" as command) ->
+    (try match command, args with
+     | "snippet-begin", [source; line; mode] ->
+       print_endline (Snippet_page.begin_request ~source ~line:(int_of_string line) ~mode)
+     | "snippet-finish", [generation; status; png; log; message] ->
+       (match Snippet_page.finish generation ~status ~png ~log ~message with
+        | Some page -> print_endline page | None -> exit 4)
+     | "snippet-current", [generation] -> if not (Snippet_page.is_current generation) then exit 4
+     | "snippet-stop", [source; message] ->
+       let matches tracked = source = "-" || source = tracked ||
+         (try tracked <> "" && (Compiler.resolve_compilation source).root_file =
+           (Compiler.resolve_compilation tracked).root_file with Project.Error _ -> false) in
+       Snippet_page.stop_auto ~matches ~message
+     | "snippet-log", [] ->
+       let path = Snippet_page.log_path () in
+       if path = "" || not (Sys.file_exists path) then raise (Project.Error "No preview log is available for the current request.");
+       print_endline path
+     | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
+     with Project.Error message | Sys_error message | Failure message ->
+       Printf.eprintf "%s\n" message; exit 2)
   | Some "equation-at" ->
     (match args with
      | [file; line] -> (try print_endline (Equation.at_line (Preview.read_file file) (int_of_string line))

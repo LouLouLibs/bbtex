@@ -147,6 +147,7 @@ fi
 # The save attachment must not start a competing preview during this build.
 printf '%s' "$$" > "$STATE_DIR/suppress-save-preview"
 trap 'if [[ "$(cat "$STATE_DIR/suppress-save-preview" 2>/dev/null)" == "$$" ]]; then rm -f "$STATE_DIR/suppress-save-preview"; fi' EXIT
+"$BBTEX" snippet-stop "$SOURCE" "Automatic preview paused for a full build. Save an equation afterward to refresh."
 if ! osascript -e 'tell application "BBEdit" to save front document'; then
     alert "Could not save document" "Compilation stopped. Save the document and try again."
     exit 1

@@ -61,6 +61,7 @@ cp "$PROJECT_ROOT/scripts/bbtex-bbedit-results.sh" "$PKG/Contents/Scripts/LaTeX 
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-log.sh" "$PKG/Contents/Scripts/LaTeX — Open Build Log.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-cancel.sh" "$PKG/Contents/Scripts/LaTeX — Cancel Build.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-preview.sh" "$PKG/Contents/Scripts/LaTeX — Preview Selection.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-preview-log.sh" "$PKG/Contents/Scripts/LaTeX — Open Preview Log.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-preview-on-save.sh" "$PKG/Contents/Scripts/LaTeX — Toggle Preview on Save.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-clean-all.sh" "$PKG/Contents/Scripts/LaTeX — Clean All Build Output.sh"
 chmod +x "$PKG/Contents/Scripts/"*.sh

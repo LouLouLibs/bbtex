@@ -29,11 +29,12 @@ let document root_text selection =
   "\\begin{document}\n\\begin{preview}\n" ^ body ^
   "\n\\end{preview}\n\\end{document}\n"
 
-let compile source selection =
+let compile ?(current = fun () -> true) source selection =
+  if not (current ()) then raise Build_job.Cancelled;
   let started = Unix.gettimeofday () in
   let config = Compiler.resolve_compilation source in
   let text = document (read_file config.root_file) selection in
-  Build_job.with_job config.root_file (fun job ->
+  Build_job.with_job ~superseded:(fun () -> not (current ())) config.root_file (fun job ->
     let dir = Filename.concat (Build_job.state_dir ())
       ("preview-" ^ Digest.to_hex (Digest.string config.root_file)) in
     Build_job.mkdir dir;
@@ -43,6 +44,7 @@ let compile source selection =
     let log = Filename.concat dir "compiler.log" in
     let png = Filename.concat dir "selection.png" in
     let manifest = Filename.concat dir "cache.inputs" in
+    Printf.printf "log: %s\n%!" log;
     let engine = Types.string_of_engine config.engine in
     let key = Preview_cache.key text engine config.options in
     let cacheable = config.engine <> Types.Tectonic && config.engine <> Types.Ratex && config.options = [] in
@@ -74,7 +76,10 @@ let compile source selection =
       let convert_job = { job with Build_job.log = Filename.concat dir "conversion.log" } in
       let converted = Build_job.run convert_job ~cwd:dir "pdftoppm"
         ["-f"; "1"; "-singlefile"; "-scale-to"; "1400"; "-png"; pdf; Filename.concat dir "selection"] in
-      if converted <> 0 then raise (Project.Error ("PNG conversion failed: " ^ convert_job.log));
+      if converted <> 0 then begin
+        Printf.printf "log: %s\n%!" convert_job.log;
+        raise (Project.Error ("PNG conversion failed: " ^ convert_job.log))
+      end;
       if cacheable then Preview_cache.record ~manifest ~key
         ~cwd:(Filename.dirname config.root_file) ~dir ~root:config.root_file ~engine;
       Printf.printf "png: %s\nrender_duration: %.3f\nconversion_duration: %.3f\n"

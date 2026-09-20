@@ -46,6 +46,8 @@ jobs:
           dune build
           dune runtest
           uv run test/integration/check_project_builds.py
+          uv run test/integration/check_preview_cancellation.py
+          node test/integration/check_snippet_page.mjs
           uv run test/integration/check_draft_release.py
           for script in scripts/*.sh test/integration/*.sh; do bash -n "$script"; done
           perl -c scripts/with-preview-lock.pl

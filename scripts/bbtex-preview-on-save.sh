@@ -12,6 +12,7 @@ FLAG="$BBTEX_STATE_DIR/preview-on-save-source"
 SOURCE="${2:-${BB_DOC_PATH:-}}"
 [[ -n "$SOURCE" ]] || exit 0
 if [[ "${1:-}" != "--saved" && "${1:-}" != "--locked" ]]; then
+    "$BBTEX" snippet-stop - "Preview tracking changed. Save an equation to refresh."
     rm -f "$BBTEX_STATE_DIR/preview-on-save-request"
     if [[ -f "$FLAG" && "$(cat "$FLAG")" == "$SOURCE" ]]; then
         rm "$FLAG"
@@ -30,7 +31,7 @@ SOURCE_ID="${4:-0}"
 REQUEST="$BBTEX_STATE_DIR/preview-on-save-request"
 if [[ "${1:-}" == "--saved" ]]; then
     TEMP=$(mktemp "$BBTEX_STATE_DIR/request.XXXXXX")
-    TOKEN="${TEMP##*/}"
+    TOKEN=$("$BBTEX" snippet-begin "$SOURCE" "$LINE" auto)
     printf '%s' "$TOKEN" > "$TEMP"
     mv "$TEMP" "$REQUEST"
     LOCK_SCRIPT="$REAL_DIR/with-preview-lock.pl"
@@ -41,28 +42,42 @@ fi
 TOKEN="$5"
 current() {
     [[ -f "$FLAG" && "$(cat "$FLAG")" == "$SOURCE" &&
-       -f "$REQUEST" && "$(cat "$REQUEST")" == "$TOKEN" ]] &&
-        ! kill -0 "$(cat "$BBTEX_STATE_DIR/suppress-save-preview" 2>/dev/null)" 2>/dev/null
+       -n "$TOKEN" ]] &&
+        ! kill -0 "$(cat "$BBTEX_STATE_DIR/suppress-save-preview" 2>/dev/null)" 2>/dev/null &&
+        "$BBTEX" snippet-current "$TOKEN"
 }
 # Every save queues a contender; only the newest renders. A save during
 # publication/exit still has its own contender, so no wakeup can be lost.
 if current; then
-    BEFORE="$(cksum "$SOURCE")"
-    SELECTION=$("$BBTEX" equation-at "$SOURCE" "$LINE") || exit 0
+    SELECTION=$("$BBTEX" equation-at "$SOURCE" "$LINE" 2>&1) || {
+        "$BBTEX" snippet-finish "$TOKEN" stale "" "" "$SELECTION" >/dev/null || true
+        exit 0
+    }
+    export BBTEX_PREVIEW_TOKEN="$TOKEN"
     OUTPUT=$(printf '%s\n' "$SELECTION" | "$BBTEX" preview "$SOURCE") && RESULT=0 || RESULT=$?
-    [[ "$BEFORE" == "$(cksum "$SOURCE")" ]] && current || exit 0
-    PNG=""
+    PNG="" LOG="" MESSAGE=""
     while IFS= read -r line; do
-        [[ "$line" != png:* ]] || PNG="${line#png: }"
+        case "$line" in
+            png:*) PNG="${line#png: }" ;;
+            log:*) LOG="${line#log: }" ;;
+            message:*) MESSAGE="${line#message: }" ;;
+        esac
     done <<< "$OUTPUT"
     if [[ $RESULT -eq 0 && -f "$PNG" ]]; then
-        PAGE=$("$BBTEX" snippet-page "$PNG")
-        WINDOW_SCRIPT="$REAL_DIR/snippet-window.applescript"
-        [[ -f "$WINDOW_SCRIPT" ]] || WINDOW_SCRIPT="$PARENT/Resources/snippet-window.applescript"
-        osascript "$WINDOW_SCRIPT" "$PAGE" "$SOURCE_ID" "${PAGE##*/}" "$SOURCE"
+        STATUS=current
+        MESSAGE=""
     else
         printf '%s\n' "$OUTPUT" >&2
-        "$BBTEX" snippet-page - >/dev/null
+        STATUS=error
+        [[ "$MESSAGE" != *"already building"* ]] || STATUS=busy
+        [[ $RESULT -ne 3 ]] || { STATUS=stale; MESSAGE="Preview cancelled. Save an equation to retry."; }
+        MESSAGE="${MESSAGE:-Could not render the equation. See the preview log.}"
     fi
+    PAGE=$("$BBTEX" snippet-finish "$TOKEN" "$STATUS" "$PNG" "$LOG" "$MESSAGE") || exit 0
+    WINDOW_SCRIPT="$REAL_DIR/snippet-window.applescript"
+    [[ -f "$WINDOW_SCRIPT" ]] || WINDOW_SCRIPT="$PARENT/Resources/snippet-window.applescript"
+    osascript "$WINDOW_SCRIPT" "$PAGE" "$SOURCE_ID" "${PAGE##*/}" "$SOURCE"
     exit 0
+else
+    "$BBTEX" snippet-finish "$TOKEN" busy "" "" "Automatic preview paused while a full build is active. Save again to refresh." >/dev/null || true
 fi

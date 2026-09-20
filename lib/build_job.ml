@@ -26,9 +26,9 @@ let write path value =
   Fun.protect ~finally:(fun () -> close_out oc) (fun () -> output_string oc (value ^ "\n"))
 let remove path = try Sys.remove path with Sys_error _ -> ()
 
-type job = { control : string; log : string; cancelled : bool ref }
+type job = { control : string; log : string; cancelled : bool ref; superseded : unit -> bool }
 
-let with_job root f =
+let with_job ?(superseded = fun () -> false) root f =
   mkdir (state_dir ());
   let lock = Unix.openfile (prefix root ^ ".lock") [Unix.O_RDWR; Unix.O_CREAT] 0o600 in
   Unix.set_close_on_exec lock;
@@ -48,7 +48,7 @@ let with_job root f =
     ) (fun () ->
       write control "running";
       write active (Filename.basename control);
-      f { control; log = log_path root; cancelled }))
+      f { control; log = log_path root; cancelled; superseded }))
 
 let request_cancel root =
   let active = active_path root in
@@ -84,6 +84,7 @@ let executable command =
   | None -> raise (Project.Error (command ^ " not found in PATH"))
 
 let run job ~cwd command args =
+  if job.superseded () then raise Cancelled;
   let executable = try executable command with Project.Error message as error ->
     write job.log message; raise error in
   let log = Unix.openfile job.log [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC] 0o600 in
@@ -111,7 +112,8 @@ let run job ~cwd command args =
     let rec go () = try Unix.waitpid flags pid with Unix.Unix_error (Unix.EINTR, _, _) -> go () in go ()
   in
   let rec poll () =
-    let requested = !(job.cancelled) || (try read job.control = "cancel" with _ -> false) in
+    let requested = !(job.cancelled) || job.superseded () ||
+      (try read job.control = "cancel" with _ -> false) in
     if requested then begin
       (* The session leader owns the whole latexmk/TeX/BibTeX process group. *)
       signal_group Sys.sigterm;

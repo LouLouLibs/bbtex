@@ -14,6 +14,7 @@ import base64
 import plistlib
 import shlex
 import shutil
+import json
 
 ROOT = Path(__file__).resolve().parents[2]
 with tempfile.TemporaryDirectory(prefix="bbtex-live-preview-") as directory:
@@ -73,8 +74,9 @@ with tempfile.TemporaryDirectory(prefix="bbtex-live-preview-") as directory:
         assert source.read_text() == original
         pdfs = list((folder / "state").glob("preview-*/selection.pdf"))
         assert len(pdfs) == 1
-        assert (window_dir / "image.js").read_text().startswith('showSnippet("data:image/png;base64,')
-        encoded = (window_dir / "image.js").read_text().split(",", 1)[1].split('"', 1)[0]
+        published = json.loads((window_dir / "image.js").read_text().split("window.bbtexSnippet(", 1)[1].split(");}else", 1)[0])
+        assert published["status"] == "current" and published["source"] == str(source)
+        encoded = published["image"].split(",", 1)[1]
         assert base64.b64decode(encoded) == next((folder / "state").glob("preview-*/selection.png")).read_bytes()
         if proof := os.environ.get("BBTEX_PREVIEW_PROOF"):
             subprocess.run(["pdftoppm", "-singlefile", "-scale-to", "1200", "-png", str(pdfs[0]), proof], check=True)

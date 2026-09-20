@@ -41,7 +41,9 @@ PNG conversion requires Poppler's `pdftoppm` (already installed on this machine)
 
 Preview output is stored in a separate `preview-…` directory under bbtex's state
 directory, with one reusable directory per main file. The full document's PDF
-and compiler log are preserved. A failed preview opens its own compiler log.
+and compiler log are preserved. A failed manual preview opens its own compiler
+log. Automatic failures stay in the preview window; choose **LaTeX — Open Preview
+Log** to inspect the log for the current preview request.
 **LaTeX — Cancel Build** also cancels a preview for the same project, and a
 preview cannot overlap a full build or cleanup of that project.
 
@@ -59,6 +61,22 @@ On the simple test fixture, rendering measured 0.22–0.50 s, PNG conversion
 1.45 s with first window creation and 0.31 s with a cached result and existing
 window. The window polls the published image every 250 ms, adding up to that
 delay before a change appears. These are local test timings, not guarantees.
+
+## Preview status
+
+The window shows the source file, cursor line, and one of **Rendering**, **Current**,
+**Out of date**, **Preview failed**, or **Project busy**. While rendering or after
+a failure, the previous image from that source may remain visible, dimmed and
+explicitly marked out of date. Switching source files clears the previous image.
+Current means the requested preview completed from saved inputs; it does not
+include unsaved changes in other editor buffers.
+
+New requests replace older requests across manual and automatic preview. The
+running preview detects supersession and cancels its own compiler process group;
+it never cancels an unrelated full build. The final request check and image/status
+publication share a lock, so obsolete completions cannot overwrite newer state.
+The browser also rejects out-of-order responses and delayed image loads.
+Existing open preview pages migrate automatically when the next request arrives.
 
 ## Limits
 
@@ -93,13 +111,15 @@ This uses BBEdit’s `documentDidSave` attachment, not continuous typing capture
 The initial implementation recognizes `\[...\]`, equation, align, gather,
 multline, flalign (including starred forms), and displaymath environments.
 Inline math and `$$...$$` are not recognized. Place the cursor inside a complete
-block; saves elsewhere do nothing. Included files use the existing main-file
+block; saves elsewhere mark the previous preview out of date. Included files use the existing main-file
 resolver and the main file’s **saved** preamble. Save changed macros/preamble
 files first. Saving a different dependency does not trigger the tracked source.
-Rapid saves are coalesced; superseded renders finish but their results are
-discarded. Saves arriving during publication are queued for the next update.
-Normal compilation suppresses the hook and waits for an already-running save
-preview so that the preview does not make the build report busy.
+Rapid saves are coalesced and superseded renders are cancelled. Normal compilation
+suppresses the hook, interrupts the matching automatic preview, and waits for its
+compiler cleanup before starting the full build. The old preview is marked out
+of date; save an equation afterward to refresh it. Disabling or switching tracking
+also invalidates the old automatic request. Cancellation includes a short grace
+period for compiler children to stop.
 
 Install the menu command with `uv run scripts/install-workflow-commands.py` and
 the attachment with `uv run scripts/install-preview-save-hook.py --apply`.
@@ -128,5 +148,9 @@ The serialization helper uses macOS's `/usr/bin/perl`; optional installers use
 
 `test/integration/check_save_preview_worker.py` covers rapid saves, source
 switching, disabling tracking, saves during publication, build suppression, and
-failure clearing without native automation. `check_save_preview.py` checks real
-BBEdit saves with a disposable document and restores the prior tracking flag/image.
+failure status without native automation. `check_preview_cancellation.py` checks
+process-group cleanup and isolation from full builds. `check_snippet_page.mjs`
+checks the browser's ordering and safe text rendering with controlled image loads.
+`check_save_preview.py` checks real BBEdit saves and a rendering error with a
+disposable document, retains a temporary recovery backup, and restores the prior
+tracking flag/image with a fresh publication revision.

@@ -7,6 +7,8 @@
 - LaTeX — Cancel Build stops the project's active compiler and its children.
 - LaTeX — Preview Selection renders selected math in a compact BBEdit window using the main-file
   preamble. Select a complete equation or raw math first; see [preview details](selection-preview.md).
+- LaTeX — Open Preview Log opens the current preview request's log. Status in the
+  preview window distinguishes current output from rendering, stale, or failed output.
 - LaTeX — Clean preserves the PDF; Clean All Build Output removes it after confirmation.
 - Use LaTeX — Forward Search to locate the source position in Skim.
   Existing personal key assignments are preserved.

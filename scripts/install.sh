@@ -92,6 +92,7 @@ fi
 ln -s "$PROJECT_DIR/scripts/bbtex-preview-on-save.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Toggle Preview on Save.sh"
 uv run "$PROJECT_DIR/scripts/install-preview-save-hook.py" --apply
+uv run "$PROJECT_DIR/scripts/install-workflow-commands.py"
 
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Compile.sh"
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Forward Search.sh"

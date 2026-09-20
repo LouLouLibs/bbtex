@@ -3,8 +3,11 @@ single-pass rendering for pdfLaTeX, XeLaTeX, and LuaLaTeX. Tectonic is also
 supported. Full-document PDFs continue to use Skim.
 
 - Optional preview on save follows the complete display equation at the cursor.
-- Rapid saves coalesce; superseded output is discarded and full builds wait for
-  active save previews. Switching source tabs does not reopen the old preview.
+- The preview shows rendering/current/stale/error/busy status and source context.
+  Previous images are clearly marked out of date; Open Preview Log exposes errors.
+- Rapid saves coalesce; superseded previews cancel their own compiler children.
+  Full builds interrupt matching automatic previews and wait for their cleanup.
+  Switching source tabs does not reopen the old preview.
 - A BBEdit-only contextual service provides Preview Selection through Services.
 - Bundled installers support optional save attachments and the contextual service.
 - RaTeX remains an experimental placeholder, with no installation or default change.
