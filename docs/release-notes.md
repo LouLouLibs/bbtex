@@ -17,6 +17,9 @@ Citation launching now preserves PATH entries containing spaces, fixing an
 `env: … No such file or directory` error with paths such as Little Snitch's.
 
 - Optional preview on save follows the complete display equation at the cursor.
+- Change/Toggle/Close Environment now match nested tags while skipping comments
+  and common literal regions. Rename/toggle are single undoable edits, preserve
+  cursor position, and refuse stale buffers or malformed nesting.
 - Saving a known macro/preamble input refreshes the tracked equation, including
   background document saves, while preserving editor focus. Changed source
   locations require a fresh equation save. Recorder-less engines have limited

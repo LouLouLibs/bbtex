@@ -274,6 +274,17 @@ let () =
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)
+  | Some ("environment-find" | "environment-change" as command) ->
+    (try match command, args with
+     | "environment-find", [snapshot; cursor; ending] ->
+       print_endline (Structure.describe ~text:(Project_index.read snapshot)
+         ~cursor:(int_of_string cursor) ~ending:(ending = "true"))
+     | "environment-change", [snapshot; cursor; name] ->
+       print_endline (Structure.change ~text:(Project_index.read snapshot)
+         ~cursor:(int_of_string cursor) name)
+     | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
+     with Project.Error message | Sys_error message | Failure message ->
+       Printf.eprintf "%s\n" message; exit 2)
   | Some ("reference-picker" | "picker-insert" | "picker-check" | "picker-unchanged" as command) ->
     (try match command, args with
      | "reference-picker", [source; query] ->

@@ -74,9 +74,26 @@ Scripts > LaTeX Editing contains:
 The former LaTeX clippings and stationery remain available. Scripted clippings
 for inserting and closing environments keep their shared environment library.
 
-The environment helpers operate through text searches, so commented commands
-and verbatim environments can confuse them. Further parser hardening is planned.
-Use Undo to reverse an unwanted editing operation.
+Place an empty cursor inside an environment (including either tag) to change its
+name or toggle its star. The innermost matched pair changes in one undoable edit;
+body text, indentation, and surrounding tags stay intact. The cursor follows the
+same position through the name changes, including Unicode before the cursor.
+Cancel leaves text and selection unchanged. Edits made while the rename dialog
+is open cause an explanatory refusal rather than applying an obsolete edit.
+
+Matching uses the current unsaved buffer and skips comments, common verbatim
+environments, inline literal commands, and common macro/environment definitions.
+Nested identical names are supported. Malformed or crossed tags, dynamic names,
+selected text, and a cursor inside a comment, literal region, or definition are
+rejected. Names may contain letters, digits, `*`, `@`, and hyphens. Buffers are
+limited to 4 MiB; TeX macro expansion, custom literal syntax, and conditionals
+are outside this bounded scanner's scope.
+
+The Close Environment clipping uses the same scanner on text before the cursor
+and proposes the innermost still-open name; it does not inspect future closing
+tags. Failed matching inserts nothing and explains why. Insert Environment's
+clipping placeholders remain available; wrapping and insertion improvements are
+the next structural-editing slice.
 
 ## Rollback
 
@@ -105,3 +122,11 @@ The last command previews migration. Add --apply --restart to install.
 The native integration checks use disposable BBEdit documents/PDFs and require
 macOS application scripting access. The workflow check uses fake compilers and
 desktop commands to exercise failure paths without touching the editor.
+
+After `dune build` and building support, verify environment edits with:
+
+    osascript test/integration/check_editing.applescript "$PWD/dist/bbtex-support.bbpackage/Contents/Scripts/LaTeX Editing/Toggle Starred Environment.scpt" "$PWD/dist/bbtex-support.bbpackage/Contents/Resources"
+
+This checks nested toggling, Unicode cursor positions, renaming, single Undo,
+and rejection of changed buffers/selections. `dune runtest` covers scanner edge
+cases. Release checks run the native test when `BBTEX_TEST_NATIVE=1` is set.

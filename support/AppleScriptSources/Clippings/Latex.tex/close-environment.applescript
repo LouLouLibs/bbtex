@@ -3,6 +3,7 @@
 on main()
 	set env_lib_file to path_to_contents() & "Resources/environments-lib.scpt"
 	set env_lib to load script POSIX file env_lib_file
+	set env_lib's binaryPath to path_to_contents() & "Resources/bbtex"
 	tell env_lib to set {env_name, begin_loc, end_loc, cursor_loc, doc} to balance_environment without ending
 	return "\\end{" & env_name & "}\r#INSERTION#"
 end main
@@ -14,6 +15,7 @@ on run
 	on error eStr number eNum partial result rList from badObj to exptectedType
 		if eNum = 5033 then
 			display dialog eStr buttons {"OK"} with title "Error" default button 1
+			return ""
 		else if eNum = 5088 then
 			return "\\end{#SELSTART#???#SELEND#}"
 		else if eNum is not -128 then

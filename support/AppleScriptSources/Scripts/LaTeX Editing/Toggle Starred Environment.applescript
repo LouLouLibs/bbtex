@@ -1,14 +1,10 @@
 -- by Nathan Grigg
 
-property delay_time : 0.2
-
 on main()
 	set env_lib_file to path_to_contents() & "Resources/environments-lib.scpt"
 	set env_lib to load script POSIX file env_lib_file
+	set env_lib's binaryPath to path_to_contents() & "Resources/bbtex"
 	tell env_lib to set {env_name, begin_loc, end_loc, cursor_loc, doc} to balance_environment with ending
-
-	tell application "BBEdit" to select characters begin_loc thru end_loc of doc
-	delay delay_time
 
 	if last character of env_name is "*" then
 		set new_env to text 1 through -2 of env_name

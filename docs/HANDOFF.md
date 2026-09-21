@@ -1,5 +1,23 @@
 # BBEdit LaTeX handoff — updated 2026-09-21
 
+## Structural editing, first slice — 2026-09-21
+
+Phase 4 hardens Change/Toggle/Close Environment with `Structure`, a bounded OCaml
+scanner over the unsaved buffer. Comments, common literal regions, and common
+definitions are excluded; nesting is matched by a stack. Rename/toggle apply
+both tags as one edit, map the UTF-16 cursor, and reject changed buffers/selections.
+The editing support package now carries its own `Resources/bbtex` executable.
+Menu scripts explicitly supply that resource path to the library: a native test
+exposed that a loaded library's `path to me` can refer to the calling menu script.
+
+Unit and native checks pass for nesting, malformed tags, Unicode, one Undo,
+renaming, and stale edits. See `docs/bbedit-editing.md` for scanner boundaries.
+Packaged and installed native tests pass. The existing development package's
+environment scripts and binary were updated without restarting BBEdit; a full
+backup is under `~/Library/Application Support/BBEdit/Backups/bbtex-environments-hVDjUX`.
+Next: audit the existing clippings/TexLab placeholders, then add safe wrapping and
+harden insertion. Phase 4 remains in progress; RaTeX stays experimental.
+
 ## Citation/reference pickers — 2026-09-21
 
 Phase 3 implements and installs **LaTeX — Insert Citation** and **LaTeX — Insert

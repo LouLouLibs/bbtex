@@ -1,6 +1,7 @@
 # BBEdit LaTeX writing-workflow roadmap
 
-Status: Phases 1 and 2 complete; Phase 3 implemented and locally tested,
+Status: Phases 1 and 2 complete; Phase 3 implemented and locally tested;
+Phase 4 environment matching/renaming implemented,
 updated 2026-09-21.
 
 Completed in the first implementation slice: rendering/current/stale/error/busy
@@ -157,6 +158,12 @@ Deliverable: richer pickers sharing project data with navigation, with a native
 walkthrough limited to the new interactions.
 
 ## Phase 4 — Structural editing (original priority 2)
+
+First slice: Change/Toggle/Close Environment share a bounded OCaml matcher over
+the unsaved buffer. Rename/toggle use one edit with UTF-16 cursor mapping and
+buffer/selection guards. Unit and native checks cover nesting, comments/literals,
+definitions, malformed tags, Undo, and stale edits. Wrap-selection and insertion/
+placeholder audit remain next; this phase is not complete.
 
 **Outcome:** common LaTeX edits are predictable in nested, real-world documents.
 

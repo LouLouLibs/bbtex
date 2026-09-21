@@ -16,6 +16,9 @@ def build(destination):
     source = ROOT / "support"
     contents = destination / "Contents"
     shutil.copytree(source / "Contents", contents, dirs_exist_ok=True)
+    binary = ROOT / "_build/default/bin/main.exe"
+    assert binary.is_file(), "Run dune build before building editing support"
+    shutil.copy2(binary, contents / "Resources/bbtex")
     shutil.copy2(source / "THIRD-PARTY-NOTICES.md", destination)
     shutil.copy2(source / "README.md", destination)
     for script in sorted((source / "AppleScriptSources").rglob("*.applescript")):

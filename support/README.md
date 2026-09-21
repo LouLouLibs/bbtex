@@ -12,6 +12,7 @@ and git-information build command. The full installed original is archived.
 
 Build from this repository:
 
+    dune build
     uv run scripts/build-support.py
 
 Preview migration:
@@ -30,5 +31,8 @@ If VIRTUAL_ENV points to a removed interpreter, unset it for the invocation and
 select an existing interpreter with uv's --python option. Do not repair or install
 packages into another environment as part of building bbtex.
 
-Environment helpers are inherited text-search tools. They are not a full TeX
-parser; commented commands and verbatim content need further hardening.
+Change/Toggle/Close Environment use the bundled OCaml executable to match literal
+environment tags in the unsaved buffer. Matching skips comments, common verbatim
+regions, and common macro definitions; malformed nesting is rejected. Rename and
+toggle use one undoable edit and preserve the cursor. They do not expand TeX
+macros or evaluate conditionals. See `docs/bbedit-editing.md` in the repository.

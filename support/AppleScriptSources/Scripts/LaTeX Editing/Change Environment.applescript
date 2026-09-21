@@ -3,14 +3,12 @@
 on main()
 	set env_lib_file to path_to_contents() & "Resources/environments-lib.scpt"
 	set env_lib to load script POSIX file env_lib_file
+	set env_lib's binaryPath to path_to_contents() & "Resources/bbtex"
 	tell env_lib to set {env_name, begin_loc, end_loc, cursor_loc, doc} to balance_environment with ending
-
-	tell application "BBEdit" to select characters begin_loc thru end_loc of doc
 
 	try
 		display dialog "Change " & env_name & " environment to:" default answer env_name with title "Change environment"
 	on error number -128
-		select insertion point before character cursor_loc of doc
 		error number -128
 	end try
 
