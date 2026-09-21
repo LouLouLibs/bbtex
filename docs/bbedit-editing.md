@@ -43,6 +43,10 @@ In a TeX document:
 - Command-double-click a reference, or use Go > Go to Definition.
 - Use Search > Find References to Selected Symbol for references.
 - Use Search > Find Symbol in Workspace to navigate project symbols.
+- Use **Scripts → LaTeX — Project Outline** for a searchable saved-file outline
+  of sections, equations, figures, tables, and labels across included files.
+  Duplicate labels retain their locations; stale targets require a fresh search.
+  See [project navigation](project-navigation.md) for scope and keyboard usage.
 - Use View > Text Display > Show Issues for source diagnostics.
 
 If completion is missing, inspect Settings > Languages > TeX > Server.

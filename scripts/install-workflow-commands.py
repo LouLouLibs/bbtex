@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 scripts = Path.home() / "Library/Application Support/BBEdit/Scripts"
 commands = {"LaTeX — Show Build Results.sh": "bbtex-bbedit-results.sh",
+            "LaTeX — Project Outline.sh": "bbtex-bbedit-outline.sh",
             "LaTeX — Open Build Log.sh": "bbtex-bbedit-log.sh",
             "LaTeX — Cancel Build.sh": "bbtex-bbedit-cancel.sh",
             "LaTeX — Clean All Build Output.sh": "bbtex-bbedit-clean-all.sh",

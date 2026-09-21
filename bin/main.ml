@@ -13,6 +13,7 @@ Commands:
   cancel <file.tex>          Cancel the running build for this project
   profiles <file.tex>        List named profiles from .bbtex
   preview <file.tex>         Preview selected math read from stdin
+  outline <file.tex> [query] List the saved project outline as JSON
   save-project <file.tex>    Emit AppleScript to save open project files
   document-settings <file> <engine|inherit> <root|->
                             Emit AppleScript to update document directives
@@ -270,6 +271,21 @@ let () =
        let path = Snippet_page.log_path () in
        if path = "" || not (Sys.file_exists path) then raise (Project.Error "No preview log is available for the current request.");
        print_endline path
+     | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
+     with Project.Error message | Sys_error message | Failure message ->
+       Printf.eprintf "%s\n" message; exit 2)
+  | Some ("outline" | "outline-picker" | "outline-jump" | "outline-check" as command) ->
+    (try match command, args with
+     | ("outline" | "outline-picker"), ([_] | [_; _]) ->
+       let index = Project_index.build (List.hd args) in
+       let query = match args with [_; query] -> query | _ -> "" in
+       print_endline (if command = "outline" then Project_index.json index (Project_index.search index query)
+         else Outline.picker index query)
+     | "outline-jump", [file; fingerprint; line] ->
+       print_string (Outline.jump ~binary:(Unix.realpath Sys.executable_name) file fingerprint (int_of_string line))
+     | "outline-check", [file; fingerprint] ->
+       if Project_index.hash (Project_index.read file) <> fingerprint then
+         raise (Project.Error "Source changed. Run Project Outline again.")
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)

@@ -2,6 +2,12 @@ BBEdit equation previews now use a compact reusable image window, with cached
 single-pass rendering for pdfLaTeX, XeLaTeX, and LuaLaTeX. Tectonic is also
 supported. Full-document PDFs continue to use Skim.
 
+**LaTeX — Project Outline** adds native search across saved project sections,
+equations, figure/table captions, and labels. Duplicate labels retain their source
+locations; changed files and unsaved targets require a refreshed outline. The
+bounded index follows literal includes and reports unavailable inputs. Existing
+TexLab completion and symbol navigation remain available.
+
 - Optional preview on save follows the complete display equation at the cursor.
 - Saving a known macro/preamble input refreshes the tracked equation, including
   background document saves, while preserving editor focus. Changed source

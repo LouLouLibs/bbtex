@@ -44,15 +44,18 @@ cp "$PROJECT_ROOT/LICENSE" "$PKG/LICENSE"
 # Binary
 cp "$BINARY" "$PKG/Contents/Resources/bbtex"
 cp "$PROJECT_ROOT/scripts/configure-document.applescript" "$PKG/Contents/Resources/configure-document.applescript"
+cp "$PROJECT_ROOT/scripts/project-outline.applescript" "$PKG/Contents/Resources/project-outline.applescript"
 cp "$PROJECT_ROOT/scripts/snippet-window.applescript" "$PKG/Contents/Resources/snippet-window.applescript"
 cp "$PROJECT_ROOT/scripts/preview-save-hook.applescript" "$PKG/Contents/Resources/preview-save-hook.applescript"
 cp "$PROJECT_ROOT/scripts/with-preview-lock.pl" "$PKG/Contents/Resources/with-preview-lock.pl"
 cp "$PROJECT_ROOT/scripts/install-preview-save-hook.py" "$PKG/Contents/Resources/install-preview-save-hook.py"
 cp "$PROJECT_ROOT/scripts/install-preview-service.py" "$PKG/Contents/Resources/install-preview-service.py"
 cp "$PROJECT_ROOT/docs/selection-preview.md" "$PKG/Contents/Resources/selection-preview.md"
+cp "$PROJECT_ROOT/docs/project-navigation.md" "$PKG/Contents/Resources/project-navigation.md"
 chmod +x "$PKG/Contents/Resources/bbtex"
 
 # Scripts — copy with BBEdit menu names
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-outline.sh" "$PKG/Contents/Scripts/LaTeX — Project Outline.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-compile-with.sh" "$PKG/Contents/Scripts/LaTeX — Compile With….sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-compile.sh" "$PKG/Contents/Scripts/LaTeX — Compile.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-forward.sh" "$PKG/Contents/Scripts/LaTeX — Forward Search.sh"

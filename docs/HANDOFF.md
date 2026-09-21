@@ -1,4 +1,37 @@
-# BBEdit LaTeX handoff — updated 2026-09-20
+# BBEdit LaTeX handoff — updated 2026-09-21
+
+## Project navigation — 2026-09-21
+
+Phase 2 implements **LaTeX — Project Outline**, installed as a development Scripts
+symlink and included in release packaging. `project_index.ml` is a saved-file,
+bounded scanner that follows literal includes, preserves duplicate labels, shows
+section hierarchy and equation/caption context, and reports missing/dynamic/cyclic
+inputs. `bbtex outline FILE [QUERY]` exposes versioned JSON for future reference
+pickers. Native query/list dialogs use `outline.ml` and `project-outline.applescript`.
+`outline-jump` checks the target fingerprint and generated AppleScript rejects
+dirty buffers or mismatched lines. No files are silently saved; RaTeX is unchanged.
+
+Capability audit: BBEdit's native functions menu and TexLab symbol search remain
+available. Local TexLab tests now cover document/workspace symbols alongside
+completion and definition. No supported scripting API to retrieve BBEdit's
+internal LSP symbol data was found. See `docs/project-navigation.md` for the
+presentation decision, parser boundaries, query syntax, and saved-source contract.
+
+Phase 2 is accepted: the user confirmed search and Return-to-navigate work in the
+installed BBEdit command on 2026-09-21. Do not repeat that acceptance question.
+Next roadmap item: Phase 3, richer citation/reference selection.
+
+Unit and native integration checks pass for multi-file hierarchy, duplicate labels,
+verbatim/comments, include/root cycles, changed disk contents, every fixture
+row-to-location mapping, dirty buffers, quoted paths, and Unicode. Computer Use
+permission was granted on retry, but reading BBEdit's modal dialogs intermittently
+times out or fails screen capture; the user supplied the final keyboard check. The
+wrapper now redirects shell output to `outline.log`, like the existing build
+commands, and explicitly activates BBEdit for the user-requested search dialog.
+Release package/archive checks, including the packaged outline binary, pass.
+
+The previous preview milestone was committed/pushed as `aba5ca9`; CI passed on
+both architectures: https://github.com/LouLouLibs/bbtex/actions/runs/35533004418 .
 
 ## Dependency-save refresh — 2026-09-20
 

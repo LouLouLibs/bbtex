@@ -1,6 +1,7 @@
 # BBEdit LaTeX writing-workflow roadmap
 
-Status: Phase 1 implemented and locally verified, updated 2026-09-20.
+Status: Phases 1 and 2 complete,
+updated 2026-09-21.
 
 Completed in the first implementation slice: rendering/current/stale/error/busy
 status, source/line context, old-image labeling, HTML migration, serialized
@@ -15,7 +16,14 @@ inputs persist separately from the cache, including after failed renders.
 Deterministic routing and native macro-save/focus checks pass. Unsaved snapshots
 remain deferred; engines without recorder output guarantee only root refresh.
 Latest packaged native timings: 1.478 s first open, 0.336 s cached reuse.
-Next planned phase: project-wide navigation.
+Phase 2 now supplies **LaTeX — Project Outline**, a native saved-file search and
+picker backed by a bounded shared OCaml index. It follows literal inputs, shows
+hierarchy/equation/caption context, preserves duplicate labels, reports incomplete
+inputs, and refuses stale or dirty jump targets. The capability audit and data
+contract are in `docs/project-navigation.md`. Unit tests, native script compilation,
+all fixture row-to-location mappings, and dirty/stale target checks pass. The user
+confirmed that the installed command searches and opens a result with Return on
+2026-09-21. Next planned phase: richer citation/reference selection.
 
 The user's priority order is **3 → 4 → 1 → 2 → 5 → 6** from the feature
 comparison: preview polish, project navigation, citation/reference selection,

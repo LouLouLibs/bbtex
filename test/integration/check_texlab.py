@@ -95,8 +95,17 @@ def main():
             location = definitions[0] if isinstance(definitions, list) else definitions
             assert location.get("uri", location.get("targetUri")) == tex.as_uri()
             print("Reference definition verified")
-            send({"id": 5, "method": "shutdown"})
-            response(5)
+            send({"id": 5, "method": "textDocument/documentSymbol", "params": {
+                "textDocument": {"uri": tex.as_uri()}}})
+            symbols = response(5)
+            assert symbols, "No document symbols"
+            print("Document symbols:", json.dumps(symbols))
+            send({"id": 6, "method": "workspace/symbol", "params": {"query": "Test"}})
+            symbols = response(6)
+            assert symbols, "No workspace symbols"
+            print("Workspace symbols:", json.dumps(symbols))
+            send({"id": 7, "method": "shutdown"})
+            response(7)
             send({"method": "exit"})
             process.wait(timeout=5)
         finally:
