@@ -15,6 +15,9 @@ renaming, and stale edits. See `docs/bbedit-editing.md` for scanner boundaries.
 Packaged and installed native tests pass. The existing development package's
 environment scripts and binary were updated without restarting BBEdit; a full
 backup is under `~/Library/Application Support/BBEdit/Backups/bbtex-environments-hVDjUX`.
+CI exposed read-only Dune executable permissions when rebuilding package resources;
+the support builder now stages and atomically replaces the binary instead of
+opening the previous copy for writing.
 Next: audit the existing clippings/TexLab placeholders, then add safe wrapping and
 harden insertion. Phase 4 remains in progress; RaTeX stays experimental.
 

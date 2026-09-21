@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -18,7 +19,14 @@ def build(destination):
     shutil.copytree(source / "Contents", contents, dirs_exist_ok=True)
     binary = ROOT / "_build/default/bin/main.exe"
     assert binary.is_file(), "Run dune build before building editing support"
-    shutil.copy2(binary, contents / "Resources/bbtex")
+    # Dune artifacts can be read-only. Replace an existing copy rather than
+    # opening it for writing, so repeat builds work on clean CI runners too.
+    resources = contents / "Resources"
+    resources.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".bbtex-", dir=resources) as staging:
+        staged_binary = Path(staging) / "bbtex"
+        shutil.copy2(binary, staged_binary)
+        staged_binary.replace(resources / "bbtex")
     shutil.copy2(source / "THIRD-PARTY-NOTICES.md", destination)
     shutil.copy2(source / "README.md", destination)
     for script in sorted((source / "AppleScriptSources").rglob("*.applescript")):
