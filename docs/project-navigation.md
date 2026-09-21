@@ -25,6 +25,8 @@ Nothing is saved automatically. Other dirty buffers are not included in the inde
 `bbtex outline FILE [QUERY]` emits version-1 JSON with `root`, `savedOnly`,
 `issues`, and `entries`. Each entry has `kind`, `title`, canonical `file`, one-based
 `line`, hierarchy `depth`, nearby `context`, and the saved file's `fingerprint`.
+The additive `files` and `bibliographies` fields expose indexed-file fingerprints
+and declared bibliography paths for the citation/reference pickers.
 This index is reusable by future reference pickers. `outline-picker` and
 `outline-jump` are native-dialog integration commands.
 

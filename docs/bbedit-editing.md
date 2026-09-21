@@ -48,6 +48,9 @@ In a TeX document:
   Duplicate labels retain their locations; stale targets require a fresh search.
   See [project navigation](project-navigation.md) for scope and keyboard usage.
 - Use View > Text Display > Show Issues for source diagnostics.
+- **Scripts → LaTeX — Insert Citation / Insert Reference** provide explicit
+  metadata/context search and safe key insertion alongside native completion.
+  [Picker usage and supported commands](citation-reference-pickers.md).
 
 If completion is missing, inspect Settings > Languages > TeX > Server.
 BBEdit's TeX module is preconfigured for texlab; a direct executable symlink

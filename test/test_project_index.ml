@@ -55,9 +55,9 @@ x = y \label{duplicate}
     assert (child_section.depth = 1 && child_section.context = first.title);
     let duplicate = List.hd (Project_index.search index "kind:label duplicate child.tex") in
     assert (duplicate.line = 4);
-    assert (List.length (Project_index.search index "figure useful") = 1);
-    assert (List.length (Project_index.search index "table Measurements") = 1);
-    assert (List.length (Project_index.search index "equation") = 2);
+    assert (List.length (Project_index.search index "kind:figure useful") = 1);
+    assert (List.length (Project_index.search index "kind:table Measurements") = 1);
+    assert (List.length (Project_index.search index "kind:equation") = 2);
     let script = Outline.picker index "duplicate" in
     assert (Project_index.find script 0 "1. " < String.length script);
     assert (Project_index.find script 0 "2. " < String.length script);

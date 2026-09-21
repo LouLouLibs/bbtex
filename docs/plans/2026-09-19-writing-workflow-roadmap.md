@@ -1,6 +1,6 @@
 # BBEdit LaTeX writing-workflow roadmap
 
-Status: Phases 1 and 2 complete,
+Status: Phases 1 and 2 complete; Phase 3 implemented and locally tested,
 updated 2026-09-21.
 
 Completed in the first implementation slice: rendering/current/stale/error/busy
@@ -23,7 +23,16 @@ inputs, and refuses stale or dirty jump targets. The capability audit and data
 contract are in `docs/project-navigation.md`. Unit tests, native script compilation,
 all fixture row-to-location mappings, and dirty/stale target checks pass. The user
 confirmed that the installed command searches and opens a result with Return on
-2026-09-21. Next planned phase: richer citation/reference selection.
+2026-09-21.
+
+Phase 3 now provides installed and packaged citation/reference menus. Citation
+search supports metadata and multiple keys; references show type and context from
+the shared index. Pinned BibtexParser handles bibliography blocks, with bounded
+string expansion and metadata inheritance. Native insertion checks cover command
+and option retention, UTF-16 offsets, one Undo, cancellation, and changed buffers
+or selections. Metadata and release-package checks pass, including a 10,000-entry
+fixture. The new-menu user walkthrough is pending; next planned phase is
+structural editing. See `docs/citation-reference-pickers.md` for scope and limits.
 
 The user's priority order is **3 → 4 → 1 → 2 → 5 → 6** from the feature
 comparison: preview polish, project navigation, citation/reference selection,

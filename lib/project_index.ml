@@ -1,7 +1,8 @@
 (** A saved-source outline, not a TeX interpreter. Locations are hard lines. *)
 type entry = { kind : string; title : string; file : string; line : int;
                depth : int; context : string; fingerprint : string }
-type t = { root : string; entries : entry list; issues : string list }
+type t = { root : string; entries : entry list; issues : string list;
+           files : (string * string) list; bibliographies : string list }
 
 let read = Preview_cache.read
 let hash text = Digest.to_hex (Digest.string text)
@@ -84,6 +85,7 @@ let build source =
   let root = (Compiler.resolve_compilation source).root_file in
   let entries = ref [] and issues = ref [] and visited = Hashtbl.create 32 in
   let sections = ref [] in
+  let files = ref [] and bibliographies = ref [] in
   let issue file line message = issues := Printf.sprintf "%s:%d: %s" file line message :: !issues in
   let rec visit stack file =
     if List.mem file stack then issue file 1 "Input cycle; not followed again."
@@ -97,6 +99,7 @@ let build source =
           raise (Project.Error "File exceeds the 4 MiB outline limit.");
         let raw = read file in
         let fingerprint = hash raw and text = visible raw in
+        files := (file, fingerprint) :: !files;
         let n = String.length text in
         let context () = String.concat " › " (List.map snd !sections) in
         let add kind title pos extra =
@@ -109,6 +112,21 @@ let build source =
           let name, next = command text i in
           let arg = argument text (optional text (star text next)) in
           match section_level name, name, arg with
+          | _, ("bibliography" | "addbibresource"), Some (names, stop) ->
+            List.iter (fun value ->
+              let value = String.trim value in
+              if value = "" || String.exists (fun c -> List.mem c ['\\'; '#'; '{'; '}'; '$']) value then
+                issue file (line_at text i) ("Dynamic bibliography unavailable: " ^ value)
+              else begin
+                let value = if Filename.extension value = "" then value ^ ".bib" else value in
+                let candidates = if Filename.is_relative value then
+                  [Filename.concat (Filename.dirname root) value; Filename.concat (Filename.dirname file) value]
+                  else [value] in
+                let path = Option.value ~default:(List.hd candidates) (List.find_opt Sys.file_exists candidates) in
+                let path = try Unix.realpath path with Unix.Unix_error _ -> path in
+                if not (List.mem path !bibliographies) then bibliographies := path :: !bibliographies
+              end) (if name = "bibliography" then String.split_on_char ',' names else [names]);
+            scan stop
           | Some level, _, Some (title, stop) ->
             sections := List.filter (fun (l, _) -> l < level) !sections;
             add name title i "";
@@ -152,7 +170,8 @@ let build source =
             let stop = find text next "\\]" in
             add "equation" (String.sub text next (stop - next)) i ""; scan next
           | _, "label", Some (label, stop) ->
-            add "label" label i (match !environments with (_, title) :: _ -> title | [] -> ""); scan stop
+            add "label" label i (match !environments with (env, title) :: _ -> env ^ ": " ^ title
+              | [] -> (match List.rev !sections with [] -> "label" | _ -> "section label")); scan stop
           | _, ("newcommand" | "renewcommand" | "providecommand" | "DeclareRobustCommand"), _ ->
             let after_name = match argument text (star text next) with
               | Some (_, j) -> j | None -> let j = skip text (star text next) in
@@ -174,7 +193,8 @@ let build source =
       with Sys_error message | Project.Error message -> issue file 1 message
          | Unix.Unix_error (error, _, _) -> issue file 1 (Unix.error_message error)
     end
-  in visit [] root; {root; entries = List.rev !entries; issues = List.rev !issues}
+  in visit [] root; {root; entries = List.rev !entries; issues = List.rev !issues;
+    files = List.rev !files; bibliographies = List.rev !bibliographies}
 
 let relative root file =
   let prefix = Filename.dirname root ^ "/" in
@@ -191,8 +211,12 @@ let search index query =
       else find text 0 token < String.length text) tokens) index.entries
 let json index entries =
   let q = Snippet_page.json in
-  Printf.sprintf {|{"version":1,"root":%s,"savedOnly":true,"issues":[%s],"entries":[%s]}|}
-    (q index.root) (String.concat "," (List.map q index.issues))
+  Printf.sprintf {|{"version":1,"root":%s,"savedOnly":true,"files":[%s],"bibliographies":[%s],"issues":[%s],"entries":[%s]}|}
+    (q index.root)
+    (String.concat "," (List.map (fun (file, fingerprint) -> Printf.sprintf
+      {|{"file":%s,"fingerprint":%s}|} (q file) (q fingerprint)) index.files))
+    (String.concat "," (List.map q index.bibliographies))
+    (String.concat "," (List.map q index.issues))
     (String.concat "," (List.map (fun e -> Printf.sprintf
       {|{"kind":%s,"title":%s,"file":%s,"line":%d,"depth":%d,"context":%s,"fingerprint":%s}|}
       (q e.kind) (q e.title) (q e.file) e.line e.depth (q e.context) (q e.fingerprint)) entries))

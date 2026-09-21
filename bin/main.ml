@@ -274,6 +274,22 @@ let () =
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)
+  | Some ("reference-picker" | "picker-insert" | "picker-check" | "picker-unchanged" as command) ->
+    (try match command, args with
+     | "reference-picker", [source; query] ->
+       print_string (Picker.reference_picker ~binary:(Unix.realpath Sys.executable_name) source query)
+     | "picker-insert", [mode; snapshot; prefix; selected; chosen] ->
+       print_string (Picker.script (Picker.plan ~mode ~text:(Project_index.read snapshot)
+         ~prefix:(Project_index.read prefix) ~selected:(Project_index.read selected) chosen))
+     | "picker-check", [file; fingerprint] ->
+       if Project_index.hash (Project_index.read file) <> fingerprint then
+         raise (Project.Error "A picker source changed. Run the picker again.")
+     | "picker-unchanged", [snapshot; current] ->
+       if Project_index.read snapshot <> Project_index.read current then
+         raise (Project.Error "The document changed while the picker was open. Run the picker again.")
+     | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
+     with Project.Error message | Sys_error message | Failure message ->
+       Printf.eprintf "%s\n" message; exit 2)
   | Some ("outline" | "outline-picker" | "outline-jump" | "outline-check" as command) ->
     (try match command, args with
      | ("outline" | "outline-picker"), ([_] | [_; _]) ->

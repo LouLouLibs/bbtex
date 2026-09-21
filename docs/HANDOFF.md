@@ -1,5 +1,25 @@
 # BBEdit LaTeX handoff — updated 2026-09-21
 
+## Citation/reference pickers — 2026-09-21
+
+Phase 3 implements and installs **LaTeX — Insert Citation** and **LaTeX — Insert
+Reference**, also included in release packages. References reuse the saved project
+index with label type/context; citations search author/title/year/key across
+declared bibliographies using pinned BibtexParser through uv. See
+`docs/citation-reference-pickers.md` for dependencies, scope, and limitations.
+
+Insertion preserves supported command names/options, merges multiple citation
+keys, and guards saved inputs, exact buffer bytes, document identity, and selection.
+Native tests pass for Unicode/UTF-16 offsets, citation and reference insertion,
+single Undo, cancellation, and buffer/selection changes. Metadata tests cover
+malformed-entry recovery, duplicates, strings, inheritance, missing files, bounded
+expansion, and 10,000 entries (about 0.15 seconds). Release package checks pass.
+
+The optional user walkthrough of the two new menus is pending; do not repeat the
+already accepted outline check. Next planned work is Phase 4 structural editing.
+Preserve the user's uncommitted edit in `examples/ui-check/sections/equations.tex`.
+RaTeX remains an experimental placeholder.
+
 ## Project navigation — 2026-09-21
 
 Phase 2 implements **LaTeX — Project Outline**, installed as a development Scripts

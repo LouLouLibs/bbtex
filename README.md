@@ -20,6 +20,11 @@ source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
 - **LaTeX — Cancel Build** stops the current project's compiler and its children.
 - **LaTeX — Preview Selection** renders selected math using the project's preamble
   in a compact BBEdit image window. See [selection preview](docs/selection-preview.md).
+- **LaTeX — Project Outline** searches saved headings, equations, captions, and
+  labels across included files. See [navigation](docs/project-navigation.md).
+- **LaTeX — Insert Citation / Insert Reference** search bibliography metadata or
+  label context and insert keys without changing existing command styles.
+  See [picker details](docs/citation-reference-pickers.md); citation search uses uv.
 - **LaTeX — Clean** (menu only) removes build artifacts (`.aux`, `.log`, `.synctex.gz`,
   etc.), preserving the PDF. **Clean All Build Output** also removes the PDF,
   after confirmation.
