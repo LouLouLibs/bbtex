@@ -77,8 +77,18 @@ Release packages include both commands and their helpers. Citation search requir
 Reference search uses the OCaml binary directly. Errors are logged to
 `~/.local/state/bbtex/picker.log`.
 
+If citation search reports `env: … Snitch.app/Contents/Components:…: No such
+file or directory`, update to commit `75aadf7` or a package built from it or later.
+The launcher previously split inherited PATH entries containing spaces, such as
+`/Applications/Little Snitch.app/Contents/Components`. It now quotes the complete
+PATH assignment; no changes to Little Snitch or your shell configuration are
+needed. Development menu symlinks use the corrected helper immediately; packaged
+installations need an updated package.
+
 `dune runtest` checks edit planning and the shared index.
 `uv run test/integration/check_pickers.py` tests metadata and compiles dialogs.
+It also executes the launcher's shell prefix with a spaced Little Snitch PATH
+entry to catch this regression.
 Set `BBTEX_TEST_NATIVE=1` to exercise multi-citation insertion, reference replacement,
 Undo, cancellation, Unicode ranges, and concurrent buffer/selection changes in
 disposable BBEdit documents. The automated test substitutes dialog choices;

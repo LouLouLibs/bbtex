@@ -15,6 +15,13 @@ single Undo, cancellation, and buffer/selection changes. Metadata tests cover
 malformed-entry recovery, duplicates, strings, inheritance, missing files, bounded
 expansion, and 10,000 entries (about 0.15 seconds). Release package checks pass.
 
+The user walkthrough exposed an unquoted inherited PATH in the citation launcher:
+Little Snitch's spaced application path caused `env: … No such file or directory`.
+Fix `75aadf7` quotes the full PATH assignment and adds a regression executing the
+actual launcher shell prefix with that spaced path. Metadata tests and AppleScript
+compilation pass. Installed development symlinks already use the fix; packaged
+users need a rebuilt package. Post-fix menu acceptance is not yet confirmed.
+
 The optional user walkthrough of the two new menus is pending; do not repeat the
 already accepted outline check. Next planned work is Phase 4 structural editing.
 Preserve the user's uncommitted edit in `examples/ui-check/sections/equations.tex`.

@@ -13,6 +13,8 @@ context and insert keys into the current command. Citation multi-selection,
 existing options/keys, Undo, cancellation, and changed-buffer checks are supported.
 Citation search uses uv with pinned BibtexParser; reference search uses the shared
 OCaml index. Both use saved project definitions and reject ambiguous duplicate keys.
+Citation launching now preserves PATH entries containing spaces, fixing an
+`env: … No such file or directory` error with paths such as Little Snitch's.
 
 - Optional preview on save follows the complete display equation at the cursor.
 - Saving a known macro/preamble input refreshes the tracked equation, including
