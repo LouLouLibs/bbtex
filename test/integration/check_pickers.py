@@ -7,6 +7,7 @@
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -21,6 +22,19 @@ RESOURCES = Path(os.environ.get('BBTEX_TEST_RESOURCES', ROOT / 'scripts'))
 spec = importlib.util.spec_from_file_location('citations', RESOURCES / 'citation-picker.py')
 citations = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(citations)
+
+# Exercise the actual AppleScript shell prefix, including inherited PATH entries
+# with spaces. The native insertion tests stub out the interactive picker launch.
+helper_source = (RESOURCES / 'insert-picker.applescript').read_text()
+launch_literal = re.search(r'set pickerText to do shell script ("(?:\\.|[^"\\])*")', helper_source)
+launch = json.loads(launch_literal.group(1))
+inherited_path = '/Applications/Little Snitch.app/Contents/Components:/usr/bin:/bin'
+shell_prefix = launch.split(' uv run ', 1)[0]
+path_result = subprocess.check_output(
+    ['/bin/sh', '-c', shell_prefix + ' /usr/bin/printenv PATH'],
+    env=dict(os.environ, PATH=inherited_path, VIRTUAL_ENV='/tmp/unused environment'), text=True)
+assert path_result.strip() == '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:' + inherited_path
+print('Citation launcher preserves inherited PATH entries containing spaces')
 
 def run(*args):
     return subprocess.check_output([str(BINARY), *map(str, args)], text=True)

@@ -44,7 +44,7 @@ on run argv
         my writeUTF8(selectedText, temporaryDirectory & "/selected")
         set queryText to text returned of answer
         if modeName is "cite" then
-            set pickerText to do shell script "env -u VIRTUAL_ENV PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH uv run " & quoted form of citationHelper & " " & quoted form of binaryPath & " " & quoted form of sourcePath & " " & quoted form of queryText
+            set pickerText to do shell script "env -u VIRTUAL_ENV PATH=\"/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH\" uv run " & quoted form of citationHelper & " " & quoted form of binaryPath & " " & quoted form of sourcePath & " " & quoted form of queryText
         else
             set pickerText to do shell script quoted form of binaryPath & " reference-picker " & quoted form of sourcePath & " " & quoted form of queryText
         end if
