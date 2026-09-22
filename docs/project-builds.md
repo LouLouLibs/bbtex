@@ -71,6 +71,10 @@ options = --reruns=1
 `root` is relative to the configuration file. `output_directory` is relative to
 the final root `.tex` file; omit it to write beside the root file. All profiles
 share this output directory so results, cleanup, and forward search agree.
+For nested `\include{chapters/...}` files, bbtex recovers missing auxiliary
+subdirectories inside that output directory and retries latexmk. Recovery is
+limited to 16 attempts and does not follow symlink parents or paths escaping
+the output tree. Other write errors remain build failures.
 
 Optionally add `default_profile = Draft` above the profile sections to use that
 profile for ordinary ⌘K builds. Profile names are case-sensitive. Profiles can

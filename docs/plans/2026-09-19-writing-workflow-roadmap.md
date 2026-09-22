@@ -1,7 +1,7 @@
 # BBEdit LaTeX writing-workflow roadmap
 
 Status: Phases 1 and 2 complete; Phase 3 implemented and locally tested;
-Phase 4 structural editing implemented and locally tested,
+Phase 4 structural editing implemented and locally tested; Phase 5 first tier implemented,
 updated 2026-09-22.
 
 Completed in the first implementation slice: rendering/current/stale/error/busy
@@ -191,6 +191,14 @@ selections, and incomplete input. Native checks verify Undo and cursor placement
 Deliverable: hardened editing helpers and a small, documented command set.
 
 ## Phase 5 — Broader regression coverage (original priority 5)
+
+First tier: original article/book/Beamer fixtures and a generated 40-file case run
+through real pdfLaTeX, BibTeX/Biber and Poppler. Checks cover PDF content/geometry,
+source/output isolation, bibliography convergence, SyncTeX, outline data, preview
+cache invalidation, included-file diagnostic lines, and actual TeX cancellation.
+A separate Ubuntu workflow retains logs and timing/version evidence. The first
+passing local run took 14.6 seconds; broader engine tiers remain pending. See
+`docs/real-engine-regressions.md` for limitations and the local Biber workaround.
 
 **Outcome:** confidence extends beyond the development machine and simple paper.
 

@@ -1,5 +1,27 @@
 # BBEdit LaTeX handoff — updated 2026-09-22
 
+## Real-engine corpus and CI, first tier — 2026-09-22
+
+Phase 5 adds original article/book/Beamer fixtures plus a generated 40-file case,
+isolated from the user-edited sample. The runner checks real bibliography
+convergence, PDF content/geometry, output isolation, SyncTeX inputs, outline data,
+preview cache invalidation, diagnostic line mapping, and cancellation/recovery.
+Local full run: 14.6 seconds, with retained logs and version/timing JSON under
+`dist/real-engines`. See `docs/real-engine-regressions.md` for scope and commands.
+
+The corpus exposed missing nested include auxiliary directories with isolated
+output and file-line diagnostics. Compiler recovery now creates only safe relative
+`.aux` parents inside the output tree and retries latexmk, bounded to 16 attempts.
+Containment and symlink rejection have unit coverage. The local universal Biber
+launcher failed independently; the passing run used a temporary arm64 extraction
+of Biber 2.20. Installed TeX tools were not replaced; record this for doctor work.
+
+The new Ubuntu real-engine workflow uses explicit packages, path-filtered pushes/
+PRs, version tags, and manual dispatch; evidence uploads even on failures. It is
+separate from macOS packaging and does not gate draft creation automatically.
+Phase 5 remains in progress: broader engines and native release walkthroughs
+remain. RaTeX is still an experimental placeholder.
+
 ## Structural wrapping and placeholders — 2026-09-22
 
 Phase 4 adds **LaTeX Editing → Wrap in Environment** for complete-line selections

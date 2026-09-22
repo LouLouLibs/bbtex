@@ -177,9 +177,32 @@ let test_engine_precedence () =
 
 (* ── Runner ────────────────────────────────────────────────── *)
 
+let test_aux_directory_recovery () =
+  let folder = Filename.temp_file "bbtex-aux-" "" in
+  Sys.remove folder; Unix.mkdir folder 0o700;
+  let log = Filename.concat folder "main.log" in
+  let write text = let channel = open_out log in output_string channel text; close_out channel in
+  let recover () = Compiler.prepare_aux_directories ~output_directory:folder ~log_file:log in
+  Fun.protect ~finally:(fun () ->
+    Sys.remove log;
+    Unix.unlink (Filename.concat folder "link");
+    Unix.rmdir (Filename.concat folder "chapters/deep");
+    Unix.rmdir (Filename.concat folder "chapters");
+    Unix.rmdir folder) (fun () ->
+    write "./main.tex:10: I can't write on file `chapters/deep/intro.aux'.\n";
+    assert_true ~msg:"creates reported nested aux parents" (recover ());
+    assert_true ~msg:"existing parents do not request another retry" (not (recover ()));
+    Unix.symlink (Filename.dirname folder) (Filename.concat folder "link");
+    List.iter (fun path ->
+      write ("! I can't write on file `" ^ path ^ "'.\n");
+      assert_true ~msg:("reject unsafe/non-aux path: " ^ path) (not (recover ())))
+      ["../escape/intro.aux"; "/tmp/escape/intro.aux"; "link/escape/intro.aux";
+       "chapters/other/output.pdf"])
+
 let () =
   Printf.printf "Compiler tests:\n";
   run_test "engine precedence" test_engine_precedence;
+  run_test "missing auxiliary directories and containment" test_aux_directory_recovery;
   run_test "resolve_compilation: engine is pdflatex" test_resolve_sample_engine;
   run_test "resolve_compilation: root_file ends with sample.tex" test_resolve_sample_root_file;
   run_test "resolve_compilation: log_file ends with sample.log" test_resolve_sample_log_file;

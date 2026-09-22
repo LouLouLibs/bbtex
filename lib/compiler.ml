@@ -83,6 +83,46 @@ let settings_for path =
   let config = resolve_compilation path in
   Project.load config.project_dir
 
+(* Some latexmk versions only recognize this TeX error without file-line-error.
+   Recover only missing relative .aux parents, strictly inside the output tree. *)
+let prepare_aux_directories ~output_directory ~log_file =
+  let created = ref false in
+  let prepare line =
+    let marker = "I can't write on file `" in
+    let rec find i =
+      if i + String.length marker > String.length line then None
+      else if String.sub line i (String.length marker) = marker then Some (i + String.length marker)
+      else find (i + 1) in
+    match find 0 with
+    | None -> ()
+    | Some first ->
+      (match String.index_from_opt line first '\'' with
+       | None -> ()
+       | Some last ->
+         let path = String.sub line first (last-first) in
+         let parts = String.split_on_char '/' path in
+         if Filename.is_relative path && String.ends_with ~suffix:".aux" path &&
+            not (List.exists (fun p -> p = ".." || p = "") parts) then begin
+           let parents = List.rev (List.tl (List.rev parts)) |> List.filter ((<>) ".") in
+           let rec make parent = function
+             | [] -> ()
+             | part :: rest ->
+               let dir = Filename.concat parent part in
+               let exists = try Some (Unix.lstat dir).Unix.st_kind
+                 with Unix.Unix_error (Unix.ENOENT, _, _) -> None in
+               (match exists with
+                | Some Unix.S_DIR -> make dir rest
+                | Some _ -> () (* Do not follow symlinks or overwrite files. *)
+                | None -> Unix.mkdir dir 0o700; created := true; make dir rest)
+           in make output_directory parents
+         end)
+  in
+  (try
+     if (Unix.stat log_file).Unix.st_size <= 8 * 1024 * 1024 then
+       Preview_cache.read log_file |> String.split_on_char '\n' |> List.iter prepare
+   with Sys_error _ | Unix.Unix_error _ -> ());
+  !created
+
 let run_compilation job config =
   Build_job.mkdir config.output_directory;
   let command, args = match config.engine with
@@ -91,8 +131,13 @@ let run_compilation job config =
     | engine -> "latexmk", [Types.latexmk_flag engine; "-interaction=nonstopmode";
         "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory]
   in
-  Build_job.run job ~cwd:(Filename.dirname config.root_file) command
-    (args @ config.options @ [config.root_file])
+  let rec run remaining retry =
+    let code = Build_job.run job ~cwd:(Filename.dirname config.root_file) command
+      (args @ (if retry then ["-g"] else []) @ config.options @ [config.root_file]) in
+    if code <> 0 && command = "latexmk" && remaining > 0 &&
+       prepare_aux_directories ~output_directory:config.output_directory ~log_file:config.log_file
+    then run (remaining-1) true else code
+  in run 16 false
 
 (* ── make_summary ────────────────────────────────────────────── *)
 

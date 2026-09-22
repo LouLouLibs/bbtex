@@ -13,9 +13,12 @@ package binary must link only system libraries. Tool versions and the source
 commit are recorded beside the ZIP, along with SHA-256 checksums. Actions are
 pinned to commit IDs; Homebrew tools use the runner's available formula versions.
 
-No TeX distribution or interactive editor session is needed for CI. Real TeX
-rendering, Skim, save attachments, and native focus/selection checks remain
-local integration tests; passing CI does not replace those checks. The current
+The package workflow needs no TeX distribution or interactive editor session.
+The separate **Real TeX engines** workflow runs the article/book/Beamer corpus
+with pdfLaTeX, BibTeX, Biber, and Poppler on Ubuntu. It retains diagnostic artifacts
+on failure; see [real-engine coverage](real-engine-regressions.md).
+Skim, save attachments, and native focus/selection checks remain local integration
+tests; passing CI does not replace those checks. The current
 packages are built and tested on macOS 15; older macOS versions are unverified.
 
 ## Download a build
@@ -29,7 +32,8 @@ installation is described in [selection preview](selection-preview.md#release-in
 ## Prepare a release
 
 1. Update [release notes](release-notes.md), complete local native checks, and
-   commit/push the intended changes to `main`. Wait for CI to pass.
+   commit/push the intended changes to `main`. Wait for both package and real-engine
+   checks to pass for that commit (manually dispatch the latter if path filters skipped it).
 2. Choose the next version, then create and push an annotated tag, for example:
 
    ```sh
@@ -39,7 +43,8 @@ installation is described in [selection preview](selection-preview.md#release-in
 
 3. The tag workflow rebuilds both architectures. Only after both pass does it
    create a **draft** GitHub release containing both package ZIPs, checksums,
-   and build information. Inspect the draft and publish it manually when ready.
+   and build information. The separate real-engine workflow is not a dependency
+   of draft creation; verify its result too before publishing manually.
 
 A normal push or manual workflow run produces artifacts only. The workflow
 does not choose a version, create a tag, or publish a release. Rerunning a tag

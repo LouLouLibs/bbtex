@@ -23,6 +23,9 @@ Citation launching now preserves PATH entries containing spaces, fixing an
 - Wrap in Environment preserves selected lines and indentation, or inserts a paired
   environment on a blank line. New hyperlink/image clippings provide native argument
   placeholders. Cancelled or invalid environment clippings preserve selected text.
+- Builds recover missing nested include auxiliary directories inside isolated
+  output folders. A new real pdfLaTeX/BibTeX/Biber CI corpus covers article, book,
+  Beamer, previews, diagnostic mapping, and cancellation.
 - Saving a known macro/preamble input refreshes the tracked equation, including
   background document saves, while preserving editor focus. Changed source
   locations require a fresh equation save. Recorder-less engines have limited

@@ -278,3 +278,5 @@ GitHub Actions builds tested packages for Apple Silicon and Intel Macs. Successf
 runs provide ZIP artifacts and checksums. Pushing a version tag creates a draft
 release after both architectures pass; publishing is manual. See
 [CI and release instructions](docs/releases.md).
+An additional [real-engine corpus](docs/real-engine-regressions.md) checks
+pdfLaTeX/BibTeX/Biber rendering, previews, diagnostics, and cancellation in CI.
