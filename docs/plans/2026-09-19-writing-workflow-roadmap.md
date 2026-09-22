@@ -199,8 +199,10 @@ cache invalidation, included-file diagnostic lines, and actual TeX cancellation.
 A separate Ubuntu workflow retains logs and timing/version evidence. The first
 passing local run took 14.6 seconds. The corpus now accepts XeLaTeX and LuaLaTeX,
 with explicit engine settings for every generated case and an extra fontspec/
-Unicode fixture. CI runs all three TeX Live engines independently. Tectonic's
-binary/bundle provisioning and engine-specific checks remain pending. See
+Unicode fixture. CI runs all three TeX Live engines independently. A fourth job
+provisions Tectonic 0.17.0 and a dated bundle, checking BibTeX, Beamer, Unicode,
+cached-resource rebuilds and fresh preview rendering. Tectonic Biber compatibility,
+cancellation and large-project parity remain open. See
 `docs/real-engine-regressions.md` for limitations and the local Biber workaround.
 
 **Outcome:** confidence extends beyond the development machine and simple paper.

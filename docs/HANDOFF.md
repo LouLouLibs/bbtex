@@ -16,6 +16,12 @@ See `docs/real-engine-regressions.md`. Next: doctor/setup diagnostics, including
 both Biber launch failure and version mismatch; remaining Tectonic parity work
 stays explicit. Preserve user sample edits; RaTeX stays experimental.
 
+Commit `c601917` passed all four engine jobs:
+https://github.com/LouLouLibs/bbtex/actions/runs/35779917765
+and both macOS package jobs:
+https://github.com/LouLouLibs/bbtex/actions/runs/35779917520 .
+The explicit dated-bundle local run passed in 7.3 seconds.
+
 ## XeLaTeX/LuaLaTeX regression tier — 2026-09-22
 
 The corpus now accepts `--engine pdflatex|xelatex|lualatex`, sets the selected
