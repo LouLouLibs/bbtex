@@ -10,6 +10,7 @@ on:
       - 'bin/**'
       - 'test/corpus/**'
       - 'test/integration/check_real_engines.py'
+      - 'test/integration/check_tectonic.py'
       - '.github/workflows/real-engines.yml'
   pull_request:
     paths:
@@ -17,6 +18,7 @@ on:
       - 'bin/**'
       - 'test/corpus/**'
       - 'test/integration/check_real_engines.py'
+      - 'test/integration/check_tectonic.py'
       - '.github/workflows/real-engines.yml'
 
 permissions:
@@ -56,6 +58,39 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: real-engines-${{ matrix.engine }}
+          path: dist/real-engines/
+          if-no-files-found: warn
+          retention-days: 14
+
+  tectonic:
+    name: Tectonic / BibTeX / cached resources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      UV_PYTHON: '3.13'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Tectonic and rendering tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ocaml-nox ocaml-dune pipx poppler-utils
+          pipx install uv==0.11.2
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          curl --fail --location --retry 3 -o "$RUNNER_TEMP/tectonic.tar.gz" https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.17.0/tectonic-0.17.0-x86_64-unknown-linux-musl.tar.gz
+          echo "8533d07f9ccbd7a65824b9e0459041bca34af1eb33daba48f59215593753a3b7  $RUNNER_TEMP/tectonic.tar.gz" | sha256sum --check
+          mkdir -p "$HOME/.local/bin"
+          tar -xzf "$RUNNER_TEMP/tectonic.tar.gz" -C "$HOME/.local/bin" tectonic
+      - name: Build and test online then cached rendering
+        run: |
+          dune build
+          uv run test/integration/check_tectonic.py --bundle https://data1.fullyjustified.net/tlextras-2022.0r0.tar
+      - name: Upload rendering evidence and failure logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: real-engines-tectonic
           path: dist/real-engines/
           if-no-files-found: warn
           retention-days: 14

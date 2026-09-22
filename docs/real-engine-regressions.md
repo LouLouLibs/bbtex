@@ -56,12 +56,21 @@ existing two-architecture macOS package workflow stays separate and fast. Draft
 release creation currently waits for those package jobs; verify this real-engine
 workflow for the same commit before publishing a release.
 
-Tectonic remains outside this CI corpus. Its follow-up needs explicit binary and
-bundle provisioning and engine-specific checks: the current preview implementation
-deliberately does not cache Tectonic results because it has no recorder manifest.
-The installed Tectonic CLI offers `--bundle` and `--only-cached`; validate download
-and offline behavior, bibliography handling, and retained outputs before adding
-that tier. The existing local four-engine preview test remains available. Native BBEdit/Skim,
+An additional Tectonic job runs `uv run test/integration/check_tectonic.py --bundle
+https://data1.fullyjustified.net/tlextras-2022.0r0.tar`. It downloads the official
+0.17.0 Linux musl binary and verifies its release SHA-256. The dated bundle is
+selected explicitly; resources are downloaded on demand on the fresh CI runner,
+then each fixture is rebuilt with `--only-cached`. This checks Tectonic's cached
+resource mode, not a network firewall. The bundle server remains a dependency;
+the archive itself is not vendored or independently checksum-pinned here.
+
+This narrower tier covers the BibTeX article, Beamer and Unicode/fontspec, PDF
+text/geometry, article SyncTeX, source/output isolation, and preview macro updates.
+Tectonic intentionally renders previews afresh (no recorder manifest), and the
+test asserts cache misses. It does not require `.bbl` persistence: Tectonic removes
+intermediates by default; the bibliography is checked in the rendered PDF.
+Reports explicitly list omitted Biber-book, cancellation and large-project cases.
+The existing local four-engine preview test remains available. Native BBEdit/Skim,
 focus/selection, save attachments, and editing acceptance remain local checks;
 Linux rendering success does not establish native macOS behavior.
 
@@ -79,3 +88,9 @@ extraction before processing any bibliography. The local passing run used a
 temporary arm64 extraction of the same Biber 2.20 executable, without replacing
 the installed TeX tools. The Ubuntu job uses its native packaged Biber. This is a
 local tool-launch issue to include in the planned doctor/troubleshooting work.
+
+Tectonic's local book probe exposed a second, distinct Biber problem: the current
+cached bundle supplies biblatex 3.17 / control-file version 3.8, while the working
+temporary Biber 2.20 expects version 3.11. Tectonic does launch Biber automatically,
+but that pair fails. Biber-book coverage needs a compatible pinned tool/bundle pair;
+it is not claimed by the Tectonic job. No installed TeX tools were changed.

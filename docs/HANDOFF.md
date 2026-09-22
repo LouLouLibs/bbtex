@@ -1,5 +1,21 @@
 # BBEdit LaTeX handoff — updated 2026-09-22
 
+## Tectonic rendering tier — 2026-09-22
+
+`test/integration/check_tectonic.py` covers article/BibTeX, Beamer, Unicode/fontspec,
+cached-resource rebuilds, SyncTeX, output isolation and preview macro updates.
+The first local run passed in 10.6 seconds. CI adds a separate Tectonic 0.17.0
+job with a checksum-verified musl binary and explicit tlextras-2022.0r0 bundle.
+Reports explicitly exclude Biber-book, cancellation and 40-file coverage.
+Preview checks require fresh rendering, matching the existing no-cache contract.
+
+The book probe found a separate compatibility issue after using the temporary
+working Biber: bundle biblatex 3.17 produces control version 3.8, but Biber 2.20
+expects 3.11. Tectonic does invoke Biber; the tool/bundle versions must match.
+See `docs/real-engine-regressions.md`. Next: doctor/setup diagnostics, including
+both Biber launch failure and version mismatch; remaining Tectonic parity work
+stays explicit. Preserve user sample edits; RaTeX stays experimental.
+
 ## XeLaTeX/LuaLaTeX regression tier — 2026-09-22
 
 The corpus now accepts `--engine pdflatex|xelatex|lualatex`, sets the selected
