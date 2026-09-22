@@ -1,4 +1,27 @@
-# BBEdit LaTeX handoff — updated 2026-09-21
+# BBEdit LaTeX handoff — updated 2026-09-22
+
+## Structural wrapping and placeholders — 2026-09-22
+
+Phase 4 adds **LaTeX Editing → Wrap in Environment** for complete-line selections
+and empty insertion on blank lines. It preserves body indentation and selects the
+wrapped body, or places an empty cursor one tab into the inserted body. The shared
+snapshot guard and single-edit application now serve rename and wrapping.
+
+The clippings/TexLab audit found existing argument templates but name-only local
+TexLab completions for frac/equation. New hyperlink/image clippings use native
+placeholders; the custom environment clipping validates names and stale snapshots.
+Native cancellation tests discovered that returning an empty clipping result can
+erase selected text. Insert/Close Environment now abort with cancellation instead;
+BBEdit's scripting caller may report -1701 for the absent clipping result.
+
+Unit tests cover wrapping boundaries, indentation, Unicode and line endings.
+Native tests cover body/cursor placement, Undo, placeholder expansion/selection,
+stale buffers, cancellation and invalid input with selected text. Actual dialog
+answers are substituted in the deterministic tests. See the editing guide for
+scope. Next roadmap phase: broader regression coverage; no RaTeX adoption work.
+Release-package and installed-copy checks pass. The development package was
+updated without restarting BBEdit; its full backup is under
+`~/Library/Application Support/BBEdit/Backups/bbtex-wrapping-L77928`.
 
 ## Structural editing, first slice — 2026-09-21
 

@@ -68,6 +68,7 @@ Scripts > LaTeX Editing contains:
 
 - Change Environment
 - Toggle Starred Environment
+- Wrap in Environment
 - Declare Math Operator
 - Package Documentation
 
@@ -89,11 +90,37 @@ rejected. Names may contain letters, digits, `*`, `@`, and hyphens. Buffers are
 limited to 4 MiB; TeX macro expansion, custom literal syntax, and conditionals
 are outside this bounded scanner's scope.
 
+**Wrap in Environment** wraps selected complete lines, preserving their existing
+indentation and leaving the body selected. A selection may start after leading
+whitespace and end before the last line ending; the helper includes that line's
+indentation and trailing whitespace. It rejects partial prose lines and selections
+that cross environment boundaries. On a blank line, an empty selection inserts
+a paired environment and places the cursor in its body, one tab beyond the line's
+indentation. LF, CRLF, and CR line endings are retained by the planner (BBEdit
+normalizes its scripting text). Wrapping is one Undo and uses the same buffer and
+selection guards as renaming.
+
 The Close Environment clipping uses the same scanner on text before the cursor
 and proposes the innermost still-open name; it does not inspect future closing
-tags. Failed matching inserts nothing and explains why. Insert Environment's
-clipping placeholders remain available; wrapping and insertion improvements are
-the next structural-editing slice.
+tags. Failed matching aborts insertion and explains why. The custom begin/end
+clipping validates the environment name and the same whole-line/context boundaries,
+then rechecks the buffer/selection after its dialog. It retains its original
+indented body template; use Wrap in Environment to keep body indentation exactly.
+Cancellation and invalid input preserve selected text: scripted
+clippings abort instead of returning an empty replacement.
+
+The existing fraction, matrix, minipage, and command clippings remain the route
+for argument placeholders. A local TexLab audit with snippet support enabled
+returned name completions for `\frac` and `\begin{equation}`, without argument
+placeholders. Two missing templates are now under **links and images**:
+
+- **hyperlink (hyperref)** wraps selected text in `\href` and selects the URL
+  placeholder; the document must load `hyperref`.
+- **image (graphicx)** inserts `\includegraphics` with width and filename
+  placeholders, selecting width first; the document must load `graphicx`.
+
+These use BBEdit's native clipping placeholders and each insertion is one Undo.
+They do not add package declarations or alter TexLab's completion shortcut.
 
 ## Rollback
 
@@ -130,3 +157,9 @@ After `dune build` and building support, verify environment edits with:
 This checks nested toggling, Unicode cursor positions, renaming, single Undo,
 and rejection of changed buffers/selections. `dune runtest` covers scanner edge
 cases. Release checks run the native test when `BBTEX_TEST_NATIVE=1` is set.
+
+`check_wrapping.applescript` takes the package Resources and `Clippings/Latex.tex`
+paths and verifies wrapping, empty insertion, selected bodies, native placeholders,
+and Undo. `uv run test/integration/check_structure_dialogs.py` tests the actual
+menu/clipping scripts with deterministic dialog answers, including cancellation
+and invalid input over selected text. Both are included in native release checks.

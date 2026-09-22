@@ -274,7 +274,7 @@ let () =
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)
-  | Some ("environment-find" | "environment-change" as command) ->
+  | Some ("environment-find" | "environment-change" | "environment-wrap" as command) ->
     (try match command, args with
      | "environment-find", [snapshot; cursor; ending] ->
        print_endline (Structure.describe ~text:(Project_index.read snapshot)
@@ -282,6 +282,9 @@ let () =
      | "environment-change", [snapshot; cursor; name] ->
        print_endline (Structure.change ~text:(Project_index.read snapshot)
          ~cursor:(int_of_string cursor) name)
+     | "environment-wrap", [snapshot; cursor; length; name] ->
+       print_endline (Structure.wrap_script (Structure.wrap ~text:(Project_index.read snapshot)
+         ~cursor:(int_of_string cursor) ~length:(int_of_string length) name))
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)

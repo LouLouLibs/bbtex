@@ -68,7 +68,8 @@ def main():
         try:
             send({"id": 1, "method": "initialize", "params": {
                 "processId": None, "rootUri": root.as_uri(),
-                "capabilities": {"workspace": {"configuration": True}},
+                "capabilities": {"workspace": {"configuration": True},
+                    "textDocument": {"completion": {"completionItem": {"snippetSupport": True}}}},
                 "workspaceFolders": [{"uri": root.as_uri(), "name": "bbtex-test"}]}})
             capabilities = response(1)["capabilities"]
             assert capabilities.get("completionProvider"), "No completion capability"
@@ -104,8 +105,22 @@ def main():
             symbols = response(6)
             assert symbols, "No workspace symbols"
             print("Workspace symbols:", json.dumps(symbols))
-            send({"id": 7, "method": "shutdown"})
-            response(7)
+            snippets = root / "snippets.tex"
+            snippet_text = "\\documentclass{article}\n\\begin{document}\n\\fra\n\\begin{equ\n\\end{document}\n"
+            snippets.write_text(snippet_text)
+            send({"method": "textDocument/didOpen", "params": {"textDocument": {
+                "uri": snippets.as_uri(), "languageId": "latex", "version": 1, "text": snippet_text}}})
+            for identifier, line, expected in [(7, 2, "frac"), (8, 3, "equation")]:
+                send({"id": identifier, "method": "textDocument/completion", "params": {
+                    "textDocument": {"uri": snippets.as_uri()},
+                    "position": {"line": line, "character": len(snippet_text.splitlines()[line])}}})
+                result = response(identifier)
+                items = result.get("items", []) if isinstance(result, dict) else result or []
+                matching = [item for item in items if expected in item.get("label", "")]
+                assert matching, (expected, items)
+                print("Command/environment completion:", json.dumps(matching[:2]))
+            send({"id": 9, "method": "shutdown"})
+            response(9)
             send({"method": "exit"})
             process.wait(timeout=5)
         finally:

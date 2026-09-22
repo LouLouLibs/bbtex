@@ -36,3 +36,9 @@ environment tags in the unsaved buffer. Matching skips comments, common verbatim
 regions, and common macro definitions; malformed nesting is rejected. Rename and
 toggle use one undoable edit and preserve the cursor. They do not expand TeX
 macros or evaluate conditionals. See `docs/bbedit-editing.md` in the repository.
+
+Wrap in Environment preserves complete selected lines and their indentation, or
+inserts an empty environment on a blank line. Scripted environment clippings
+validate names and abort safely on cancellation/invalid input. The links and
+images clipping folder adds native URL, width, and filename placeholders; these
+require hyperref or graphicx in the document, respectively.

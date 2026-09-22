@@ -15,11 +15,13 @@ on run
 	on error eStr number eNum partial result rList from badObj to exptectedType
 		if eNum = 5033 then
 			display dialog eStr buttons {"OK"} with title "Error" default button 1
-			return ""
+			error number -128
 		else if eNum = 5088 then
-			return "\\end{#SELSTART#???#SELEND#}"
+			error number -128
 		else if eNum is not -128 then
 			error eStr number eNum partial result rList from badObj to exptectedType
+		else
+			error number -128
 		end if
 	end try
 end run

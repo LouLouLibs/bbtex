@@ -30,7 +30,7 @@ on helperCommand(commandName, originalValue, extraArguments)
     end try
 end helperCommand
 
-on balance_environment given ending:endBool
+on capture_document()
     if binaryPath is "" then error "The environment helper requires its package's Resources/bbtex executable." number 5033
     tell application "BBEdit"
         set doc to front text document
@@ -39,6 +39,11 @@ on balance_environment given ending:endBool
         set originalOffset to characterOffset of selection of window of doc
         set originalLength to length of selection of window of doc
     end tell
+    return doc
+end capture_document
+
+on balance_environment given ending:endBool
+    set doc to my capture_document()
     if originalLength is not 0 then error "Place the cursor inside the environment without selecting text." number 5033
     set endingText to "false"
     if endBool then set endingText to "true"
@@ -53,6 +58,19 @@ on change_environment(begin_loc, end_loc, doc, cursor_loc, new_env, old_env)
     end considering
     set resultText to my helperCommand("environment-change", originalText, (originalOffset as text) & " " & quoted form of new_env)
     set patch to run script resultText
+    my apply_patch(patch)
+end change_environment
+
+on plan_wrap(new_env)
+    set resultText to my helperCommand("environment-wrap", originalText, (originalOffset as text) & " " & (originalLength as text) & " " & quoted form of new_env)
+    return run script resultText
+end plan_wrap
+
+on wrap_environment(new_env)
+    my apply_patch(my plan_wrap(new_env))
+end wrap_environment
+
+on validate_snapshot()
     tell application "BBEdit"
         if ID of front text document is not originalID then error "The active document changed. Run the command again." number 5033
         set doc to text document id originalID
@@ -74,9 +92,25 @@ on change_environment(begin_loc, end_loc, doc, cursor_loc, new_env, old_env)
         end considering
         if ID of front text document is not originalID then error "The active document changed. Run the command again." number 5033
         if characterOffset of selection of window of doc is not originalOffset or length of selection of window of doc is not originalLength then error "The selection moved. Run the command again." number 5033
-        if originalLength is not 0 then error "Place the cursor inside the environment without selecting text." number 5033
-        select characters (item 1 of patch) thru ((item 1 of patch) + (item 2 of patch) - 1) of doc
-        set contents of selection of window of doc to item 3 of patch
-        select insertion point before character (item 4 of patch) of doc
     end tell
-end change_environment
+    return doc
+end validate_snapshot
+
+on apply_patch(patch)
+    set doc to my validate_snapshot()
+    tell application "BBEdit"
+        if item 2 of patch is 0 then
+            select insertion point before character (item 1 of patch) of doc
+        else
+            select characters (item 1 of patch) thru ((item 1 of patch) + (item 2 of patch) - 1) of doc
+        end if
+        set contents of selection of window of doc to item 3 of patch
+        set selectedCount to 0
+        if (count patch) > 4 then set selectedCount to item 5 of patch
+        if selectedCount is 0 then
+            select insertion point before character (item 4 of patch) of doc
+        else
+            select characters (item 4 of patch) thru ((item 4 of patch) + selectedCount - 1) of doc
+        end if
+    end tell
+end apply_patch

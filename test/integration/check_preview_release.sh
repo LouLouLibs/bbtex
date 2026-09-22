@@ -18,6 +18,8 @@ BBTEX_TEST_BINARY="$PKG/Contents/Resources/bbtex" uv run test/integration/check_
 BBTEX_TEST_BINARY="$PKG/Contents/Resources/bbtex" BBTEX_TEST_RESOURCES="$PKG/Contents/Resources" uv run test/integration/check_pickers.py
 if [[ "${BBTEX_TEST_NATIVE:-0}" == 1 ]]; then
     osascript test/integration/check_editing.applescript "$PKG/Contents/Scripts/LaTeX Editing/Toggle Starred Environment.scpt" "$PKG/Contents/Resources"
+    osascript test/integration/check_wrapping.applescript "$PKG/Contents/Resources" "$PKG/Contents/Clippings/Latex.tex"
+    BBTEX_TEST_RESOURCES="$PKG/Contents/Resources" uv run test/integration/check_structure_dialogs.py
     BBTEX_TEST_PREVIEW_WRAPPER="$PKG/Contents/Scripts/LaTeX — Preview Selection.sh" uv run test/integration/check_live_preview.py
     uv run scripts/install-preview-service.py
     BBTEX_TEST_PREVIEW_SERVICE="$PWD/dist/LaTeX — Preview Selection.workflow" uv run test/integration/check_live_preview.py

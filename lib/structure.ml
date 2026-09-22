@@ -95,3 +95,51 @@ let change ~text ~cursor name =
     else pos) (cursor - 1) [a;b] in
   Printf.sprintf "{%d, %d, %s, %d}" (units text a.first + 1)
     (units text b.last - units text a.first) (Outline.quote replacement) (mapped + 1)
+
+(* Whole-line wrapping preserves the body's existing indentation byte for byte. *)
+type wrap_edit = { start : int; count : int; replacement : string;
+                   selection_start : int; selection_count : int }
+let wrap ~text ~cursor ~length name =
+  if not (valid_name name) then fail "Use a literal environment name (letters, digits, *, @ or hyphen).";
+  if length < 0 then fail "Invalid selection length.";
+  let at = byte_offset text (cursor - 1) in
+  let stop = byte_offset text (cursor - 1 + length) in
+  let linebreak = function '\n' | '\r' -> true | _ -> false in
+  let indent_char = function ' ' | '\t' -> true | _ -> false in
+  let left = ref at in
+  while !left > 0 && not (linebreak text.[!left-1]) do decr left done;
+  let before = String.sub text !left (at - !left) in
+  if not (String.for_all indent_char before) then fail "Select complete lines, or place the cursor on an empty line.";
+  let right = ref stop in
+  while !right < String.length text && not (linebreak text.[!right]) do incr right done;
+  let ends_at_line_start = stop > at && linebreak text.[stop-1] in
+  if not ends_at_line_start && not (String.for_all indent_char (String.sub text stop (!right-stop))) then
+    fail "Select through the end of the last line.";
+  let last = if ends_at_line_start then stop else !right in
+  if at > 0 && at < String.length text && text.[at-1] = '\r' && text.[at] = '\n' ||
+     stop > 0 && stop < String.length text && text.[stop-1] = '\r' && text.[stop] = '\n' then
+    fail "The selection splits a CRLF line ending.";
+  let newline = if String.contains text '\n' then
+      (if String.contains text '\r' then "\r\n" else "\n")
+    else if String.contains text '\r' then "\r" else "\n" in
+  let body = String.sub text !left (last - !left) in
+  let indent =
+    let n = ref 0 in while !n < String.length body && indent_char body.[!n] do incr n done;
+    String.sub body 0 !n in
+  let body, body_cursor = if length = 0 then indent ^ "\t", String.length indent + 1 else body, 0 in
+  let trailing = body <> "" && linebreak body.[String.length body-1] in
+  let prefix = String.sub text 0 !left and suffix = String.sub text last (String.length text-last) in
+  let probe_open = "\\begin{bbtexWrapProbe}\n" in
+  let probe = prefix ^ probe_open ^ body ^ "\n\\end{bbtexWrapProbe}" ^ suffix in
+  let a,b = locate ~text:probe ~cursor:(units prefix (String.length prefix)+1) ~ending:true in
+  if a.first <> !left || (Option.get b).first <> !left + String.length probe_open + String.length body + 1 then
+    fail "The selection crosses an environment boundary.";
+  let opening = indent ^ "\\begin{" ^ name ^ "}" ^ newline in
+  let replacement = opening ^ body ^ (if trailing then "" else newline) ^ indent ^ "\\end{" ^ name ^ "}" ^
+    (if ends_at_line_start then newline else "") in
+  {start=units text !left+1; count=units text last-units text !left; replacement;
+   selection_start=units text !left + units opening (String.length opening) + body_cursor + 1;
+   selection_count=(if length=0 then 0 else units body (String.length body))}
+
+let wrap_script edit = Printf.sprintf "{%d, %d, %s, %d, %d}" edit.start edit.count
+  (Outline.quote edit.replacement) edit.selection_start edit.selection_count
