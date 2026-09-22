@@ -5,6 +5,7 @@ open Bbtex
 let usage = {|Usage: bbtex <command> [options] <file>
 
 Commands:
+  doctor [file.tex]          Inspect setup without changing files or settings
   compile <file.tex>         Compile and report results (protocol output)
   results <file.tex>         Show all diagnostics from the current project log
   paths <file.tex>           Resolve project log and PDF paths without compiling
@@ -225,6 +226,11 @@ let () =
   end;
   if verbose then Log.set_verbose ();
   match cmd with
+  | Some "doctor" ->
+    (match args with
+     | [] -> Doctor.run None
+     | [source] -> Doctor.run (Some source)
+     | _ -> Printf.eprintf "doctor accepts at most one source file\n"; exit 2)
   | None ->
     print_string usage;
     exit 1

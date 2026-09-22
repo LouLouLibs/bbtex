@@ -1,5 +1,8 @@
 # bbtex — LaTeX for BBEdit
 
+Setup checks: `bbtex doctor [file.tex]` or **Scripts → LaTeX — Doctor**.
+See [setup troubleshooting](docs/setup-troubleshooting.md) for scope and fixes.
+
 Compile LaTeX, see errors in BBEdit's results browser, and jump between
 source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
 

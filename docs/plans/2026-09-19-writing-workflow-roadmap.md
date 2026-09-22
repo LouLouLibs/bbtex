@@ -230,6 +230,13 @@ push versus release preparation or scheduled runs.
 
 ## Phase 6 — Setup and troubleshooting (original priority 6)
 
+First inspection tier implemented: `bbtex doctor [file.tex]`, BBEdit menu entry,
+read-only PATH/configuration/layout/state checks, Biber failure-log recognition,
+home-path redaction, and a troubleshooting/smoke-check guide. Unit and isolated
+conflicting-installation tests verify the inspected files remain unchanged.
+Active version/launch probes, broader custom-layout discovery, and fresh-machine
+acceptance remain; the report explicitly marks those capabilities unverified.
+
 **Outcome:** a new installation can explain what works and how to fix what does not.
 
 1. Add a read-only `bbtex doctor` command and BBEdit menu entry. Check required

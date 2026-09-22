@@ -55,11 +55,13 @@ cp "$PROJECT_ROOT/scripts/install-preview-save-hook.py" "$PKG/Contents/Resources
 cp "$PROJECT_ROOT/scripts/install-preview-service.py" "$PKG/Contents/Resources/install-preview-service.py"
 cp "$PROJECT_ROOT/docs/selection-preview.md" "$PKG/Contents/Resources/selection-preview.md"
 cp "$PROJECT_ROOT/docs/project-navigation.md" "$PKG/Contents/Resources/project-navigation.md"
+cp "$PROJECT_ROOT/docs/setup-troubleshooting.md" "$PKG/Contents/Resources/setup-troubleshooting.md"
 cp "$PROJECT_ROOT/docs/citation-reference-pickers.md" "$PKG/Contents/Resources/citation-reference-pickers.md"
 chmod +x "$PKG/Contents/Resources/bbtex"
 
 # Scripts — copy with BBEdit menu names
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-outline.sh" "$PKG/Contents/Scripts/LaTeX — Project Outline.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-doctor.sh" "$PKG/Contents/Scripts/LaTeX — Doctor.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-citation.sh" "$PKG/Contents/Scripts/LaTeX — Insert Citation.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-reference.sh" "$PKG/Contents/Scripts/LaTeX — Insert Reference.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-compile-with.sh" "$PKG/Contents/Scripts/LaTeX — Compile With….sh"

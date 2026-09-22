@@ -1,5 +1,21 @@
 # BBEdit LaTeX handoff — updated 2026-09-22
 
+## Doctor inspection tier — 2026-09-22
+
+Added `bbtex doctor [file.tex]` and **LaTeX — Doctor** (development shortcut
+installed; release packaging includes command and troubleshooting guide).
+Inspection is read-only: resolves engine, locates tools in PATH order, checks
+state-parent permissions, known installation duplicates/broken links, optional
+editing package/Skim and attachment presence. Home paths are redacted. Existing
+bounded project build logs identify Biber launcher and control-version failures.
+Tool versions/launchability, attachment ownership and native integration are
+explicitly unverified; no subprocess probes or repairs are performed.
+
+Unit and isolated partial/conflicting-installation tests pass and verify no
+inspection writes. Phase 6 remains in progress: active bounded version probes,
+broader installation discovery, and fresh-machine acceptance remain. See
+`docs/setup-troubleshooting.md`. Preserve sample edits and experimental RaTeX.
+
 ## Tectonic rendering tier — 2026-09-22
 
 `test/integration/check_tectonic.py` covers article/BibTeX, Beamer, Unicode/fontspec,
