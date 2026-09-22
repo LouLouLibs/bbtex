@@ -5,6 +5,8 @@ or third-party publisher templates. The article exercises two-column constraints
 BibTeX, root directives, shared external inputs, accented text and references.
 The book uses includes, a table of contents, biblatex/Biber and Unicode metadata.
 The Beamer deck exercises widescreen geometry and fragile/verbatim content.
+The Unicode fixture targets XeLaTeX/LuaLaTeX with fontspec and TeX-distributed
+Latin Modern font files; pdfLaTeX does not run this engine-specific case.
 
 The runner copies this tree into an isolated path containing spaces and Unicode,
 creates output-directory configuration there, and generates a larger multi-file

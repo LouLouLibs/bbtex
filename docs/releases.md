@@ -15,7 +15,8 @@ pinned to commit IDs; Homebrew tools use the runner's available formula versions
 
 The package workflow needs no TeX distribution or interactive editor session.
 The separate **Real TeX engines** workflow runs the article/book/Beamer corpus
-with pdfLaTeX, BibTeX, Biber, and Poppler on Ubuntu. It retains diagnostic artifacts
+with pdfLaTeX, XeLaTeX, and LuaLaTeX in separate Ubuntu jobs, each exercising
+BibTeX/Biber and Poppler. It retains diagnostic artifacts
 on failure; see [real-engine coverage](real-engine-regressions.md).
 Skim, save attachments, and native focus/selection checks remain local integration
 tests; passing CI does not replace those checks. The current

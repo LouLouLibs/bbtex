@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""Real pdfLaTeX/BibTeX/Biber corpus; preserve diagnostic artifacts on failure."""
+"""Real TeX Live/BibTeX/Biber corpus; preserve diagnostic artifacts on failure."""
 import argparse
 import gzip
 import hashlib
@@ -19,15 +19,16 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 BINARY = Path(os.environ.get('BBTEX_TEST_BINARY', ROOT / '_build/default/bin/main.exe')).resolve()
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--engine', choices=['pdflatex', 'xelatex', 'lualatex'], default='pdflatex')
 parser.add_argument('--artifacts', type=Path, default=ROOT / 'dist/real-engines')
 args = parser.parse_args()
 args.artifacts.mkdir(parents=True, exist_ok=True)
-run_dir = Path(tempfile.mkdtemp(prefix='run-', dir=args.artifacts.resolve()))
+run_dir = Path(tempfile.mkdtemp(prefix=args.engine + '-', dir=args.artifacts.resolve()))
 project = run_dir / 'paper with spaces é'
 shutil.copytree(ROOT / 'test/corpus', project)
 env = dict(os.environ, BBTEX_STATE_DIR=str(run_dir / 'state'))
 started = time.monotonic()
-report = {'status': 'running', 'cases': [], 'versions': {}}
+report = {'status': 'running', 'engine': args.engine, 'cases': [], 'versions': {}}
 print('Artifacts:', run_dir, flush=True)
 
 
@@ -69,21 +70,24 @@ def pdf_details(pdf):
 
 
 try:
-    for tool in ['pdflatex', 'latexmk', 'bibtex', 'biber', 'pdfinfo', 'pdftotext', 'pdftoppm']:
+    for tool in [args.engine, 'latexmk', 'bibtex', 'biber', 'pdfinfo', 'pdftotext', 'pdftoppm']:
         assert shutil.which(tool), f'Required tool missing: {tool}'
         version = command([tool, '-v' if tool in ['pdfinfo', 'pdftotext', 'pdftoppm'] else '--version'])
         report['versions'][tool] = (version.stdout + version.stderr).splitlines()[:3]
         assert version.returncode == 0, f'{tool} cannot run: {version.stdout}{version.stderr}'
-    for case in ['article', 'book', 'beamer']:
-        (project / case / '.bbtex').write_text('root = main.tex\nengine = pdflatex\noutput_directory = build output\n')
+    for case in ['article', 'book', 'beamer', 'unicode']:
+        (project / case / '.bbtex').write_text(f'root = main.tex\nengine = {args.engine}\noutput_directory = build output\n')
     before = snapshot()
     cases = [('article', 'sections/results.tex', ['ArticleEvidence', 'Corpus Bibliography Evidence'], 1, 3),
              ('book', 'chapters/introduction.tex', ['BookEvidence', 'Book Bibliography Evidence'], 4, 8),
              ('beamer', 'main.tex', ['BeamerEvidence', 'Literal text'], 2, 2)]
+    if args.engine != 'pdflatex':
+        cases.append(('unicode', 'main.tex', ['UnicodeEvidence', 'naïve façade', 'García'], 1, 1))
     for case, entry, markers, minimum, maximum in cases:
         case_started = time.monotonic()
         fields = bbtex(case, 'compile', project / case / entry)
         assert fields['status'] == 'success', fields
+        assert fields['engine'] == args.engine, fields
         pdf = Path(fields['pdf'])
         # macOS may canonicalize the Unicode directory spelling to decomposed form.
         assert pdf.samefile(project / case / 'build output/main.pdf'), fields
@@ -115,7 +119,7 @@ try:
     # Exercise larger include graphs without checking generated boilerplate into git.
     large = project / 'larger project'
     large.mkdir()
-    (large / '.bbtex').write_text('root = main.tex\noutput_directory = build output\n')
+    (large / '.bbtex').write_text(f'root = main.tex\nengine = {args.engine}\noutput_directory = build output\n')
     inputs = []
     for i in range(40):
         name = f'part-{i:02}.tex'
@@ -123,6 +127,7 @@ try:
         inputs.append('\\input{' + name + '}')
     (large / 'main.tex').write_text('\\documentclass{article}\n\\begin{document}\n' + '\n'.join(inputs) + '\n\\end{document}\n')
     large_fields = bbtex('larger', 'compile', large / 'main.tex')
+    assert large_fields['engine'] == args.engine, large_fields
     assert 'CorpusPart39' in pdf_details(Path(large_fields['pdf']))[3]
     large_index = json.loads(command([BINARY, 'outline', large / 'main.tex']).stdout)
     assert len([e for e in large_index['entries'] if e['kind'] == 'label']) == 40
@@ -133,6 +138,7 @@ try:
     built_pdf = project / 'article/build output/main.pdf'
     original_pdf = built_pdf.read_bytes()
     preview = bbtex('preview-first', 'preview', entry, selection=r'\energyfactor m c^2')
+    assert preview['engine'] == args.engine, preview
     preview_pdf = Path(preview['pdf'])
     _, width, height, _ = pdf_details(preview_pdf)
     assert width < 650 and height < 150, (width, height)
@@ -164,6 +170,7 @@ try:
     # Close a marker file before looping: TeX's piped console output is buffered.
     cancelled_project = project / 'cancellation'
     cancelled_project.mkdir()
+    (cancelled_project / '.bbtex').write_text(f'engine = {args.engine}\n')
     cancellation_source = cancelled_project / 'main.tex'
     cancellation_source.write_text('\\documentclass{article}\n\\begin{document}\n'
                                    '\\newwrite\\readyout\n\\immediate\\openout\\readyout=ready.txt\n'

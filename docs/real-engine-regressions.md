@@ -1,8 +1,10 @@
 # Real-engine regression checks
 
-Run `dune build`, then `uv run test/integration/check_real_engines.py` with
-pdfLaTeX, latexmk, BibTeX, Biber, and Poppler (`pdfinfo`, `pdftotext`, `pdftoppm`)
-on PATH. Python runs through uv with explicit script metadata. Required tools
+Run `dune build`, then `uv run test/integration/check_real_engines.py` for pdfLaTeX.
+Use `--engine xelatex` or `--engine lualatex` to run the same corpus with those
+engines. The selected engine, latexmk, BibTeX, Biber, and Poppler (`pdfinfo`,
+`pdftotext`, `pdftoppm`) must be on PATH. Python runs through uv with explicit
+script metadata. Required tools
 must start successfully; the runner fails rather than silently skipping them.
 
 The original, MIT-licensed fixtures live in `test/corpus`. Every run copies them
@@ -14,6 +16,8 @@ into a fresh directory containing spaces and Unicode. It never mutates
 - A multi-file book with nested include paths, contents, biblatex/Biber, and
   Unicode bibliography metadata.
 - A widescreen Beamer deck with fragile/verbatim content.
+- Native Unicode/fontspec text under XeLaTeX and LuaLaTeX, using TeX-distributed
+  Latin Modern font files without depending on OS font registration.
 - A generated 40-file article, including outline/index coverage.
 - Cropped preview geometry, PNG output, warm-cache reuse, external macro
   invalidation, and preservation of the compiled full-document PDF.
@@ -25,16 +29,23 @@ SyncTeX input records, and source/output isolation. They avoid cross-platform pi
 comparisons. PNG differences are used only within one run to establish that a
 changed macro caused a new render.
 
-Results remain under `dist/real-engines/run-*`, including copied source, build
+Results remain under `dist/real-engines/ENGINE-*`, including copied source, build
 outputs, command stdout/stderr, diagnostic scripts, and `report.json` with tool
-versions, case timings and failure details. `--artifacts DIR` changes the parent
+versions, the selected engine, case timings and failure details. `--artifacts DIR` changes the parent
 directory; each run creates a new child directory. The first passing local run
 on 2026-09-22 took 14.6 seconds, excluding dependency installation.
+The expanded Unicode-inclusive corpus took 16.2 seconds with XeLaTeX and
+21.1 seconds with LuaLaTeX locally on the same date.
 
 ## CI tier
 
-**Real TeX engines** runs on Ubuntu 24.04 with pdfLaTeX/BibTeX/Biber and explicit
-APT dependencies. Ubuntu supplies [Dune 3.14](https://packages.ubuntu.com/noble/ocaml/ocaml-dune),
+**Real TeX engines** runs a three-job Ubuntu 24.04 matrix for pdfLaTeX, XeLaTeX,
+and LuaLaTeX. Every job exercises BibTeX/Biber and the full shared corpus; the
+two Unicode engines also run the fontspec fixture. Generated large-project and
+cancellation fixtures explicitly select the requested engine. Each job uploads
+its own `real-engines-ENGINE` artifact, and one failure does not cancel the other
+jobs. TeX packages and Latin Modern fonts are explicit APT dependencies.
+Ubuntu supplies [Dune 3.14](https://packages.ubuntu.com/noble/ocaml/ocaml-dune),
 which meets this repository's Dune requirement. The workflow pins uv to 0.11.2;
 APT package versions follow the Ubuntu repositories and runtime versions are
 recorded in each report.
@@ -45,8 +56,12 @@ existing two-architecture macOS package workflow stays separate and fast. Draft
 release creation currently waits for those package jobs; verify this real-engine
 workflow for the same commit before publishing a release.
 
-This first tier does not yet run the corpus with XeLaTeX, LuaLaTeX, or Tectonic.
-The existing local four-engine preview test remains available. Native BBEdit/Skim,
+Tectonic remains outside this CI corpus. Its follow-up needs explicit binary and
+bundle provisioning and engine-specific checks: the current preview implementation
+deliberately does not cache Tectonic results because it has no recorder manifest.
+The installed Tectonic CLI offers `--bundle` and `--only-cached`; validate download
+and offline behavior, bibliography handling, and retained outputs before adding
+that tier. The existing local four-engine preview test remains available. Native BBEdit/Skim,
 focus/selection, save attachments, and editing acceptance remain local checks;
 Linux rendering success does not establish native macOS behavior.
 

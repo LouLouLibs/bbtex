@@ -27,8 +27,12 @@ concurrency:
   cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 jobs:
-  pdflatex:
-    name: pdfLaTeX / BibTeX / Biber
+  texlive:
+    name: ${{ matrix.engine }} / BibTeX / Biber
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [pdflatex, xelatex, lualatex]
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -40,18 +44,18 @@ jobs:
       - name: Install real rendering tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ocaml-nox ocaml-dune pipx latexmk texlive-latex-extra texlive-bibtex-extra texlive-fonts-recommended texlive-pictures preview-latex-style biber poppler-utils
+          sudo apt-get install -y --no-install-recommends ocaml-nox ocaml-dune pipx latexmk texlive-latex-extra texlive-bibtex-extra texlive-fonts-recommended texlive-pictures texlive-xetex texlive-luatex lmodern preview-latex-style biber poppler-utils
           pipx install uv==0.11.2
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Build and run real-engine corpus
         run: |
           dune build
-          uv run test/integration/check_real_engines.py
+          uv run test/integration/check_real_engines.py --engine "${{ matrix.engine }}"
       - name: Upload rendering evidence and failure logs
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: real-engines-pdflatex
+          name: real-engines-${{ matrix.engine }}
           path: dist/real-engines/
           if-no-files-found: warn
           retention-days: 14

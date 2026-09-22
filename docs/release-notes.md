@@ -26,6 +26,8 @@ Citation launching now preserves PATH entries containing spaces, fixing an
 - Builds recover missing nested include auxiliary directories inside isolated
   output folders. A new real pdfLaTeX/BibTeX/Biber CI corpus covers article, book,
   Beamer, previews, diagnostic mapping, and cancellation.
+- Real-engine CI now also runs the full corpus under XeLaTeX and LuaLaTeX,
+  including a native Unicode/fontspec fixture and separate diagnostic artifacts.
 - Saving a known macro/preamble input refreshes the tracked equation, including
   background document saves, while preserving editor focus. Changed source
   locations require a fresh equation save. Recorder-less engines have limited

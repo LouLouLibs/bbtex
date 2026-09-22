@@ -1,5 +1,23 @@
 # BBEdit LaTeX handoff — updated 2026-09-22
 
+## XeLaTeX/LuaLaTeX regression tier — 2026-09-22
+
+The corpus now accepts `--engine pdflatex|xelatex|lualatex`, sets the selected
+engine for all generated projects (including cancellation), verifies the reported
+build/preview engine, and records it in artifact names and JSON. CI has independent
+jobs and artifacts for all three engines, with explicit XeTeX/LuaTeX/font packages.
+XeLaTeX and LuaLaTeX also compile a native Unicode/fontspec fixture using TeX font
+filenames rather than OS registration. Final local runs: 16.2 s XeLaTeX and 21.1 s
+LuaLaTeX, using the previously documented temporary Biber workaround.
+
+Tectonic is the remaining engine tier: explicitly provision its binary/bundle,
+verify offline/cache and bibliography behavior, and adapt checks to its retained
+outputs. The current preview code intentionally disables Tectonic cache hits.
+After coverage, proceed to doctor/setup troubleshooting, including local Biber.
+Future UI requests are tracked separately: outline window
+https://github.com/LouLouLibs/bbtex/issues/1 and live-selection preview
+https://github.com/LouLouLibs/bbtex/issues/2. RaTeX remains experimental.
+
 ## Real-engine corpus and CI, first tier — 2026-09-22
 
 Phase 5 adds original article/book/Beamer fixtures plus a generated 40-file case,
