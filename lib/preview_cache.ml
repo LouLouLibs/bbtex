@@ -2,10 +2,7 @@
 let digest path = Digest.to_hex (if Sys.is_directory path then
     Digest.string (String.concat "\000" (Array.to_list (Sys.readdir path) |> List.sort String.compare))
   else Digest.file path)
-let read path =
-  let ic = open_in_bin path in
-  Fun.protect ~finally:(fun () -> close_in ic)
-    (fun () -> really_input_string ic (in_channel_length ic))
+let read path = In_channel.with_open_bin path In_channel.input_all
 (* Environment variables that can change what TeX reads or writes. Others, like
    BBEdit's per-run BB_DOC_SELSTART, would make every preview a cache miss. *)
 let affects_tex binding =

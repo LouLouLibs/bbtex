@@ -100,6 +100,17 @@ case "$MODE" in
             alert "LaTeX action failed" "${MESSAGE:-The action could not finish.}"
             exit 1
         fi
+        # A build still waiting for a save preview has not started bbtex yet;
+        # flag it so it stops instead of compiling once the preview finishes.
+        if [[ "$COMMAND" == cancel && "$SUMMARY" == "No build is running"* ]] &&
+            PATHS_OUTPUT=$("$BBTEX" paths "$SOURCE"); then
+            QUEUED_ROOT=$(sed -n 's/^root: //p' <<< "$PATHS_OUTPUT")
+            QUEUED="$STATE_DIR/queued-$(/sbin/md5 -q -s "$QUEUED_ROOT")"
+            if [[ -f "$QUEUED" ]] && kill -0 "$(cat "$QUEUED")" 2>/dev/null; then
+                : > "$QUEUED.cancel"
+                SUMMARY="Cancellation requested"
+            fi
+        fi
         osascript - "$SUMMARY" <<'APPLESCRIPT'
 on run argv
     display notification (item 1 of argv) with title "LaTeX"
@@ -145,8 +156,10 @@ APPLESCRIPT
 fi
 
 # The save attachment must not start a competing preview during this build.
-printf '%s' "$$" > "$STATE_DIR/suppress-save-preview"
-trap 'if [[ "$(cat "$STATE_DIR/suppress-save-preview" 2>/dev/null)" == "$$" ]]; then rm -f "$STATE_DIR/suppress-save-preview"; fi' EXIT
+# PID and start time: a PID reused after a crashed build must not keep save
+# previews off (see suppressed() in bbtex-preview-on-save.sh).
+printf '%s\n%s\n' "$$" "$(ps -o lstart= -p $$)" > "$STATE_DIR/suppress-save-preview"
+trap 'if [[ "$(head -n 1 "$STATE_DIR/suppress-save-preview" 2>/dev/null)" == "$$" ]]; then rm -f "$STATE_DIR/suppress-save-preview"; fi' EXIT
 "$BBTEX" snippet-stop "$SOURCE" "Automatic preview paused for a full build. Save an equation afterward to refresh."
 if ! osascript -e 'tell application "BBEdit" to save front document'; then
     alert "Could not save document" "Compilation stopped. Save the document and try again."
@@ -176,8 +189,17 @@ APPLESCRIPT
 printf '%s\n' "$SOURCE" > "$STATE_DIR/last-compile-source"
 LOCK_SCRIPT="$REAL_DIR/with-preview-lock.pl"
 [[ -f "$LOCK_SCRIPT" ]] || LOCK_SCRIPT="$PARENT/Resources/with-preview-lock.pl"
+# While this build waits for a save preview, Cancel Build finds it through the
+# queued marker (see --cancel); the flag is checked once the lock is ours.
+QUEUED="$STATE_DIR/queued-$(/sbin/md5 -q -s "$ROOT")"
+printf '%s\n' "$$" > "$QUEUED"
+rm -f "$QUEUED.cancel"
+trap 'rm -f "$QUEUED" "$QUEUED.cancel"; if [[ "$(head -n 1 "$STATE_DIR/suppress-save-preview" 2>/dev/null)" == "$$" ]]; then rm -f "$STATE_DIR/suppress-save-preview"; fi' EXIT
 # Let an existing save preview finish before taking the project's build lock.
-OUTPUT=$(/usr/bin/perl "$LOCK_SCRIPT" "$STATE_DIR/preview-on-save.lock" "$BBTEX" "${COMPILE_ARGS[@]}" "$SOURCE" 2>"$STATE_DIR/last-compile.log") && EXIT=0 || EXIT=$?
+# shellcheck disable=SC2016 # $1 and $@ belong to the inner bash
+OUTPUT=$(/usr/bin/perl "$LOCK_SCRIPT" "$STATE_DIR/preview-on-save.lock" /bin/bash -c \
+    'if [[ -f "$1.cancel" ]]; then printf "status: cancelled\n"; exit 3; fi; shift; exec "$@"' \
+    bash "$QUEUED" "$BBTEX" "${COMPILE_ARGS[@]}" "$SOURCE" 2>"$STATE_DIR/last-compile.log") && EXIT=0 || EXIT=$?
 parse_output
 if [[ "$STATUS" == "cancelled" ]]; then
     osascript -e 'display notification "Build cancelled" with title "LaTeX"'

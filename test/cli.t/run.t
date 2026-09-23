@@ -26,3 +26,14 @@ Options still work before the command, and for compile-style commands.
 
   $ bbtex paths --engine xelatex main.tex | grep '^engine'
   engine: xelatex
+
+forward-search reports when SyncTeX has no position for a file (here one that
+is not part of the PDF) instead of claiming page 1; the PDF is still given.
+
+  $ printf '\\documentclass{article}\n\\begin{document}\nHello\n\\end{document}\n' > doc.tex
+  $ printf '%%!TEX root = doc.tex\nNot included.\n' > orphan.tex
+  $ pdflatex -synctex=1 -interaction=nonstopmode doc.tex > /dev/null
+  $ bbtex forward-search orphan.tex 2 2>/dev/null | sed 's|^pdf: .*/|pdf: |'
+  status: no-position
+  pdf: doc.pdf
+  message: No SyncTeX position for line 2

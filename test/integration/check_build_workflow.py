@@ -118,6 +118,37 @@ printf '%s\\n' "$@" >> "$BBTEX_TEST_TRACE"
     assert "compiler\n" in trace.read_text()
     print("Full build waits for active save preview before starting compiler")
 
+    # Cancel Build while the build is still waiting for the save preview.
+    gate.touch()
+    ready.unlink()
+    preview = subprocess.Popen(["/usr/bin/perl", str(ROOT / "scripts/with-preview-lock.pl"),
+        str(root / "state/preview-on-save.lock"), "/bin/bash", "-c",
+        'touch "$1"; while [[ -f "$2" ]]; do sleep 0.02; done', "bash", str(ready), str(gate)])
+    build = None
+    try:
+        deadline = time.monotonic() + 5
+        while not ready.exists():
+            assert time.monotonic() < deadline
+            time.sleep(0.02)
+        trace.write_text("")
+        build = subprocess.Popen(["/bin/bash", str(WRAPPER)], env=env)
+        deadline = time.monotonic() + 5
+        while "LaTeX: Building" not in trace.read_text():
+            assert time.monotonic() < deadline
+            time.sleep(0.02)
+        cancel = subprocess.run(["/bin/bash", str(WRAPPER), "--cancel"], env=env,
+                                capture_output=True, text=True)
+        assert cancel.returncode == 0, cancel.stderr
+    finally:
+        gate.unlink(missing_ok=True)
+        preview.wait(timeout=5)
+        if build is not None:
+            assert build.wait(timeout=10) == 0
+    output = trace.read_text()
+    assert "Cancellation requested" in output and "Build cancelled" in output, output
+    assert "compiler\n" not in output, "a build cancelled while queued must not compile"
+    print("Cancel while waiting for a save preview: build stops before compiling")
+
     source.with_suffix(".synctex.gz").unlink()
     code, output = run(BBTEX_TEST_SYNCTEX="0")
     assert code == 0 and "open\n-g\n-a\nSkim" in output and "sync\n" not in output

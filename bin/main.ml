@@ -104,7 +104,7 @@ let cmd_compile ?engine ?profile filename =
   let started = Unix.gettimeofday () in
   try
     let config = Compiler.resolve_compilation ?engine ?profile filename in
-    let result = Compiler.compile ?engine ?profile filename in
+    let result = Compiler.compile_config config in
     Printf.printf "root: %s\nengine: %s\nduration: %.1f\nbuild_log: %s\n"
       config.root_file (Types.string_of_engine config.engine)
       (Unix.gettimeofday () -. started) (Build_job.log_path config.root_file);
@@ -210,15 +210,15 @@ let cmd_forward_search filename line_str =
            else None
          ) output
        in
-       let page = Option.value ~default:"1" (find_val "Page:") in
-       let x = Option.value ~default:"0" (find_val "x:") in
-       let y = Option.value ~default:"0" (find_val "y:") in
-
-       Printf.printf "status: success\n";
-       Printf.printf "pdf: %s\n" pdf_file;
-       Printf.printf "page: %s\n" page;
-       Printf.printf "x: %s\n" x;
-       Printf.printf "y: %s\n" y;
+       (* Without a SyncTeX match, say so rather than inventing page 1; the
+          PDF is still reported so callers can open it. *)
+       (match find_val "Page:" with
+        | Some page ->
+          Printf.printf "status: success\npdf: %s\npage: %s\nx: %s\ny: %s\n" pdf_file page
+            (Option.value ~default:"0" (find_val "x:")) (Option.value ~default:"0" (find_val "y:"))
+        | None ->
+          Printf.printf "status: no-position\npdf: %s\nmessage: No SyncTeX position for line %d\n"
+            pdf_file line_num);
        exit 0
      with Unix.Unix_error (Unix.ENOENT, _, _) ->
        Unix.close r_fd;

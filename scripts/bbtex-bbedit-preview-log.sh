@@ -6,7 +6,7 @@ PARENT="$(dirname "$REAL_DIR")"
 BBTEX="$PARENT/_build/default/bin/main.exe"
 [[ ! -x "$PARENT/Resources/bbtex" ]] || BBTEX="$PARENT/Resources/bbtex"
 if LOG=$("$BBTEX" snippet-log 2>&1); then
-    /usr/local/bin/bbedit "$LOG"
+    PATH="/usr/local/bin:/opt/homebrew/bin:$PATH" bbedit "$LOG"
 else
     osascript - "$LOG" <<'APPLESCRIPT'
 on run argv

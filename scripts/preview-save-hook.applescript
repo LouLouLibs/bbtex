@@ -23,7 +23,8 @@ on documentDidSave(myDoc)
         on error
             set workerPath to packageWorker
         end try
-        set commandText to "if [ -f " & quoted form of (stateDirectory & "preview-on-save-source") & " ] && ! kill -0 $(cat " & quoted form of (stateDirectory & "suppress-save-preview") & " 2>/dev/null) 2>/dev/null; then /bin/bash " & quoted form of workerPath & " --saved " & quoted form of sourcePath & " " & cursorLine & " " & sourceID & " >" & quoted form of (stateDirectory & "preview-on-save.log") & " 2>&1 & fi"
+        -- The worker decides whether a full build is pausing previews.
+        set commandText to "if [ -f " & quoted form of (stateDirectory & "preview-on-save-source") & " ]; then /bin/bash " & quoted form of workerPath & " --saved " & quoted form of sourcePath & " " & cursorLine & " " & sourceID & " >" & quoted form of (stateDirectory & "preview-on-save.log") & " 2>&1 & fi"
         do shell script commandText
     on error messageText
         do shell script "/usr/bin/logger -t bbtex " & quoted form of messageText

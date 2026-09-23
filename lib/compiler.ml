@@ -245,8 +245,9 @@ let inspect_log path =
     raise (Bbtex_error "No LaTeX log yet. Compile the document first, or use Open Build Log for compiler output.");
   assemble_result config ~exit_code:0 (Log_parser.parse_file config.log_file)
 
-let compile ?engine ?profile path =
-  let config = resolve_compilation ?engine ?profile path in
+(** Builds an already-resolved project, so callers that report the root and
+    engine report the ones actually built. *)
+let compile_config config =
   Build_job.with_job config.root_file (fun job ->
   let exit_code = run_compilation job config in
   Log.info (Printf.sprintf "compiler exited with code %d" exit_code);
@@ -260,3 +261,5 @@ let compile ?engine ?profile path =
   if result.status = Success && not (Sys.file_exists config.pdf_file) then
     raise (Bbtex_error "Compiler finished without producing a PDF. Use Open Build Log for details.");
   result)
+
+let compile ?engine ?profile path = compile_config (resolve_compilation ?engine ?profile path)

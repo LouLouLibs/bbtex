@@ -22,10 +22,7 @@ let empty = { generation = ""; revision = 0; status = "stale"; source = "";
   line = 0; image = ""; image_line = 0; message = "Select an equation to preview.";
   log = ""; fingerprint = ""; mode = "manual" }
 
-let read_file path =
-  let ic = open_in_bin path in
-  Fun.protect ~finally:(fun () -> close_in ic)
-    (fun () -> really_input_string ic (in_channel_length ic))
+let read_file path = In_channel.with_open_bin path In_channel.input_all
 
 let directory () =
   let dir = Filename.concat (Build_job.state_dir ()) "snippet-window" in

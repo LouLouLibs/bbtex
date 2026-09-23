@@ -33,7 +33,8 @@ on run argv
                 end if
             end repeat
         end tell
-        do shell script "/usr/local/bin/bbedit --background --preview " & quoted form of pagePath
+        -- The bbedit command-line tool normally lives in /usr/local/bin.
+        do shell script "PATH=/usr/local/bin:/opt/homebrew/bin:$PATH bbedit --background --preview " & quoted form of pagePath
         delay 0.6
         tell application "BBEdit"
             repeat with w in (get web_preview_windows)

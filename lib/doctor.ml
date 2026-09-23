@@ -35,9 +35,7 @@ let inspect ~home ~path ~state ~binary ?source ?(probe=false) () =
         let log = Filename.concat state ("build-" ^ Digest.to_hex (Digest.string config.root_file) ^ ".log") in
         (try
            if (Unix.stat log).Unix.st_size <= 1024 * 1024 then begin
-             let ic = open_in_bin log in
-             let text = Fun.protect ~finally:(fun () -> close_in_noerr ic)
-               (fun () -> really_input_string ic (in_channel_length ic)) in
+             let text = In_channel.with_open_bin log In_channel.input_all in
              List.iter (add "WARN" "Previous build evidence") (log_findings text)
            end else add "UNVERIFIED" "Build evidence" "Log exceeds inspection limit (1 MiB)."
          with Sys_error _ | Unix.Unix_error _ -> add "UNVERIFIED" "Build evidence" "No readable build log.");
