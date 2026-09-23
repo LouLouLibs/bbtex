@@ -295,6 +295,15 @@ let () =
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)
+  | Some "preview-service" ->
+    (try match args with
+     | ["build"; directory] -> print_endline ("Built: " ^ Preview_service.build directory)
+     | ["install"] ->
+       let backups = Filename.concat (Sys.getenv "HOME") "Library/Application Support/BBEdit/Backups" in
+       print_endline ("Installed: " ^ Preview_service.install ~backups)
+     | _ -> raise (Project.Error "Usage: bbtex preview-service build <directory> | install")
+     with Project.Error message | Sys_error message | Failure message ->
+       Printf.eprintf "%s\n" message; exit 2)
   | Some ("citation-picker" | "reference-picker" | "picker-insert" | "picker-check" | "picker-unchanged" as command) ->
     (try match command, args with
      | "citation-picker", [source; query] ->

@@ -25,8 +25,8 @@ AppleScript glue for BBEdit. Keep it that way.
   another environment. If `VIRTUAL_ENV` points at a removed interpreter, use
   `env -u VIRTUAL_ENV uv run ...`.
 
-The Python that remains outside tests is being removed under issue #4. Don't
-extend it; prefer porting what you touch.
+No Python remains outside `test/`. Moving the tests that only exercise the
+binary to dune cram tests is tracked in issue #4.
 
 ## Build
 
