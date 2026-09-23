@@ -69,11 +69,14 @@ echo "Local CI for $SHORT ($(git log -1 --format=%s "$SHA")) — log: $LOG"
 
 STARTED=$SECONDS
 CURRENT=""
-step() { # name, command...
+# Each step runs in its own bash with errexit: bash ignores set -e inside a
+# function called from an if condition, which would let every command but the
+# last one in a step fail unnoticed.
+step() { # name, function-or-command, args...
     CURRENT="$1"; shift
     local began=$SECONDS
     printf '  %-28s' "$CURRENT"
-    if "$@" >> "$LOG" 2>&1; then
+    if bash -Eeuo pipefail -c '"$@"' step "$@" >> "$LOG" 2>&1; then
         echo "ok ($((SECONDS - began))s)"
     else
         echo "FAILED — see $LOG"
@@ -115,6 +118,8 @@ package() {
     (cd dist/release && shasum -a 256 bbtex-macos-arm64.bbpackage.zip > SHA256SUMS-arm64.txt)
 }
 engine() { uv run test/integration/check_real_engines.py --engine "$1"; }
+export SHA
+export -f build integration lint package engine
 
 step "build and unit tests" build
 step "integration checks" integration
