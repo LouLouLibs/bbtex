@@ -128,14 +128,16 @@ try:
 
     large = project / 'larger project'
     large.mkdir()
-    configure('larger project', True)
+    configure('larger project')
     inputs = []
     for i in range(40):
         name = f'part-{i:02}.tex'
         (large / name).write_text(f'\\section{{Section {i}}}\\label{{sec:{i}}}\nCorpusPart{i:02}.\n')
         inputs.append('\\input{' + name + '}')
     (large / 'main.tex').write_text('\\documentclass{article}\n\\begin{document}\n' + '\n'.join(inputs) + '\n\\end{document}\n')
-    result = invoke('larger', 'compile', large / 'main.tex')
+    invoke('larger-online', 'compile', large / 'main.tex')
+    configure('larger project', True)
+    result = invoke('larger-offline', 'compile', large / 'main.tex')
     assert 'CorpusPart39' in pdf_details(result['pdf'])[3]
     index = command([binary, 'outline', large / 'main.tex'])
     assert index.returncode == 0, index.stderr

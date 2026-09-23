@@ -1,5 +1,25 @@
 # BBEdit LaTeX handoff — updated 2026-09-23
 
+## MacTeX 2026 installation verification — 2026-09-23
+
+User installed MacTeX 2026 and asked to verify it, then circle back together to
+remove the old installation. `/Library/TeX/texbin` now selects TeX Live 2026.
+Unfortunately its Biber universal launcher STILL fails with the same lipo error.
+No installed binary was replaced. Extracted the new binary's arm64 slice to
+`dist/biber-2026-check/biber` (Biber 2.21) strictly for isolated verification.
+With that temporary PATH override, the full real-engine corpus passes:
+pdfLaTeX 13.9 s, XeLaTeX 15.8 s, LuaLaTeX 20.0 s. Four-engine previews pass;
+native BBEdit preview reuse/selection/focus passes (1.387 s first, 0.292 s reused).
+
+Keep cleanup pending with the user: `/usr/local/texlive/2024` is 11 GB; 2026 is
+9.7 GB. Preserve shared `texmf-local`. A stale 2022 PATH entry is in ~/.zshrc:209.
+Neither was changed. User wants verifiable manual Biber repair, not another
+opaque administrator prompt. 2024 repair binary is not appropriate for 2026;
+use the new installation's own Biber 2.21 if proceeding with native extraction.
+
+CI exposed a cold-cache font miss in the new Tectonic large-project fixture.
+It now warms its own dependencies online before the asserted cached rebuild.
+
 ## Biber repair investigation and Tectonic expansion — 2026-09-23
 
 Tectonic now passes generated 40-file build/outline checks and real-process
