@@ -192,6 +192,38 @@ let test_texshop_engine_names () =
       assert_true ~msg:("error lists the supported engines: " ^ message)
         (String.length message > 30 && Project_index.find message 0 "pdflatexmk" < String.length message))
 
+let test_clean () =
+  let dir = Filename.temp_file "bbtex-clean-" "" in
+  Sys.remove dir; Unix.mkdir dir 0o700;
+  let file name = Filename.concat dir name in
+  let write name text = let oc = open_out (file name) in output_string oc text; close_out oc in
+  let path = Sys.getenv "PATH" in
+  Unix.putenv "BBTEX_STATE_DIR" (file "state");
+  Fun.protect ~finally:(fun () ->
+    Unix.putenv "PATH" path;
+    ignore (Sys.command ("rm -rf " ^ Filename.quote dir))) (fun () ->
+    (* Tectonic project, no latexmk on PATH: known build files go directly. *)
+    write "main.tex" "%!TEX program = tectonic\n\\documentclass{article}\n";
+    List.iter (fun n -> write n "x") ["main.aux"; "main.log"; "main.synctex.gz"; "main.pdf"; "notes.txt"];
+    Unix.putenv "PATH" (file "no-tools");
+    assert_true ~msg:"clean without latexmk succeeds" (Compiler.clean (file "main.tex") = 0);
+    List.iter (fun n -> assert_true ~msg:(n ^ " removed") (not (Sys.file_exists (file n))))
+      ["main.aux"; "main.log"; "main.synctex.gz"];
+    assert_true ~msg:"PDF kept" (Sys.file_exists (file "main.pdf"));
+    assert_true ~msg:"unrelated file kept" (Sys.file_exists (file "notes.txt"));
+    assert_true ~msg:"clean all succeeds" (Compiler.clean ~full:true (file "main.tex") = 0);
+    assert_true ~msg:"clean all removes the PDF" (not (Sys.file_exists (file "main.pdf")));
+    Unix.putenv "PATH" path;
+    (* latexmk project: the last compile's build log survives a clean. *)
+    write "main.tex" "\\documentclass{article}\n";
+    let build_log = Build_job.log_path (Unix.realpath (file "main.tex")) in
+    write "main.aux" "x";
+    let oc = open_out build_log in output_string oc "compile output\n"; close_out oc;
+    ignore (Compiler.clean (file "main.tex"));
+    let ic = open_in build_log in
+    assert_equal ~msg:"build log kept" "compile output" (input_line ic); close_in ic;
+    assert_true ~msg:"latexmk removed main.aux" (not (Sys.file_exists (file "main.aux"))))
+
 (* ── Runner ────────────────────────────────────────────────── *)
 
 let test_aux_directory_recovery () =
@@ -220,6 +252,7 @@ let () =
   Printf.printf "Compiler tests:\n";
   run_test "engine precedence" test_engine_precedence;
   run_test "TeXShop engine names" test_texshop_engine_names;
+  run_test "clean: Tectonic without latexmk, clean all, build log kept" test_clean;
   run_test "missing auxiliary directories and containment" test_aux_directory_recovery;
   run_test "resolve_compilation: engine is pdflatex" test_resolve_sample_engine;
   run_test "resolve_compilation: root_file ends with sample.tex" test_resolve_sample_root_file;

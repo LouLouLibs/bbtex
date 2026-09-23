@@ -11,7 +11,7 @@ else
     BBTEX="$PARENT/_build/default/bin/main.exe"
 fi
 
-STATE_DIR="${BBTEX_STATE_DIR:-$HOME/.local/state/bbtex}"
+STATE_DIR="${BBTEX_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/bbtex}"
 mkdir -p "$STATE_DIR"
 export BBTEX_STATE_DIR="$STATE_DIR"
 exec >/dev/null 2>>"$STATE_DIR/last-compile.log"
@@ -191,12 +191,21 @@ fi
 # Automatic results contain errors only. Empty results close the previous browser.
 show_results || exit 1
 
+# Skim adds SyncTeX; without it the PDF opens in the default viewer, and a
+# viewer problem never skips the notification below.
+open_pdf() {
+    open -g -a Skim "$PDF" 2>/dev/null || open -g "$PDF" || echo "Could not open $PDF" >&2
+}
 if [[ "$STATUS" == "success" && -n "$PDF" && -f "$PDF" ]]; then
-    SKIM="${BBTEX_SKIM_DISPLAYLINE:-/Applications/Skim.app/Contents/SharedSupport/displayline}"
-    if [[ -x "$SKIM" && ( -f "${PDF%.pdf}.synctex.gz" || -f "${PDF%.pdf}.synctex" ) ]]; then
-        "$SKIM" -r -g "$SOURCE_LINE" "$PDF" "$SOURCE" || open -g -a Skim "$PDF"
+    SKIM="${BBTEX_SKIM_DISPLAYLINE:-}"
+    for app in /Applications/Skim.app "$HOME/Applications/Skim.app"; do
+        [[ -n "$SKIM" ]] || [[ ! -x "$app/Contents/SharedSupport/displayline" ]] ||
+            SKIM="$app/Contents/SharedSupport/displayline"
+    done
+    if [[ -n "$SKIM" && -x "$SKIM" && ( -f "${PDF%.pdf}.synctex.gz" || -f "${PDF%.pdf}.synctex" ) ]]; then
+        "$SKIM" -r -g "$SOURCE_LINE" "$PDF" "$SOURCE" || open_pdf
     else
-        open -g -a Skim "$PDF"
+        open_pdf
     fi
 fi
 

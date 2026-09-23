@@ -167,11 +167,34 @@ let make_summary entries =
 (** [clean path] resolves directives to find the root file, then runs
     [latexmk -C] to remove all build artifacts (.aux, .log, .pdf, .synctex.gz,
     etc.).  Works regardless of which engine was used to compile. *)
+(* Build files a TeX run leaves next to the root's output name. *)
+let build_file_extensions = [
+  ".aux"; ".log"; ".synctex.gz"; ".synctex"; ".fls"; ".fdb_latexmk"; ".out"; ".toc";
+  ".lof"; ".lot"; ".bbl"; ".blg"; ".bcf"; ".run.xml"; ".nav"; ".snm"; ".vrb"; ".xdv";
+  ".idx"; ".ind"; ".ilg" ]
+
+(** Removes build output, keeping the PDF unless [full]. latexmk projects use
+    latexmk, which also finds the .aux files of included chapters; Tectonic and
+    RaTeX projects, or any project without latexmk installed, have their known
+    build files removed directly. Output goes to a separate log, so the last
+    compile's log stays available to "Open Build Log". *)
 let clean ?(full=false) path =
   let config = resolve_compilation path in
+  let latexmk = match config.engine with
+    | Tectonic | Ratex -> false
+    | _ -> (try ignore (Build_job.executable "latexmk"); true with Bbtex_error _ -> false) in
   Build_job.with_job config.root_file (fun job ->
-    Build_job.run job ~cwd:(Filename.dirname config.root_file) "latexmk"
-      [ (if full then "-C" else "-c"); "-cd"; "-outdir=" ^ config.output_directory; config.root_file ])
+    if latexmk then
+      Build_job.run { job with log = Build_job.log_path config.root_file ^ ".clean" }
+        ~cwd:(Filename.dirname config.root_file) "latexmk"
+        [ (if full then "-C" else "-c"); "-cd"; "-outdir=" ^ config.output_directory; config.root_file ]
+    else begin
+      let base = Filename.concat config.output_directory
+          (Filename.remove_extension (Filename.basename config.root_file)) in
+      List.iter (fun ext -> let file = base ^ ext in if Sys.file_exists file then Sys.remove file)
+        (build_file_extensions @ (if full then [".pdf"] else []));
+      0
+    end)
 
 let cancel path =
   let config = resolve_compilation path in

@@ -94,4 +94,14 @@ let () =
     let key = Preview_cache.key "formula" "pdflatex" [] in
     Unix.putenv "BBTEX_PREVIEW_TOKEN" "second";
     assert (Preview_cache.key "formula" "pdflatex" [] = key);
+    (* BBEdit sets selection variables per run; they must not defeat the cache. *)
+    Unix.putenv "BB_DOC_SELSTART" "1";
+    let key = Preview_cache.key "formula" "pdflatex" [] in
+    Unix.putenv "BB_DOC_SELSTART" "99";
+    assert (Preview_cache.key "formula" "pdflatex" [] = key);
+    (* Variables that change what TeX reads do change the key. *)
+    let original = Sys.getenv_opt "TEXINPUTS" in
+    Unix.putenv "TEXINPUTS" "/tmp/other-inputs:";
+    assert (Preview_cache.key "formula" "pdflatex" [] <> key);
+    Unix.putenv "TEXINPUTS" (Option.value ~default:"" original);
     print_endline "Snippet state: migration, generations, stale/error output, ownership, and cache identity passed")

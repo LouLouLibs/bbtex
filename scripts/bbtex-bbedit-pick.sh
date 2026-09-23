@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-STATE_DIR="${BBTEX_STATE_DIR:-$HOME/.local/state/bbtex}"
+STATE_DIR="${BBTEX_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/bbtex}"
 mkdir -p "$STATE_DIR"
 exec >/dev/null 2>>"$STATE_DIR/picker.log"
 MODE="${1:-ref}"

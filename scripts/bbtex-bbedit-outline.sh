@@ -2,7 +2,7 @@
 set -euo pipefail
 # As with the build commands, keep BBEdit's shell-output window out of the
 # interactive AppleScript dialog workflow.
-STATE_DIR="${BBTEX_STATE_DIR:-$HOME/.local/state/bbtex}"
+STATE_DIR="${BBTEX_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/bbtex}"
 mkdir -p "$STATE_DIR"
 exec >/dev/null 2>>"$STATE_DIR/outline.log"
 REAL_SCRIPT="$(readlink "$0" 2>/dev/null || echo "$0")"

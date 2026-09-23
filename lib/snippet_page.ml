@@ -81,7 +81,7 @@ body[data-status="error"] #status{color:#b42318}</style></head>
 <p id="source"></p><figure hidden><img id="formula" alt="Rendered mathematics"><figcaption id="caption"></figcaption></figure>
 <p id="message">Select an equation to preview.</p><p id="log" hidden></p>
 <script>
-window.bbtexSnippetVersion=2;
+window.bbtexSnippetVersion=3;
 let revision=-1;const names={rendering:"Rendering…",current:"Current",stale:"Out of date",error:"Preview failed",busy:"Project busy"};
 window.bbtexSnippet=function(s){if(s.revision<=revision)return;revision=s.revision;
 const requestedRevision=revision;document.body.dataset.status=s.status;
@@ -97,8 +97,11 @@ if(!s.image){figure.hidden=true;formula.removeAttribute("src");return}
 if(formula.getAttribute("src")!==s.image)figure.hidden=true;
 const img=new Image();img.onload=function(){if(revision!==requestedRevision)return;formula.src=s.image;figure.hidden=false};
 img.onerror=function(){if(revision!==requestedRevision)return;figure.hidden=true;document.getElementById("status").textContent="Image unavailable"};img.src=s.image};
-let loading=false;function refresh(){if(loading)return;loading=true;const s=document.createElement("script");s.src="image.js?t="+Date.now();
-s.onload=s.onerror=()=>{loading=false;s.remove()};document.body.appendChild(s)}refresh();setInterval(refresh,250);
+let polling=false,fetching=false,shown="";
+function add(name,done){const s=document.createElement("script");s.src=name+"?t="+Date.now();
+s.onload=()=>{s.remove();done(true)};s.onerror=()=>{s.remove();done(false)};document.body.appendChild(s)}
+window.bbtexRevision=function(r){if(r===shown||fetching)return;fetching=true;add("image.js",ok=>{fetching=false;if(ok)shown=r})};
+function refresh(){if(polling)return;polling=true;add("revision.js",()=>{polling=false})}refresh();setInterval(refresh,250);
 </script></body></html>|}
 
 let save dir s =
@@ -107,9 +110,15 @@ let save dir s =
   atomic_write (Filename.concat dir "state-v2") (String.concat "\000"
     [s.generation; string_of_int s.revision; s.status; s.source; string_of_int s.line;
      s.image; string_of_int s.image_line; s.message; s.log; s.fingerprint; s.mode]);
-  (* Old, already-open pages reload themselves through their existing poller. *)
+  (* The page polls the small revision.js and loads image.js, which carries the
+     whole image, only when the revision changes. Pages from an older template
+     still poll image.js and reload themselves into this one. *)
+  let payload = payload s in
   atomic_write (Filename.concat dir "image.js")
-    ("if(window.bbtexSnippetVersion===2&&window.bbtexSnippet){window.bbtexSnippet(" ^ payload s ^ ");}else{location.reload();}");
+    ("if(window.bbtexSnippetVersion===3&&window.bbtexSnippet){window.bbtexSnippet(" ^ payload ^ ");}else{location.reload();}");
+  atomic_write (Filename.concat dir "revision.js")
+    (Printf.sprintf "window.bbtexRevision&&window.bbtexRevision(%S);"
+       (Digest.to_hex (Digest.string payload)));
   page
 
 let with_state f =

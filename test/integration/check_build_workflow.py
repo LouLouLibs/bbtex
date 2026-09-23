@@ -55,7 +55,12 @@ fi
 """)
     def desktop_command(name, label):
         return command(name, f"printf '{label}\\n' >> \"$BBTEX_TEST_TRACE\"\nprintf '%s\\n' \"$@\" >> \"$BBTEX_TEST_TRACE\"\n")
-    desktop_command("open", "open")
+    command("open", """
+printf 'open\\n' >> "$BBTEX_TEST_TRACE"
+printf '%s\\n' "$@" >> "$BBTEX_TEST_TRACE"
+# Without Skim installed, "open -a Skim" fails.
+[[ "${BBTEX_TEST_NO_SKIM:-0}" == 0 || " $* " != *" -a Skim "* ]]
+""")
     desktop_command("bbedit", "bbedit")
     skim = desktop_command("displayline", "sync")
     env = {**os.environ, "PATH": str(commands) + ":/usr/bin:/bin",
@@ -77,6 +82,13 @@ fi
     assert str(source) in output and "make new results browser" not in output
     assert "bbedit\n" not in output and "sound name" not in output
     print("Clean build: quiet, background sync, quoted paths preserved")
+
+    code, output = run(BBTEX_TEST_NO_SKIM="1", BBTEX_SKIM_DISPLAYLINE=str(root / "no-skim/displayline"))
+    assert code == 0, output
+    assert "open\n-g\n-a\nSkim\n" in output, output
+    assert output.count("open\n-g\n") == 2, "falls back to the default PDF viewer"
+    assert "LaTeX: Compiled" in output, "notification still shown without Skim"
+    print("Without Skim: PDF opens in the default viewer and the notification still appears")
 
     trace.write_text("")
     ready = root / "preview-ready"
