@@ -1,8 +1,5 @@
 (** Selection previews reuse the root preamble without rewriting project inputs. *)
-let read_file path =
-  let ic = open_in_bin path in
-  Fun.protect ~finally:(fun () -> close_in ic)
-    (fun () -> really_input_string ic (in_channel_length ic))
+let read_file path = In_channel.with_open_bin path In_channel.input_all
 
 let preamble text =
   let marker = "\\begin{document}" in

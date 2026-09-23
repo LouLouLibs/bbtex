@@ -30,9 +30,7 @@ let script source engine root =
       raise (Project.Error "That main file points back to this document.");
     Some (relative_path ~source target)
   end in
-  let ic = open_in_bin source in
-  let original = Fun.protect ~finally:(fun () -> close_in ic)
-    (fun () -> really_input_string ic (in_channel_length ic)) in
+  let original = In_channel.with_open_bin source In_channel.input_all in
   let updated = update original ~engine ~root in
   let esc = Applescript.escape_applescript in
   Printf.sprintf {|tell application "BBEdit"

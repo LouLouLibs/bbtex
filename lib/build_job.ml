@@ -71,7 +71,9 @@ let cancel root =
   try
     let lock = Unix.openfile (prefix root ^ ".lock") [Unix.O_RDWR] 0 in
     Fun.protect ~finally:(fun () -> Unix.close lock) (fun () ->
-      try Unix.lockf lock Unix.F_TLOCK 0; false with
+      (* Test the lock without taking it, so a build starting right now does not
+         see this check as another build. *)
+      try Unix.lockf lock Unix.F_TEST 0; false with
       | Unix.Unix_error ((Unix.EACCES | Unix.EAGAIN), _, _) -> request_cancel root)
   with Unix.Unix_error (Unix.ENOENT, _, _) -> false
 
@@ -118,8 +120,13 @@ let run job ~cwd command args =
       (* The session leader owns the whole latexmk/TeX/BibTeX process group. *)
       signal_group Sys.sigterm;
       let deadline = Unix.gettimeofday () +. 1.0 in
+      (* Stop waiting once no process in the group is alive (ESRCH, or EPERM
+         when only the unreaped leader is left). *)
+      let group_alive () =
+        try Unix.kill (-pid) 0; true
+        with Unix.Unix_error ((Unix.ESRCH | Unix.EPERM), _, _) -> false in
       let rec drain () =
-        if Unix.gettimeofday () < deadline then (pause (); drain ())
+        if Unix.gettimeofday () < deadline && group_alive () then (pause (); drain ())
       in
       (* Keep the session leader unreaped until after the final group signal,
          preventing its PID from being reused in the meantime. *)

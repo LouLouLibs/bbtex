@@ -133,6 +133,19 @@ esac
         save(other, 12)
         finish()
         assert lines("started")[-1] == "b.tex:11"
+        # A live build's marker (PID and start time) pauses previews...
+        started = subprocess.check_output(["ps", "-o", "lstart=", "-p", str(os.getpid())],
+                                          text=True).removesuffix("\n")
+        (state / "suppress-save-preview").write_text(f"{os.getpid()}\n{started}\n")
+        save(other, 12)
+        finish()
+        assert lines("started")[-1] == "b.tex:11"
+        # ...but not when the PID now belongs to a different, later process.
+        (state / "suppress-save-preview").write_text(f"{os.getpid()}\nMon Jan  1 00:00:00 2001\n")
+        save(other, 14)
+        finish()
+        assert lines("started")[-1] == "b.tex:14", "reused PID must not keep previews off"
+        print("Build marker: live build pauses previews; a reused PID does not")
         (state / "suppress-save-preview").unlink()
         (state / "fail").touch()
         save(other, 13)

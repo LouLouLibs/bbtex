@@ -50,11 +50,23 @@ if [[ "${1:-}" == "--saved" ]]; then
         /bin/bash "$REAL_SCRIPT" --locked "$SOURCE" "$LINE" "$SOURCE_ID" "$TOKEN"
 fi
 TOKEN="$5"
+# A full build pauses save previews while it runs. Its marker holds its PID and
+# start time, so a PID reused after a crashed build does not keep previews off.
+# A marker with only a PID (older builds) falls back to checking the PID.
+suppressed() {
+    local marker="$BBTEX_STATE_DIR/suppress-save-preview" pid="" start=""
+    [[ -f "$marker" ]] || return 1
+    { IFS= read -r pid; IFS= read -r start; } < "$marker" || true
+    [[ -n "$pid" ]] || return 1
+    if [[ -n "$start" ]]; then
+        [[ "$(ps -o lstart= -p "$pid" 2>/dev/null)" == "$start" ]]
+    else
+        kill -0 "$pid" 2>/dev/null
+    fi
+}
 current() {
-    [[ -f "$FLAG" && "$(cat "$FLAG")" == "$SOURCE" &&
-       -n "$TOKEN" ]] &&
-        ! kill -0 "$(cat "$BBTEX_STATE_DIR/suppress-save-preview" 2>/dev/null)" 2>/dev/null &&
-        "$BBTEX" snippet-current "$TOKEN"
+    [[ -f "$FLAG" && "$(cat "$FLAG")" == "$SOURCE" && -n "$TOKEN" ]] &&
+        ! suppressed && "$BBTEX" snippet-current "$TOKEN"
 }
 # Every save queues a contender; only the newest renders. A save during
 # publication/exit still has its own contender, so no wakeup can be lost.
