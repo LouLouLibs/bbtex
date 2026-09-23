@@ -33,6 +33,16 @@ Options:
   --help                     Show this help message
 |}
 
+(* Commands whose arguments are data (search queries, messages, keys, document
+   text): after the command name, nothing is parsed as an option, so a search
+   for "-h" or "--verbose" is a search. *)
+let literal_commands = [
+  "outline"; "outline-picker"; "outline-jump"; "outline-check";
+  "citation-picker"; "reference-picker"; "picker-insert"; "picker-check"; "picker-unchanged";
+  "snippet-begin"; "snippet-refresh"; "snippet-finish"; "snippet-current"; "snippet-stop";
+  "snippet-log"; "snippet-page"; "equation-at"; "environment-find"; "environment-change";
+  "environment-wrap"; "document-settings"; "save-project"; "preview-service"]
+
 let parse_args () =
   let args = Array.to_list Sys.argv |> List.tl in
   let engine = ref None and profile = ref None in
@@ -56,6 +66,8 @@ let parse_args () =
        | None ->
          Printf.eprintf "Unknown format: %s (expected bbedit or text)\n" f;
          exit 1)
+    | arg :: tail when cmd = None && List.mem arg literal_commands ->
+      (Some arg, fmt, verbose, !engine, !profile, tail)
     | arg :: tail ->
       if cmd = None then go (Some arg) fmt verbose rest tail
       else go cmd fmt verbose (arg :: rest) tail

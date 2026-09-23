@@ -20,7 +20,13 @@ exception Bbtex_error = Project.Error
 let strict_engine name =
   match String.lowercase_ascii name with
   | "pdflatex" | "xelatex" | "lualatex" | "tectonic" | "ratex" -> Types.engine_of_string name
-  | _ -> raise (Bbtex_error ("Unknown LaTeX engine: " ^ name))
+  (* TeXShop's built-in engine names run these compilers (through latexmk). *)
+  | "pdflatexmk" | "latexmk" | "latex" -> Types.Pdflatex
+  | "xelatexmk" -> Types.Xelatex
+  | "lualatexmk" -> Types.Lualatex
+  | _ -> raise (Bbtex_error ("Unknown LaTeX engine: " ^ name ^ ". Use pdflatex, xelatex, \
+      lualatex or tectonic; TeXShop's pdflatexmk, xelatexmk, lualatexmk, latexmk and LaTeX \
+      also work."))
 
 let canonical path =
   if not (Sys.file_exists path) then raise (Bbtex_error ("file not found: " ^ path));

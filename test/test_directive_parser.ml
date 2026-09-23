@@ -175,6 +175,17 @@ let test_find_directive () =
 let () =
   Printf.printf "Directive parser tests:\n";
   run_test "basic root directive" test_basic_root;
+  run_test "byte-order mark before the first directive" (fun () ->
+    let file = Filename.temp_file "bbtex_bom_" ".tex" in
+    Fun.protect ~finally:(fun () -> Sys.remove file) (fun () ->
+      let oc = open_out_bin file in
+      output_string oc "\xef\xbb\xbf%!TEX root = main.tex\n%!TEX program = xelatex\n";
+      close_out oc;
+      let directives = Directive_parser.parse_file file in
+      assert_equal ~msg:"root after BOM" "main.tex"
+        (Option.value ~default:"(none)" (Directive_parser.find_directive Types.Root directives));
+      assert_equal ~msg:"program on the next line" "xelatex"
+        (Option.value ~default:"(none)" (Directive_parser.find_directive Types.Program directives))));
   run_test "TeXShop spacing and engine alias" (fun () ->
     List.iter (fun line ->
       match Directive_parser.parse_directive_line line with

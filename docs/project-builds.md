@@ -21,8 +21,11 @@ References: [TeXShop](https://pages.uoregon.edu/koch/texshop/) and
 [LaTeXTools magic-comment support](https://latextools.readthedocs.io/en/latest/features/).
 bbtex reads comments from the first 50 lines. Both `%!TEX` and `% !TEX` are
 accepted, case-insensitively, as are `program` and TeXShop's `TS-program` alias.
-The supported engine values remain `pdflatex`, `xelatex`, `lualatex`, and
-`tectonic`; arbitrary TeXShop engine scripts are not supported. The setup helper
+The supported engine values are `pdflatex`, `xelatex`, `lualatex`, and
+`tectonic`. TeXShop's built-in engine names are accepted too: `pdflatexmk`,
+`latexmk` and `LaTeX` mean pdflatex, `xelatexmk` means xelatex, and `lualatexmk`
+means lualatex. Other TeXShop engine scripts are not supported. A UTF-8
+byte-order mark before the first directive is ignored. The setup helper
 normalizes these variants when replacing settings, avoiding duplicate directives.
 
 For guided setup, press ⇧⌘K and choose **Configure Document…**. Choose whether
