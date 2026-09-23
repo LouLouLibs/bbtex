@@ -2,6 +2,9 @@
 
 ## Biber repaired; old distributions removed — 2026-09-23
 
+Documented baseline for the supported MacTeX setup: **Biber ≥ 2.21**, with a
+compatible biblatex version. This does not override Tectonic bundle compatibility.
+
 User completed the manual native-Biber installation. `/Library/TeX/texbin/biber`
 is now an arm64 executable reporting 2.21. The full pdfLaTeX corpus, including
 the biblatex/Biber book, passes in 13.9 seconds WITHOUT a temporary Biber PATH

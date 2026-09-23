@@ -1,5 +1,11 @@
 # Setup and troubleshooting
 
+For the supported MacTeX setup, use **Biber ≥ 2.21**, paired with a compatible
+biblatex version. The verified installation is MacTeX 2026 with Biber 2.21.
+Check with `biber --version`; the version alone does not prove the launcher works
+or that it matches a Tectonic bundle. Tectonic's older bundle requires separate
+Biber/biblatex compatibility validation.
+
 Run `bbtex doctor` for inspection only, or `bbtex doctor --probe` for tool launch
 and version checks. **Scripts → LaTeX — Doctor** includes the launch checks. Supply a saved
 source with `bbtex doctor path/to/main.tex` to resolve its engine and inspect its
