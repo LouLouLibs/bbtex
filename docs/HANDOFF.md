@@ -1,5 +1,26 @@
 # BBEdit LaTeX handoff — updated 2026-09-23
 
+## Issue #1: persistent-outline navigation prototype
+
+After synchronizing Claude's merged changes through `ae6567d`, added an isolated
+`outline-window-prototype FILE PRIVATE_TEMP_DIR` capability proof. Existing menu
+and source-index contract remain unchanged. OCaml serves a token-scoped loopback
+endpoint; HTML form buttons invoke existing `Outline.jump` validation. No request
+can choose a file path or executable. Saved snapshot entries are indented, not yet
+an expandable/filterable tree. See `docs/outline-window-prototype.md`.
+
+Unit checks cover escaped markup and method/token/entry/Host/Origin restrictions.
+Disposable native checks pass for window reuse, exact jumps, dirty/stale rejection
+and closing the window stopping the worker. Found that a closed BBEdit preview can
+keep its JavaScript alive: heartbeat alone is insufficient, so this prototype also
+uses bounded window-list checks every two seconds. Evaluate this tradeoff before
+installing a production menu. Real click/Return acceptance has been requested with
+the disposable `/tmp/bbtex-outline-demo.vw96At` project; do not claim it until answered.
+
+Remaining issue #1 work: tree/state model, filter/navigation UI, refresh and
+project-switching semantics, production lifecycle and packaging. Preserve user's
+sample edit and the newer local-CI/opam/no-shipped-Python architecture.
+
 ## Tectonic Biber coverage — 2026-09-23
 
 The Tectonic runner now requires a working compatible Biber and exercises the

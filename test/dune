@@ -1,5 +1,5 @@
 (tests
- (names test_log_parser test_directive_parser test_format test_log_module test_types test_source_reader test_applescript test_compiler test_document_settings test_preview test_snippet test_project_index test_picker test_structure test_doctor test_citation test_preview_service)
+ (names test_log_parser test_directive_parser test_format test_log_module test_types test_source_reader test_applescript test_compiler test_document_settings test_preview test_snippet test_project_index test_picker test_structure test_doctor test_citation test_preview_service test_outline_window)
  (libraries bbtex unix)
  (deps (glob_files ../testdata/logs/*.log)))
 

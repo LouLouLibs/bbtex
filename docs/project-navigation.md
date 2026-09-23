@@ -1,5 +1,8 @@
 # Project outline
 
+A separate [persistent-window prototype](outline-window-prototype.md) is under
+development for issue #1. The installed command described here is unchanged.
+
 Choose **Scripts → LaTeX — Project Outline** in a saved TeX document. Enter words
 from a heading, equation, caption, label, or filename; leave the search empty for
 the full outline. Search words are combined, with ASCII case-insensitive matching.

@@ -39,7 +39,7 @@ Options:
    text): after the command name, nothing is parsed as an option, so a search
    for "-h" or "--verbose" is a search. *)
 let literal_commands = [
-  "outline"; "outline-picker"; "outline-jump"; "outline-check";
+  "outline"; "outline-picker"; "outline-jump"; "outline-check"; "outline-window-prototype";
   "citation-picker"; "reference-picker"; "picker-insert"; "picker-check"; "picker-unchanged";
   "snippet-begin"; "snippet-refresh"; "snippet-finish"; "snippet-current"; "snippet-stop";
   "snippet-log"; "snippet-page"; "equation-at"; "environment-find"; "environment-change";
@@ -339,6 +339,12 @@ let () =
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)
+  | Some "outline-window-prototype" ->
+    (try match args with
+     | [source; dir] -> Outline_window.run source dir
+     | [source; dir; "no-open"] -> Outline_window.run ~launch:false source dir
+     | _ -> Printf.eprintf "outline-window-prototype requires source and a private temporary directory\n"; exit 2
+     with Project.Error message -> Printf.eprintf "%s\n" message; exit 1)
   | Some ("outline" | "outline-picker" | "outline-jump" | "outline-check" as command) ->
     (try match command, args with
      | ("outline" | "outline-picker"), ([_] | [_; _]) ->
