@@ -15,7 +15,9 @@ Commands:
   profiles <file.tex>        List named profiles from .bbtex
   preview <file.tex>         Preview selected math read from stdin
   outline <file.tex> [query] List the saved project outline as JSON
-  save-project <file.tex>    Emit AppleScript to save open project files
+  save-project [--check] <file.tex>
+                            Emit AppleScript to save open project inputs
+                            (--check: fail while any is modified instead)
   document-settings <file> <engine|inherit> <root|->
                             Emit AppleScript to update document directives
   forward-search <f> <line>  SyncTeX forward search
@@ -384,7 +386,9 @@ let () =
      | _ -> Printf.eprintf "profiles requires a filename\n"; exit 1)
   | Some "save-project" ->
     (match args with
-     | [f] -> (try print_string (Applescript.save_project_script (Compiler.resolve_compilation f))
+     | ([f] | ["--check"; f]) as args ->
+       (try print_string (Project_save.script ~check:(List.length args = 2)
+              (Compiler.resolve_compilation f))
        with Compiler.Bbtex_error msg -> Printf.eprintf "%s\n" msg; exit 2)
      | _ -> Printf.eprintf "save-project requires a filename\n"; exit 1)
   | Some "document-settings" ->
