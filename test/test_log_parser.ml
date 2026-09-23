@@ -408,8 +408,52 @@ let test_mixed_errors_warnings_badboxes () =
 
 (* ── Runner ────────────────────────────────────────────────── *)
 
+(* ── Real logs (testdata/logs, made with TeX Live 2026) ─────── *)
+
+(* "severity file:line message" for each entry, the message cut at 40 bytes. *)
+(* "severity file:line message" for each entry. *)
+let describe entries =
+  List.map (fun (e : Types.log_entry) ->
+    Printf.sprintf "%s %s:%s %s"
+      (match e.severity with Types.Error -> "error" | Warning -> "warning" | BadBox -> "badbox")
+      (Option.value ~default:"?" e.file)
+      (Option.fold ~none:"?" ~some:string_of_int e.line) e.message) entries
+
+let check_log name expected =
+  let actual = describe (Log_parser.parse_file ("../testdata/logs/" ^ name)) in
+  if actual <> expected then begin
+    Printf.eprintf "FAIL: %s\n  expected:\n    %s\n  actual:\n    %s\n" name
+      (String.concat "\n    " expected) (String.concat "\n    " actual);
+    incr tests_failed
+  end else incr tests_passed
+
+let test_real_logs () =
+  (* pdflatex without -file-line-error, as Tectonic runs: a file name with a
+     space, and box contents with "(Fig.2" and an unmatched ")". *)
+  check_log "parens-and-spaces.log" [
+    "error ./chapter one.tex:2 Undefined control sequence.";
+    "badbox ./chap3.tex:1 Overfull \\hbox (146.26979pt too wide) detected at line 1";
+    "error ./chap3.tex:3 Undefined control sequence.";
+    "badbox ./chap4.tex:1 Overfull \\hbox (144.74202pt too wide) detected at line 1";
+    "error ./chap4.tex:3 Undefined control sequence.";
+    "error ./main.tex:7 Undefined control sequence."];
+  (* Package warnings continued on "(hyperref)" and "(rerunfilecheck)" lines. *)
+  check_log "hyperref-multiline.log" [
+    "warning ./main.tex:4 Token not allowed in a PDF string (Unicode): removing `\\\\' on input line 4.";
+    "warning ./main.tex:? File `main.out' has changed. Rerun to get outlines right or use package `bookmark'."];
+  (* XeTeX wraps at 79 characters, not bytes: a warning, and an error whose
+     file:line: line is wrapped mid-message. *)
+  let accents n = String.concat "" (List.init n (fun _ -> "\xc3\xa9")) in
+  check_log "xelatex-wrap.log" [
+    "warning ./main.tex:3 Reference `sec:" ^ accents 40 ^ "' on page 1 undefined on input line 3.";
+    "warning ./main.tex:? There were undefined references."];
+  check_log "xelatex-wrapped-error.log" [
+    "error ./chapitre-" ^ accents 45 ^ ".tex:2 Undefined control sequence.";
+    "error ./main.tex:5 Undefined control sequence."]
+
 let () =
   Printf.printf "Log parser tests:\n";
+  run_test "real logs: files, boxes, package and wrapped warnings" test_real_logs;
   run_test "empty input" test_empty_input;
   run_test "clean log" test_clean_log;
   run_test "undefined control sequence" test_undefined_control_sequence;
