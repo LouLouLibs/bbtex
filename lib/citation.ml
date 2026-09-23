@@ -142,10 +142,11 @@ let contains haystack needle =
   at 0
 
 let search data query =
-  let tokens = words (fold query) in
+  (* Search ignores case and accents; names elsewhere only ignore case. *)
+  let tokens = words (Casefold.search_key query) in
   List.filter (fun e ->
     fold e.entry_type <> "xdata" &&
-    let haystack = fold (String.concat " " [e.key; e.author; e.title; e.year; e.file]) in
+    let haystack = Casefold.search_key (String.concat " " [e.key; e.author; e.title; e.year; e.file]) in
     List.for_all (contains haystack) tokens) data.entries
 
 (* Collapses whitespace and keeps at most 160 characters, never splitting one. *)

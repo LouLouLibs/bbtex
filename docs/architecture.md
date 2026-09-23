@@ -73,13 +73,14 @@ convergence detection. Reimplementing this would be a significant effort
 with subtle bugs. We use latexmk for pdflatex/xelatex/lualatex and call
 tectonic directly (tectonic handles its own multi-pass logic).
 
-### No external OCaml dependencies
+### Few external OCaml dependencies
 
-The tool uses only the OCaml standard library and the vendored
-bibtexparser-ml (`vendor/`). The opam package declares no library
-dependencies, so `opam install . --deps-only` only brings dune. This keeps
-the build simple and the code easy to audit. Linking opam libraries such as
-uucp is discussed in issue #8.
+The tool uses the OCaml standard library, the vendored bibtexparser-ml
+(`vendor/`), and two small Unicode libraries from opam: uucp (case folding,
+character categories) and uunf (normalization), which make citation search
+ignore case and accents. They are statically linked, so the released binary
+still depends only on system libraries; together they add about 1.2 MB to it.
+`opam install . --deps-only` installs them.
 
 ### No JSON output format
 
