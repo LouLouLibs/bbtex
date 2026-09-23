@@ -55,50 +55,70 @@ let scan_int s i =
 
 (* ── File stack management ──────────────────────────────────── *)
 
-(** Scan a line for '(' and ')' characters that are NOT inside
-    quoted strings, updating the file stack.
+(* Extensions of files TeX reads with \input, \usepackage, \documentclass, ... *)
+let file_extensions = [
+  ".tex"; ".sty"; ".cls"; ".clo"; ".cfg"; ".def"; ".fd"; ".ldf"; ".ltx"; ".dtx";
+  ".aux"; ".bbl"; ".toc"; ".lof"; ".lot"; ".out"; ".ind"; ".nav"; ".snm"; ".vrb";
+  ".lua"; ".dict"; ".tikz"; ".pgf"; ".mkii"; ".mkiv"; ".bst"; ".cbx"; ".bbx"; ".lbx" ]
 
-    When we see '(' followed by a filename (non-space chars ending
-    in a known extension or at end-of-line), push onto the stack.
-    When we see ')', pop. *)
-let update_file_stack stack line =
+let has_file_extension name =
+  List.exists (fun ext -> String.ends_with ~suffix:ext (String.lowercase_ascii name)) file_extensions
+
+(** The file name opened by the '(' just before [start], and where it ends.
+    TeX prints "(" and the path, unquoted even when it contains spaces
+    ("(./my chapter.tex"), or quoted ("(\"./my chapter.tex\""). A name is the
+    longest run up to a known extension; failing that, a path starting with
+    "/", "./" or "../". Anything else, like "(Fig.2" or "(1.2pt", is text. *)
+let file_name_at line start =
   let len = String.length line in
-  let stack = ref stack in
+  if start < len && line.[start] = '"' then
+    match String.index_from_opt line (start + 1) '"' with
+    | Some stop -> Some (String.sub line (start + 1) (stop - start - 1), stop + 1)
+    | None -> None
+  else begin
+    let stop = ref start in
+    while !stop < len && line.[!stop] <> ')' && line.[!stop] <> '(' do incr stop done;
+    let candidate = String.sub line start (!stop - start) in
+    (* Longest prefix ending in an extension, at a word boundary. *)
+    let rec longest k best =
+      if k > String.length candidate then best
+      else
+        let boundary = k = String.length candidate || candidate.[k] = ' ' in
+        let best = if boundary && has_file_extension (String.sub candidate 0 k)
+          then Some k else best in
+        longest (k + 1) best in
+    match longest 1 None with
+    | Some k -> Some (String.sub candidate 0 k, start + k)
+    | None ->
+      let word = match String.index_opt candidate ' ' with
+        | Some k -> String.sub candidate 0 k | None -> candidate in
+      if word <> "" && (starts_with "/" word || starts_with "./" word || starts_with "../" word)
+      then Some (word, start + String.length word) else None
+  end
+
+(** Update the file stack for the '(' and ')' in [line]: '(' plus a file name
+    pushes the file, any other '(' pushes a placeholder, ')' pops. Also
+    returns the last file closed, if any. *)
+let update_file_stack_closing stack line =
+  let len = String.length line in
+  let stack = ref stack and closed = ref None in
   let i = ref 0 in
   while !i < len do
-    let c = line.[!i] in
-    if c = '(' then begin
-      (* Try to read a filename after '(' *)
-      let start = !i + 1 in
-      if start < len && line.[start] <> ')' && line.[start] <> ' ' then begin
-        (* Consume until space, ')', or end of line *)
-        let j = ref start in
-        while !j < len && line.[!j] <> ' ' && line.[!j] <> ')' && line.[!j] <> '(' do
-          incr j
-        done;
-        let fname = String.sub line start (!j - start) in
-        (* Heuristic: it's a filename if it contains '.' or '/' *)
-        if contains_substring ~sub:"." fname || contains_substring ~sub:"/" fname then begin
-          stack := fname :: !stack;
-          i := !j  (* continue scanning from after filename *)
-        end else begin
-          (* Not a filename — might be a grouping paren *)
-          stack := "" :: !stack;
-          i := start
-        end
-      end else begin
-        stack := "" :: !stack;
-        incr i
-      end
-    end else if c = ')' then begin
-      (match !stack with
-       | _ :: rest -> stack := rest
-       | []        -> ());
-      incr i
-    end else
-      incr i
+    (match line.[!i] with
+     | '(' ->
+       (match file_name_at line (!i + 1) with
+        | Some (name, stop) -> stack := name :: !stack; i := stop
+        | None -> stack := "" :: !stack; incr i)
+     | ')' ->
+       (match !stack with
+        | top :: rest -> if top <> "" then closed := Some top; stack := rest
+        | [] -> ());
+       incr i
+     | _ -> incr i)
   done;
-  !stack
+  !stack, !closed
+
+let update_file_stack stack line = fst (update_file_stack_closing stack line)
 
 (** Return the current file from the stack (topmost non-empty entry). *)
 let current_file stack =
@@ -116,6 +136,7 @@ type line_kind =
   | OverfullBox of string         (** 'Overfull \hbox ...' *)
   | UnderfullBox of string        (** 'Underfull \hbox ...' *)
   | ContinuationLine of string    (** indented line continuing a warning *)
+  | PackageContinuation of string (** "(pkg)   text" continuing a package warning *)
   | OtherLine of string           (** anything else *)
 
 (** Try to parse a -file-line-error format line: "file:line: message".
@@ -183,6 +204,12 @@ let classify_line line =
           && (line.[0] = ' ' || line.[0] = '\t')
           && String.length trimmed > 0 then
     ContinuationLine trimmed
+  else if starts_with "(" line && (match String.index_opt line ')' with
+      | Some k -> k > 1 && k + 1 < String.length line && line.[k + 1] = ' '
+                  && not (String.contains (String.sub line 1 (k - 1)) ' ')
+      | None -> false) then
+    let k = String.index line ')' in
+    PackageContinuation (String.trim (String.sub line (k + 1) (String.length line - k - 1)))
   else
     (* Try -file-line-error format: "file.tex:69: Undefined control sequence." *)
     match try_file_line_error line with
@@ -246,6 +273,9 @@ type parse_state = {
   warning_severity : severity;
   warning_message : string;
   warning_file : string option;
+  in_box : bool;                (** inside the contents printed after a bad box *)
+  after_context : bool;         (** the line after "l.<N>" continues the excerpt *)
+  last_closed : string option;  (** for messages after every file has closed *)
 }
 
 let empty_state = {
@@ -261,6 +291,9 @@ let empty_state = {
   warning_severity = Warning;
   warning_message = "";
   warning_file = None;
+  in_box = false;
+  after_context = false;
+  last_closed = None;
 }
 
 (** Finish any in-progress error, returning updated state. *)
@@ -303,11 +336,25 @@ let flush_warning st =
 
 (** Process one line, returning the new state. *)
 let process_line st line =
-  (* Always update file stack *)
-  let file_stack = update_file_stack st.file_stack line in
-  let st = { st with file_stack } in
-  let cur_file = current_file file_stack in
-  match classify_line line with
+  let kind = classify_line line in
+  (* Text TeX copies from the document (error excerpts, box contents) can hold
+     any parentheses; only the rest of the log opens and closes files. *)
+  let copied = st.in_error || st.in_box || st.after_context || (match kind with
+      | ErrorStart _ | FileLineError _ | LineIndicator _ | OverfullBox _ | UnderfullBox _ -> true
+      | _ -> false) in
+  let in_box = (match kind with
+      | OverfullBox _ | UnderfullBox _ -> true
+      | _ -> st.in_box && String.trim line <> "") in
+  let after_context = (match kind with LineIndicator _ -> st.in_error | _ -> false) in
+  let file_stack, closed =
+    if copied then st.file_stack, None else update_file_stack_closing st.file_stack line in
+  let last_closed = if closed = None then st.last_closed else closed in
+  let st = { st with file_stack; in_box; after_context; last_closed } in
+  (* "File ended while scanning ..." and "Emergency stop" come after TeX has
+     closed the file at fault; point them at it rather than at nothing. *)
+  let cur_file = match current_file file_stack with
+    | Some _ as file -> file | None -> last_closed in
+  match kind with
   | ErrorStart msg ->
     (* Flush any previous incomplete error/warning *)
     let st = flush_error st in
@@ -393,6 +440,11 @@ let process_line st line =
     } in
     { st with entries = entry :: st.entries }
 
+  | PackageContinuation text when st.in_warning ->
+    { st with warning_message = st.warning_message ^ " " ^ text }
+
+  | PackageContinuation _ -> st
+
   | ContinuationLine text ->
     if st.in_error then
       { st with error_context = text :: st.error_context }
@@ -424,10 +476,17 @@ let process_line st line =
 
 (* ── Line unwrapping ───────────────────────────────────────── *)
 
-(** TeX hard-wraps log output at [max_print_line] characters (79 in TeX Live).
-    A physical line of exactly 79 characters was likely wrapped; concatenate it
-    with the next physical line to reconstruct the logical line.  This is the
-    standard heuristic used by LaTeXTools, texlab, and other log parsers. *)
+(** TeX hard-wraps log output at [max_print_line] characters (79 in TeX Live):
+    bytes for pdfTeX, Unicode characters for XeTeX and LuaTeX. A physical line
+    that long was likely wrapped; join it with the next one, unless that one
+    starts an error. This is the heuristic LaTeXTools and texlab use too. *)
+let full_line line =
+  String.length line = 79 || (String.length line > 79 && begin
+    let chars = ref 0 in
+    String.iter (fun c -> if Char.code c land 0xc0 <> 0x80 then incr chars) line;
+    !chars = 79
+  end)
+
 let unwrap_lines lines =
   let buf = Buffer.create 256 in
   let rec go acc = function
@@ -438,7 +497,8 @@ let unwrap_lines lines =
         List.rev acc
     | line :: rest ->
       Buffer.add_string buf line;
-      if String.length line = 79 then
+      let next_is_error = match rest with next :: _ -> starts_with "! " next | [] -> false in
+      if full_line line && not next_is_error then
         (* Physical line was wrapped — continue collecting *)
         go acc rest
       else begin
