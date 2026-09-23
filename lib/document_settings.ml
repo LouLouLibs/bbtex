@@ -30,7 +30,14 @@ let script source engine root =
       raise (Project.Error "That main file points back to this document.");
     Some (relative_path ~source target)
   end in
-  let original = In_channel.with_open_bin source In_channel.input_all in
+  (* BBEdit hands AppleScript the text with LF line breaks whatever the file
+     uses (checked with a CRLF file), and keeps the document's own line-break
+     setting when it saves. Compare and edit in LF, or a CRLF file always
+     looks changed. *)
+  let original = In_channel.with_open_bin source In_channel.input_all
+    |> String.split_on_char '\r' |> List.map (fun part ->
+      if String.starts_with ~prefix:"\n" part then String.sub part 1 (String.length part - 1)
+      else part) |> String.concat "\n" in
   let updated = update original ~engine ~root in
   let esc = Applescript.escape_applescript in
   Printf.sprintf {|tell application "BBEdit"
