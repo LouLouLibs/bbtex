@@ -49,46 +49,39 @@ duplicate a compiler might choose.
 
 ## Bibliography parser and boundaries
 
-The citation helper uses pinned **BibtexParser 2.0.1** in an isolated `uv` script
-environment. Its recoverable blocks made it preferable to writing an entry
-parser or managing another TexLab process. See the maintained
-[parser documentation](https://bibtexparser.readthedocs.io/en/main/quickstart.html)
-and [release](https://pypi.org/project/bibtexparser/2.0.1/).
+Citation search runs in the bbtex binary (`bbtex citation-picker`). Bibliography
+blocks come from [bibtexparser-ml](https://github.com/LouLouLibs/bibtexparser-ml),
+vendored in `vendor/bibtexparser-ml`: an OCaml port of the splitter in
+[python-bibtexparser](https://github.com/sciunto-org/python-bibtexparser) 2.0.1,
+made for bbtex. Its own repository tests it for identical output against
+bibtexparser 2.0.1 on edge cases, fuzzed input and real bibliographies.
 
-BibtexParser handles entry boundaries, fields, nested braces, quoted values,
+The splitter handles entry boundaries, fields, nested braces, quoted values,
 duplicates, and malformed-block recovery. A bounded value resolver handles
 `@string` references and `#` concatenation across the declared files. Search
 metadata supports direct `crossref` and comma-separated `xdata` inheritance with
 child values taking precedence; missing/ambiguous parents and cycles are reported.
 This is metadata fallback for search, not a full implementation of biblatex's
-type-specific inheritance rules. TeX markup is retained; Unicode text is searched
-with case folding. UTF-8 (including BOM) bibliography files are supported.
+type-specific inheritance rules. TeX markup is retained. Search ignores case for
+ASCII and Latin-1 letters (for example `É` and `é`); other scripts match exactly.
+UTF-8 (including BOM) bibliography files are supported.
 
 Each bibliography is limited to 32 MiB, inheritance/string expansion to 32 levels,
 and a dialog to 300 matches; use a narrower query for larger result sets. The
-10,000-entry regression fixture indexed/searched in about 0.15 seconds locally,
-excluding the first uv dependency setup and human dialog interaction.
+10,000-entry regression fixture is indexed and searched in about 0.05 seconds
+locally, excluding dialog interaction.
 
 ## Setup and checks
 
 Development commands are installed by `uv run scripts/install-workflow-commands.py`.
-Release packages include both commands and their helpers. Citation search requires
-`uv`; its first use downloads the pinned parser dependency, then reuses uv's cache.
-Reference search uses the OCaml binary directly. Errors are logged to
+Release packages include both commands and their helpers. Both searches use the
+OCaml binary directly; neither needs Python or uv. Errors are logged to
 `~/.local/state/bbtex/picker.log`.
 
-If citation search reports `env: … Snitch.app/Contents/Components:…: No such
-file or directory`, update to commit `75aadf7` or a package built from it or later.
-The launcher previously split inherited PATH entries containing spaces, such as
-`/Applications/Little Snitch.app/Contents/Components`. It now quotes the complete
-PATH assignment; no changes to Little Snitch or your shell configuration are
-needed. Development menu symlinks use the corrected helper immediately; packaged
-installations need an updated package.
-
-`dune runtest` checks edit planning and the shared index.
-`uv run test/integration/check_pickers.py` tests metadata and compiles dialogs.
-It also executes the launcher's shell prefix with a spaced Little Snitch PATH
-entry to catch this regression.
+`dune runtest` checks edit planning, the shared index, and citation metadata
+(string expansion, inheritance, duplicates, recovery and size limits).
+`uv run test/integration/check_pickers.py` tests the command-line output and
+compiles the generated dialogs.
 Set `BBTEX_TEST_NATIVE=1` to exercise multi-citation insertion, reference replacement,
 Undo, cancellation, Unicode ranges, and concurrent buffer/selection changes in
 disposable BBEdit documents. The automated test substitutes dialog choices;

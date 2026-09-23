@@ -295,8 +295,13 @@ let () =
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)
-  | Some ("reference-picker" | "picker-insert" | "picker-check" | "picker-unchanged" as command) ->
+  | Some ("citation-picker" | "reference-picker" | "picker-insert" | "picker-check" | "picker-unchanged" as command) ->
     (try match command, args with
+     | "citation-picker", [source; query] ->
+       let data = Citation.bibliography (Project_index.build source) in
+       print_string (Citation.picker ~binary:(Unix.realpath Sys.executable_name) data query)
+     | "citation-picker", [source; query; "--json"] ->
+       print_endline (Citation.json (Citation.bibliography (Project_index.build source)) query)
      | "reference-picker", [source; query] ->
        print_string (Picker.reference_picker ~binary:(Unix.realpath Sys.executable_name) source query)
      | "picker-insert", [mode; snapshot; prefix; selected; chosen] ->

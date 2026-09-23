@@ -11,10 +11,9 @@ TexLab completion and symbol navigation remain available.
 **Insert Citation / Insert Reference** search bibliography metadata or label
 context and insert keys into the current command. Citation multi-selection,
 existing options/keys, Undo, cancellation, and changed-buffer checks are supported.
-Citation search uses uv with pinned BibtexParser; reference search uses the shared
-OCaml index. Both use saved project definitions and reject ambiguous duplicate keys.
-Citation launching now preserves PATH entries containing spaces, fixing an
-`env: … No such file or directory` error with paths such as Little Snitch's.
+Both run in the bbtex binary with no Python dependency: citation search uses the
+bundled bibtexparser-ml splitter, and reference search uses the shared project
+index. Both use saved project definitions and reject ambiguous duplicate keys.
 
 - Optional preview on save follows the complete display equation at the cursor.
 - Change/Toggle/Close Environment now match nested tags while skipping comments
