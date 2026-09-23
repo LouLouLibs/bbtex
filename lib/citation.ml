@@ -10,15 +10,7 @@ type t = { entries : entry list; issues : string list; proofs : (string * string
 
 exception Invalid of string
 
-(* ASCII and Latin-1 case folding, enough for names such as "García" or "ZOË". *)
-let fold text =
-  let b = Bytes.of_string (String.lowercase_ascii text) in
-  for i = 0 to Bytes.length b - 2 do
-    let c = Bytes.get b (i + 1) in
-    if Bytes.get b i = '\xc3' && c >= '\x80' && c <= '\x9e' && c <> '\x97' then
-      Bytes.set b (i + 1) (Char.chr (Char.code c + 0x20))
-  done;
-  Bytes.to_string b
+let fold = Casefold.fold
 
 let space = function ' ' | '\t' | '\n' | '\r' | '\011' | '\012' -> true | _ -> false
 
