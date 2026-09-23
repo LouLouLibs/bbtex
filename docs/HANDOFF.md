@@ -448,7 +448,7 @@ RaTeX as a placeholder until it matures. Do not install it or change defaults.
   Logs hook errors through macOS logger; worker log is `preview-on-save.log`.
 - Full compile wrapper writes a live PID suppression marker so its own save
   does not start a competing preview. Hook ignores a marker whose PID is dead.
-- `scripts/install-preview-save-hook.py`: compile/install hook; refuses unrelated
+- `scripts/install-preview-save-hook.sh`: compile/install hook; refuses unrelated
   existing Document/BBEdit hooks. `install-workflow-commands.sh` installs menu link.
   `install.sh` wired for both. Release resources now include hook/service
   installers; see `docs/selection-preview.md` for package-only installation.

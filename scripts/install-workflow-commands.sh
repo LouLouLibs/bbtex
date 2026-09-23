@@ -1,7 +1,11 @@
 #!/bin/bash
 # Install on-demand build commands into BBEdit's Scripts menu as symlinks to this
 # checkout, without restarting BBEdit. Refuses to replace unrelated files.
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "${0##*/}: failed at line $LINENO: $BASH_COMMAND" >&2' ERR
+
+fail() { echo "${0##*/}: $*" >&2; exit 1; }
+command -v realpath >/dev/null || fail "realpath not found (macOS 13 or later required)"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPTS="$HOME/Library/Application Support/BBEdit/Scripts"
@@ -27,8 +31,7 @@ for command in "${COMMANDS[@]}"; do
         if [[ -L "$target" && "$(realpath "$target" 2>/dev/null || true)" == "$(realpath "$expected")" ]]; then
             continue
         fi
-        echo "Refusing to overwrite an unrelated file: $target" >&2
-        exit 1
+        fail "Refusing to overwrite an unrelated file: $target"
     fi
 done
 
@@ -37,6 +40,6 @@ for command in "${COMMANDS[@]}"; do
     name="${command%%|*}"
     target="$SCRIPTS/$name"
     [[ -L "$target" ]] || ln -s "$ROOT/scripts/${command#*|}" "$target"
-    [[ -f "$target" ]] || { echo "Not a working link: $target" >&2; exit 1; }
+    [[ -f "$target" ]] || fail "Not a working link: $target"
     echo "Installed: $name"
 done

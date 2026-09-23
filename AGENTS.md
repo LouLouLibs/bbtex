@@ -8,8 +8,15 @@ AppleScript glue for BBEdit. Keep it that way.
 - **Shipped code has no Python.** Anything a user runs (menu commands, pickers,
   previews, installers in the release package) is the OCaml binary, bash, or
   AppleScript. New behavior goes into `bbtex` as a subcommand.
-- **Build and install helpers are bash** (`scripts/*.sh`). They run on macOS;
-  call system tools by path where GNU and BSD versions differ (e.g. `/bin/cp`).
+- **Thin glue is bash** (`scripts/*.sh`): copying, linking, calling system
+  tools. Anything with real logic (plists, parsing, rollback across several
+  steps) is a `bbtex` subcommand in OCaml, not bash and not Python.
+- **Bash conventions** (macOS runs `#!/bin/bash` as bash 3.2, so no `mapfile`,
+  associative arrays or `${x,,}`): `set -Eeuo pipefail` with an `ERR` trap that
+  names the line; check required tools up front; don't read `find` through
+  `< <(...)`, where a failure looks like empty output; stage changes and `mv`
+  them into place; call tools whose GNU and BSD versions differ by path
+  (`/bin/cp`, `/usr/bin/stat`). CI runs shellcheck on every script.
 - **Python is only for integration tests** that drive BBEdit through
   AppleScript or compare against a Python reference implementation. Don't add
   Python for anything else, including one-off utilities.

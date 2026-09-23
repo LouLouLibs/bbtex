@@ -50,7 +50,7 @@ cp "$PROJECT_ROOT/scripts/bbtex-bbedit-pick.sh" "$PKG/Contents/Resources/bbtex-b
 cp "$PROJECT_ROOT/scripts/snippet-window.applescript" "$PKG/Contents/Resources/snippet-window.applescript"
 cp "$PROJECT_ROOT/scripts/preview-save-hook.applescript" "$PKG/Contents/Resources/preview-save-hook.applescript"
 cp "$PROJECT_ROOT/scripts/with-preview-lock.pl" "$PKG/Contents/Resources/with-preview-lock.pl"
-cp "$PROJECT_ROOT/scripts/install-preview-save-hook.py" "$PKG/Contents/Resources/install-preview-save-hook.py"
+cp "$PROJECT_ROOT/scripts/install-preview-save-hook.sh" "$PKG/Contents/Resources/install-preview-save-hook.sh"
 cp "$PROJECT_ROOT/scripts/install-preview-service.py" "$PKG/Contents/Resources/install-preview-service.py"
 cp "$PROJECT_ROOT/docs/selection-preview.md" "$PKG/Contents/Resources/selection-preview.md"
 cp "$PROJECT_ROOT/docs/project-navigation.md" "$PKG/Contents/Resources/project-navigation.md"
@@ -83,7 +83,7 @@ echo "Package assembled: $PKG"
 echo "  Binary: $BUILT_ARCH"
 echo "  Contents:"
 find "$PKG" -type f | sort | while read -r f; do
-    echo "    ${f#$PKG/}"
+    echo "    ${f#"$PKG"/}"
 done
 
 # ── Zip for distribution ──────────────────────────────────

@@ -268,8 +268,8 @@ Build helpers are bash. The remaining Python utilities run through `uv run`;
 see [AGENTS.md](AGENTS.md) for the language policy.
 
     scripts/build-support.sh
-    uv run scripts/install-support.py                 # preview migration
-    uv run scripts/install-support.py --apply --restart
+    scripts/install-support.sh                 # preview the install
+    scripts/install-support.sh --apply --restart
 # Optional preview refresh
 
 **LaTeX — Toggle Preview on Save** enables equation preview updates on ⌘S for

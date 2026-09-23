@@ -91,7 +91,7 @@ if [[ -L "$BBEDIT_SCRIPTS/LaTeX — Toggle Preview on Save.sh" ]]; then
 fi
 ln -s "$PROJECT_DIR/scripts/bbtex-preview-on-save.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Toggle Preview on Save.sh"
-uv run "$PROJECT_DIR/scripts/install-preview-save-hook.py" --apply
+"$PROJECT_DIR/scripts/install-preview-save-hook.sh" --apply
 "$PROJECT_DIR/scripts/install-workflow-commands.sh"
 
 echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Compile.sh"
@@ -102,7 +102,7 @@ echo "  Symlinked: $BBEDIT_SCRIPTS/LaTeX — Clean.sh"
 # the older Latex.bbpackage and requires BBEdit to be closed.
 "$PROJECT_DIR/scripts/build-support.sh"
 echo "  Editing assets built. Install with:"
-echo "    uv run scripts/install-support.py --apply --restart"
+echo "    scripts/install-support.sh --apply --restart"
 
 # ── Done ─────────────────────────────────────────────────────
 
