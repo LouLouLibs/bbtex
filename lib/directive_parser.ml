@@ -46,6 +46,9 @@ let parse_file filename =
       else
         match input_line ic with
         | line ->
+          (* A UTF-8 byte-order mark would hide a directive on the first line. *)
+          let line = if n = 0 && String.starts_with ~prefix:"\xef\xbb\xbf" line
+            then String.sub line 3 (String.length line - 3) else line in
           let acc' = match parse_directive_line line with
             | Some d -> d :: acc
             | None   -> acc

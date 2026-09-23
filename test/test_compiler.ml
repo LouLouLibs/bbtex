@@ -175,6 +175,23 @@ let test_engine_precedence () =
     assert_equal ~msg:"explicit choice overrides directives"
       "tectonic" (engine ~engine:Types.Tectonic ()))
 
+let test_texshop_engine_names () =
+  let root = Filename.temp_file "bbtex_texshop_" ".tex" in
+  let write text = let oc = open_out root in output_string oc text; close_out oc in
+  Fun.protect ~finally:(fun () -> Sys.remove root) (fun () ->
+    List.iter (fun (program, expected) ->
+      write ("% !TEX TS-program = " ^ program ^ "\n");
+      assert_equal ~msg:("TeXShop engine " ^ program) expected
+        (Types.string_of_engine (Compiler.resolve_compilation root).Types.engine))
+      ["pdflatexmk", "pdflatex"; "LaTeX", "pdflatex"; "latexmk", "pdflatex";
+       "xelatexmk", "xelatex"; "XeLaTeX", "xelatex"; "lualatexmk", "lualatex"];
+    write "%!TEX program = context\n";
+    match Compiler.resolve_compilation root with
+    | _ -> assert_true ~msg:"unsupported engine is rejected" false
+    | exception Compiler.Bbtex_error message ->
+      assert_true ~msg:("error lists the supported engines: " ^ message)
+        (String.length message > 30 && Project_index.find message 0 "pdflatexmk" < String.length message))
+
 (* ── Runner ────────────────────────────────────────────────── *)
 
 let test_aux_directory_recovery () =
@@ -202,6 +219,7 @@ let test_aux_directory_recovery () =
 let () =
   Printf.printf "Compiler tests:\n";
   run_test "engine precedence" test_engine_precedence;
+  run_test "TeXShop engine names" test_texshop_engine_names;
   run_test "missing auxiliary directories and containment" test_aux_directory_recovery;
   run_test "resolve_compilation: engine is pdflatex" test_resolve_sample_engine;
   run_test "resolve_compilation: root_file ends with sample.tex" test_resolve_sample_root_file;
