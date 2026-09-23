@@ -27,7 +27,10 @@ changes in your working folder never affect the result, then runs:
    OCaml, dune and uv versions) are written to `dist/release/`.
 5. With `--engines`: the article/book/Beamer corpus with pdfLaTeX, XeLaTeX and
    LuaLaTeX, including BibTeX/Biber and Poppler. With `--tectonic`: the Tectonic
-   tier, which downloads bundle resources and uses the installed Biber; see
+   tier with the same pinned bundle as the GitHub workflow. That bundle's
+   biblatex needs Biber 2.17 (MacTeX's newer Biber refuses its files), so the
+   script downloads Biber 2.17 once, checks its SHA-256, and caches it in
+   `~/Library/Caches/bbtex/biber-2.17/`; see
    [real-engine coverage](real-engine-regressions.md).
 
 `--report` posts the commit status `local-ci/macos-arm64` (or
