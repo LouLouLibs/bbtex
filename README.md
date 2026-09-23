@@ -61,7 +61,7 @@ CI builds with 5.4.1). Running the integration tests also needs
 ```bash
 git clone <repo-url> ~/bbtex-ocaml
 cd ~/bbtex-ocaml
-opam install . --deps-only   # dune; bbtex has no other opam dependencies
+opam install . --deps-only   # dune, uucp and uunf
 scripts/install.sh
 ```
 

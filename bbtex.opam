@@ -11,6 +11,8 @@ bug-reports: "https://github.com/LouLouLibs/bbtex/issues"
 depends: [
   "dune" {>= "3.0"}
   "ocaml" {>= "4.14"}
+  "uucp" {>= "17.0.0"}
+  "uunf" {>= "17.0.0"}
   "odoc" {with-doc}
 ]
 build: [

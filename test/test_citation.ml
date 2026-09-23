@@ -47,6 +47,9 @@ let () =
     assert (first "пушкин ОНЕГИН" = "russian");
     assert (first "STRASSE" = "german" && first "straße" = "german");
     assert (Casefold.fold "ΣΟΦΊΑ Straße ﬁ İ" = "σοφία strasse fi i̇");
+    (* Search also ignores accents; decomposable letters only. *)
+    assert (first "garcia nested" = "child" && first "zoe collected" = "later");
+    assert (Casefold.search_key "García Müller Ångström Łódź ÉCOLE" = "garcia muller angstrom łodz ecole");
     let duplicates = Citation.search data "duplicate" in
     assert (List.length duplicates = 2 && List.for_all (fun e -> e.Citation.ambiguous) duplicates);
     let has text = List.exists (fun issue -> Project_index.find issue 0 text < String.length issue) data.issues in

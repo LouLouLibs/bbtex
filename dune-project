@@ -12,4 +12,6 @@
  (description
   "The bbtex command-line tool behind the bbtex BBEdit package: compiles LaTeX projects, parses logs into BBEdit results, and powers SyncTeX, previews, the project outline and citation/reference pickers.")
  (depends
-  (ocaml (>= 4.14))))
+  (ocaml (>= 4.14))
+  (uucp (>= 17.0.0))
+  (uunf (>= 17.0.0))))
