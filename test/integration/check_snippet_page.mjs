@@ -39,7 +39,28 @@ try {
     Image: class { set src(value) { this.value = value; pending.push(this); } }
   });
   vm.runInContext(script, context);
-  assert.equal(window.bbtexSnippetVersion, 2);
+  assert.equal(window.bbtexSnippetVersion, 3);
+  // The page polls revision.js and loads image.js only for a new revision.
+  const loader = element('script');
+  assert.match(loader.src, /^revision\.js\?t=/);
+  loader.onload();
+  window.bbtexRevision('r1');
+  assert.match(loader.src, /^image\.js\?t=/);
+  loader.onload();
+  loader.src = 'unchanged';
+  window.bbtexRevision('r1');
+  assert.equal(loader.src, 'unchanged', 'same revision: image.js is not fetched again');
+  window.bbtexRevision('r2');
+  assert.match(loader.src, /^image\.js\?t=/);
+  loader.onerror();
+  loader.src = 'unchanged';
+  window.bbtexRevision('r2');
+  assert.match(loader.src, /^image\.js\?t=/, 'a failed fetch is retried');
+  loader.onload();
+  let revisionSeen = null;
+  vm.runInNewContext(readFileSync(join(folder, 'revision.js'), 'utf8'),
+    {window: {bbtexRevision(r) { revisionSeen = r; }}});
+  assert.match(revisionSeen, /^[0-9a-f]{32}$/);
   const state = {generation: 'one', revision: 1, status: 'current', source,
     line: 3, imageLine: 3, image: 'image-one', message: '', log: ''};
   window.bbtexSnippet(state);
@@ -69,7 +90,7 @@ try {
   assert.equal(reloaded, true);
   reloaded = false;
   vm.runInNewContext(readFileSync(join(folder, 'image.js'), 'utf8'), {
-    window: {bbtexSnippetVersion: 1, bbtexSnippet() { throw new Error('Old renderer must reload'); }},
+    window: {bbtexSnippetVersion: 2, bbtexSnippet() { throw new Error('Old renderer must reload'); }},
     location: {reload() { reloaded = true; }}
   });
   assert.equal(reloaded, true);

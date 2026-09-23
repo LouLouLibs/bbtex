@@ -6,11 +6,20 @@ let read path =
   let ic = open_in_bin path in
   Fun.protect ~finally:(fun () -> close_in ic)
     (fun () -> really_input_string ic (in_channel_length ic))
+(* Environment variables that can change what TeX reads or writes. Others, like
+   BBEdit's per-run BB_DOC_SELSTART, would make every preview a cache miss. *)
+let affects_tex binding =
+  let name = match String.index_opt binding '=' with
+    | Some i -> String.sub binding 0 i | None -> binding in
+  name = "PATH" || name = "OSFONTDIR" || name = "SOURCE_DATE_EPOCH"
+  || name = "FORCE_SOURCE_DATE" || String.starts_with ~prefix:"TEX" name
+  || String.starts_with ~prefix:"KPSE" name || String.ends_with ~suffix:"INPUTS" name
+  || String.ends_with ~suffix:"FONTS" name
+
 let key text engine options =
   Digest.to_hex (Digest.string (String.concat "\000"
-    ("png-1400-v1" :: text :: engine :: options @
-     (Array.to_list (Unix.environment ())
-      |> List.filter (fun value -> not (String.starts_with ~prefix:"BBTEX_PREVIEW_TOKEN=" value))
+    ("png-1400-v2" :: text :: engine :: options @
+     (Array.to_list (Unix.environment ()) |> List.filter affects_tex
       |> List.sort String.compare))))
 
 let valid manifest expected =

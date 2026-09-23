@@ -27,11 +27,16 @@ LINE="${BB_DOC_SELSTART_LINE:-1}"
 
 [[ -z "$PDF" ]] && exit 1
 
-SKIM="/Applications/Skim.app/Contents/SharedSupport/displayline"
-if [[ -x "$SKIM" ]]; then
+# Without Skim there is no SyncTeX jump; open the PDF in the default viewer.
+SKIM="${BBTEX_SKIM_DISPLAYLINE:-}"
+for app in /Applications/Skim.app "$HOME/Applications/Skim.app"; do
+    [[ -n "$SKIM" ]] || [[ ! -x "$app/Contents/SharedSupport/displayline" ]] ||
+        SKIM="$app/Contents/SharedSupport/displayline"
+done
+if [[ -n "$SKIM" && -x "$SKIM" ]]; then
     "$SKIM" -r -b "$LINE" "$PDF" "$BB_DOC_PATH"
 else
-    open -g -a Skim "$PDF"
+    open -g -a Skim "$PDF" 2>/dev/null || open -g "$PDF"
 fi
 
 # Keep focus on BBEdit

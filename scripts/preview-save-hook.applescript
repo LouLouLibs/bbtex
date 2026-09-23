@@ -13,7 +13,8 @@ on documentDidSave(myDoc)
                 end if
             end try
         end tell
-        set stateDirectory to POSIX path of (path to home folder) & ".local/state/bbtex/"
+        -- Same rule as bbtex and the scripts: BBTEX_STATE_DIR, else XDG_STATE_HOME/bbtex.
+        set stateDirectory to do shell script "printf '%s/' \"${BBTEX_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/bbtex}\""
         set workerPath to POSIX path of (path to home folder) & "Library/Application Support/BBEdit/Scripts/LaTeX — Toggle Preview on Save.sh"
         set packageWorker to POSIX path of (path to home folder) & "Library/Application Support/BBEdit/Packages/bbtex.bbpackage/Contents/Scripts/LaTeX — Toggle Preview on Save.sh"
         do shell script "test -f " & quoted form of workerPath & " || test -f " & quoted form of packageWorker
