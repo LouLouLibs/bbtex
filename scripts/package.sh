@@ -77,7 +77,7 @@ cp "$PROJECT_ROOT/scripts/bbtex-bbedit-clean-all.sh" "$PKG/Contents/Scripts/LaTe
 chmod +x "$PKG/Contents/Scripts/"*.sh
 
 # Editing helpers and clippings share the main package in release builds.
-uv run "$PROJECT_ROOT/scripts/build-support.py" "$PKG"
+"$PROJECT_ROOT/scripts/build-support.sh" "$PKG"
 
 echo "Package assembled: $PKG"
 echo "  Binary: $BUILT_ARCH"

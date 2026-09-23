@@ -132,9 +132,10 @@ the original editing-command assignments.
 
 ## Development checks
 
-Python utilities must run with uv and PEP 723 script metadata:
+Build the editing assets, then run the checks (Python checks run through uv;
+see `AGENTS.md`):
 
-    uv run scripts/build-support.py
+    scripts/build-support.sh
     uv run test/integration/check_texlab.py
     uv run test/integration/check_build_workflow.py
     uv run test/integration/check_project_builds.py

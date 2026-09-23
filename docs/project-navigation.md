@@ -64,7 +64,7 @@ the editor's existing symbol navigation or adding a persistent custom window.
 
 ## Installation and verification
 
-Development: `uv run scripts/install-workflow-commands.py`. Release packages
+Development: `scripts/install-workflow-commands.sh`. Release packages
 include the menu command and `project-outline.applescript` resource. Background
 errors are recorded in `~/.local/state/bbtex/outline.log`.
 

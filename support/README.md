@@ -13,7 +13,7 @@ and git-information build command. The full installed original is archived.
 Build from this repository:
 
     dune build
-    uv run scripts/build-support.py
+    scripts/build-support.sh
 
 Preview migration:
 
@@ -25,7 +25,7 @@ Install (quits and reopens BBEdit; respects unsaved-document prompts):
 
 Development uses bbtex-support.bbpackage plus the existing script symlinks.
 Release packages include the same assets inside bbtex.bbpackage.
-Python helpers use PEP 723 metadata and uv; they require no third-party packages.
+`install-support.py` uses PEP 723 metadata and uv and needs no third-party packages.
 
 If VIRTUAL_ENV points to a removed interpreter, unset it for the invocation and
 select an existing interpreter with uv's --python option. Do not repair or install

@@ -135,7 +135,7 @@ of date; save an equation afterward to refresh it. Disabling or switching tracki
 also invalidates the old automatic request. Cancellation includes a short grace
 period for compiler children to stop.
 
-Install the menu command with `uv run scripts/install-workflow-commands.py` and
+Install the menu command with `scripts/install-workflow-commands.sh` and
 the attachment with `uv run scripts/install-preview-save-hook.py --apply`.
 The installer refuses to replace unrelated save attachments; those require
 manual integration. Background diagnostics are in

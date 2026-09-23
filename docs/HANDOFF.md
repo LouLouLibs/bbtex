@@ -381,8 +381,8 @@ RaTeX as a placeholder until it matures. Do not install it or change defaults.
 - **Substantial work remains uncommitted**, including preview, cache, service,
   save hook, completion binding helper, docs and sample project. Preserve all of
   it. Inspect `git status --short` before acting. No commit made for this handoff.
-- Python must always run through **uv**, with PEP 723 metadata and explicit
-  dependencies. Never bare Python or install into another environment.
+- Language policy (no Python in shipped code; Python only for integration tests,
+  always through **uv** with PEP 723 metadata) is in `AGENTS.md`.
 - Reliable command here (inherited VIRTUAL_ENV is broken):
   `env -u VIRTUAL_ENV uv --no-cache run --python /Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13 SCRIPT`
 - User authorizes BBEdit scripting and direct installation; use required sandbox
@@ -449,7 +449,7 @@ RaTeX as a placeholder until it matures. Do not install it or change defaults.
 - Full compile wrapper writes a live PID suppression marker so its own save
   does not start a competing preview. Hook ignores a marker whose PID is dead.
 - `scripts/install-preview-save-hook.py`: compile/install hook; refuses unrelated
-  existing Document/BBEdit hooks. `install-workflow-commands.py` installs menu link.
+  existing Document/BBEdit hooks. `install-workflow-commands.sh` installs menu link.
   `install.sh` wired for both. Release resources now include hook/service
   installers; see `docs/selection-preview.md` for package-only installation.
 - RaTeX branches in types/compiler/preview/CLI/configure dialog use documented
