@@ -13,23 +13,23 @@ and git-information build command. The full installed original is archived.
 Build from this repository:
 
     dune build
-    uv run scripts/build-support.py
+    scripts/build-support.sh
 
-Preview migration:
+Preview the install:
 
-    uv run scripts/install-support.py
+    scripts/install-support.sh
 
 Install (quits and reopens BBEdit; respects unsaved-document prompts):
 
-    uv run scripts/install-support.py --apply --restart
+    scripts/install-support.sh --apply --restart
 
 Development uses bbtex-support.bbpackage plus the existing script symlinks.
 Release packages include the same assets inside bbtex.bbpackage.
-Python helpers use PEP 723 metadata and uv; they require no third-party packages.
 
-If VIRTUAL_ENV points to a removed interpreter, unset it for the invocation and
-select an existing interpreter with uv's --python option. Do not repair or install
-packages into another environment as part of building bbtex.
+The one-time migration from the retired Latex.bbpackage (archiving it and
+carrying over its keyboard shortcuts) has been removed. If that package is still
+installed, `install-support.sh` stops and points to the old
+`scripts/install-support.py` in git history.
 
 Change/Toggle/Close Environment use the bundled OCaml executable to match literal
 environment tags in the unsaved buffer. Matching skips comments, common verbatim

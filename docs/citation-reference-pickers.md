@@ -76,7 +76,7 @@ locally, excluding dialog interaction.
 
 ## Setup and checks
 
-Development commands are installed by `uv run scripts/install-workflow-commands.py`.
+Development commands are installed by `scripts/install-workflow-commands.sh`.
 Release packages include both commands and their helpers. Both searches use the
 OCaml binary directly; neither needs Python or uv. Errors are logged to
 `~/.local/state/bbtex/picker.log`.

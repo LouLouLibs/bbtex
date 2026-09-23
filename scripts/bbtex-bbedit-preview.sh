@@ -50,11 +50,10 @@ SELECTION="${SELECTION#*$'\n'}"
 TOKEN=$("$BBTEX" snippet-begin "$BB_DOC_PATH" "$SOURCE_LINE" manual)
 export BBTEX_PREVIEW_TOKEN="$TOKEN"
 OUTPUT=$(printf '%s\n' "$SELECTION" | "$BBTEX" preview "$BB_DOC_PATH") && EXIT=0 || EXIT=$?
-STATUS="" PDF="" PNG="" LOG="" MESSAGE=""
+STATUS="" PNG="" LOG="" MESSAGE=""
 while IFS= read -r line; do
     case "$line" in
         status:*) STATUS="${line#status: }" ;;
-        pdf:*) PDF="${line#pdf: }" ;;
         png:*) PNG="${line#png: }" ;;
         log:*) LOG="${line#log: }" ;;
         message:*) MESSAGE="${line#message: }" ;;

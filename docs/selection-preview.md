@@ -135,8 +135,8 @@ of date; save an equation afterward to refresh it. Disabling or switching tracki
 also invalidates the old automatic request. Cancellation includes a short grace
 period for compiler children to stop.
 
-Install the menu command with `uv run scripts/install-workflow-commands.py` and
-the attachment with `uv run scripts/install-preview-save-hook.py --apply`.
+Install the menu command with `scripts/install-workflow-commands.sh` and
+the attachment with `scripts/install-preview-save-hook.sh --apply`.
 The installer refuses to replace unrelated save attachments; those require
 manual integration. Background diagnostics are in
 `~/.local/state/bbtex/preview-on-save.log`.
@@ -147,7 +147,7 @@ Install `bbtex.bbpackage` in `~/Library/Application Support/BBEdit/Packages/`.
 For the optional save hook and contextual service, run the bundled installers:
 
 ```sh
-uv run "$HOME/Library/Application Support/BBEdit/Packages/bbtex.bbpackage/Contents/Resources/install-preview-save-hook.py" --apply
+"$HOME/Library/Application Support/BBEdit/Packages/bbtex.bbpackage/Contents/Resources/install-preview-save-hook.sh" --apply
 uv run "$HOME/Library/Application Support/BBEdit/Packages/bbtex.bbpackage/Contents/Resources/install-preview-service.py" --apply
 ```
 

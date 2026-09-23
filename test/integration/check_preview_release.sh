@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 bash scripts/package.sh
 PKG="$PWD/dist/bbtex.bbpackage"
-for resource in with-preview-lock.pl preview-save-hook.applescript snippet-window.applescript project-outline.applescript insert-picker.applescript bbtex-bbedit-pick.sh install-preview-save-hook.py install-preview-service.py; do
+for resource in with-preview-lock.pl preview-save-hook.applescript snippet-window.applescript project-outline.applescript insert-picker.applescript bbtex-bbedit-pick.sh install-preview-save-hook.sh install-preview-service.py; do
     cmp "scripts/$resource" "$PKG/Contents/Resources/$resource"
     unzip -p dist/bbtex.bbpackage.zip "bbtex.bbpackage/Contents/Resources/$resource" | cmp - "scripts/$resource"
 done
@@ -12,7 +12,7 @@ unzip -tq dist/bbtex.bbpackage.zip
 uv run test/integration/check_package_archive.py
 BBTEX_TEST_BINARY="$PKG/Contents/Resources/bbtex" uv run test/integration/check_doctor.py
 "$PKG/Contents/Scripts/LaTeX — Doctor.sh" | grep -q 'bbtex doctor'
-uv run "$PKG/Contents/Resources/install-preview-save-hook.py"
+bash "$PKG/Contents/Resources/install-preview-save-hook.sh"
 uv run "$PKG/Contents/Resources/install-preview-service.py"
 BBTEX_TEST_WRAPPER="$PKG/Contents/Scripts/LaTeX — Compile.sh" uv run test/integration/check_build_workflow.py
 uv run test/integration/check_save_preview_worker.py

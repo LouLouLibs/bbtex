@@ -124,17 +124,18 @@ They do not add package declarations or alter TexLab's completion shortcut.
 
 ## Rollback
 
-Migration saves the complete previous package and shortcut file in
-~/Library/Application Support/BBEdit/Backups/bbtex-TIMESTAMP/.
-Quit BBEdit, move bbtex-support.bbpackage out of Packages, restore Latex.bbpackage
-from the backup, then reopen BBEdit. Restore the shortcut backup too if you want
-the original editing-command assignments.
+Each install moves the previous bbtex-support.bbpackage to
+~/Library/Application Support/BBEdit/Backups/bbtex-TIMESTAMP-PID/. To go back,
+quit BBEdit, move the installed package out of Packages, put the backup in its
+place, then reopen BBEdit. (Backups from the retired Latex.bbpackage migration
+also contain that package and the previous shortcut file.)
 
 ## Development checks
 
-Python utilities must run with uv and PEP 723 script metadata:
+Build the editing assets, then run the checks (Python checks run through uv;
+see `AGENTS.md`):
 
-    uv run scripts/build-support.py
+    scripts/build-support.sh
     uv run test/integration/check_texlab.py
     uv run test/integration/check_build_workflow.py
     uv run test/integration/check_project_builds.py
@@ -142,9 +143,9 @@ Python utilities must run with uv and PEP 723 script metadata:
     uv run test/integration/check_bbedit_texlab.py
     uv run test/integration/check_results_browser.py
     uv run test/integration/check_live_compile.py
-    uv run scripts/install-support.py
+    scripts/install-support.sh
 
-The last command previews migration. Add --apply --restart to install.
+The last command previews the install. Add --apply --restart to install.
 
 The native integration checks use disposable BBEdit documents/PDFs and require
 macOS application scripting access. The workflow check uses fake compilers and

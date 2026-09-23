@@ -264,12 +264,12 @@ migration. See [editing commands and TexLab setup](docs/bbedit-editing.md),
 [asset attribution](support/THIRD-PARTY-NOTICES.md), and the
 [implementation plan](docs/plans/2026-09-17-bbedit-latex-workflow.md).
 
-Python build/check utilities always run through `uv run` with PEP 723 inline
-metadata and explicit dependencies. They do not install into shared environments.
+Build helpers are bash. The remaining Python utilities run through `uv run`;
+see [AGENTS.md](AGENTS.md) for the language policy.
 
-    uv run scripts/build-support.py
-    uv run scripts/install-support.py                 # preview migration
-    uv run scripts/install-support.py --apply --restart
+    scripts/build-support.sh
+    scripts/install-support.sh                 # preview the install
+    scripts/install-support.sh --apply --restart
 # Optional preview refresh
 
 **LaTeX — Toggle Preview on Save** enables equation preview updates on ⌘S for
