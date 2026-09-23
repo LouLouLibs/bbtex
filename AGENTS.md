@@ -36,4 +36,10 @@ binary to dune cram tests is tracked in issue #4.
 - `vendor/` holds copies of other repositories (see each `VENDORED.md`). Change
   them upstream and copy them in again; don't edit them here.
 
+## Checks
+
+CI runs locally on Apple Silicon: `scripts/ci.sh --report` before asking for a
+merge (`--engines` when build, log or engine code changed). GitHub Actions
+workflows are manual-only; don't re-enable push or pull-request triggers.
+
 See `docs/HANDOFF.md` for project history and user preferences.

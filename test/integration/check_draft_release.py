@@ -30,7 +30,7 @@ if [[ "$2" == view ]]; then
 fi
 ''')
     gh.chmod(0o755)
-    for arch in ("arm64", "x86_64"):
+    for arch in ("arm64",):
         name = f"bbtex-macos-{arch}.bbpackage.zip"
         data = f"fixture archive for {arch}".encode()
         (assets / name).write_bytes(data)
@@ -56,7 +56,7 @@ fi
     result, calls = run("missing")
     assert result.returncode != 0 and not calls
     (assets / "bbtex-macos-arm64.bbpackage.zip").write_bytes(b"fixture archive for arm64")
-    (assets / "bbtex-macos-x86_64.bbpackage.zip").unlink()
+    (assets / "build-info-arm64.txt").unlink()
     result, calls = run("draft")
     assert result.returncode != 0 and not calls
     print("Draft creation/update, published-release refusal, version gating, and artifact checks passed")

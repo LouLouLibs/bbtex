@@ -281,10 +281,9 @@ it is not installed automatically or selected by default.
 
 ## CI builds and releases
 
-GitHub Actions builds tested packages for Apple Silicon and Intel Macs. Successful
-runs provide ZIP artifacts and checksums. Pushing a version tag creates a draft
-release after both architectures pass; publishing is manual. See
+bbtex supports Apple Silicon Macs. `scripts/ci.sh` runs the full check suite on
+a clean checkout, posts the result to GitHub with `--report`, and prepares draft
+releases with `--release`. `--engines` adds the
+[real-engine corpus](docs/real-engine-regressions.md) (pdfLaTeX/XeLaTeX/LuaLaTeX
+with BibTeX/Biber, previews, diagnostics and cancellation). See
 [CI and release instructions](docs/releases.md).
-An additional [real-engine corpus](docs/real-engine-regressions.md) checks
-pdfLaTeX/XeLaTeX/LuaLaTeX rendering with BibTeX/Biber, previews, diagnostics,
-and cancellation in CI.

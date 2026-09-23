@@ -1,5 +1,6 @@
 #!/bin/bash
-# Called only after both architecture jobs succeed. Never publishes a release.
+# Called only after local CI passes for the tag (scripts/ci.sh --release TAG).
+# Never publishes a release; it creates or updates a draft.
 set -euo pipefail
 ASSETS="${1:?Expected artifact directory}"
 TAG="${RELEASE_TAG:?Expected RELEASE_TAG}"
@@ -9,7 +10,7 @@ TAG="${RELEASE_TAG:?Expected RELEASE_TAG}"
 }
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ASSETS"
-for arch in arm64 x86_64; do
+for arch in arm64; do
     test -s "bbtex-macos-$arch.bbpackage.zip"
     test -s "build-info-$arch.txt"
     shasum -a 256 -c "SHA256SUMS-$arch.txt"

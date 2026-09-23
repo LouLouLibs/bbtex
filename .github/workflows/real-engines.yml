@@ -1,27 +1,8 @@
 name: Real TeX engines
 
+# Manual only; locally, run scripts/ci.sh --engines (and --tectonic).
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    tags: ['v*']
-    paths:
-      - 'lib/**'
-      - 'bin/**'
-      - 'test/dune'
-      - 'test/corpus/**'
-      - 'test/integration/check_real_engines.py'
-      - 'test/integration/check_tectonic.py'
-      - '.github/workflows/real-engines.yml'
-  pull_request:
-    paths:
-      - 'lib/**'
-      - 'bin/**'
-      - 'test/dune'
-      - 'test/corpus/**'
-      - 'test/integration/check_real_engines.py'
-      - 'test/integration/check_tectonic.py'
-      - '.github/workflows/real-engines.yml'
 
 permissions:
   contents: read
