@@ -5,13 +5,17 @@ to `main`, pull request, version tag, and manual workflow run. It builds separat
 Apple Silicon (`arm64`, `macos-15`) and Intel (`x86_64`, `macos-15-intel`) packages.
 Runner labels follow [GitHub's hosted-runner documentation](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
-Each job installs OCaml, dune, uv, and BBEdit's scripting dictionary. It runs
+Each job installs OCaml and dune through opam (`ocaml/setup-ocaml`, compiler
+pinned by `OCAML_COMPILER` in the workflow), then uv and BBEdit's scripting
+dictionary. It runs
 unit tests, mocked project/build/cancellation and save-worker tests, compiles
 the editing assets and optional hook, and validates the package ZIP, including
 Finder stationery flags and executable permissions after extraction. The
 package binary must link only system libraries. Tool versions and the source
 commit are recorded beside the ZIP, along with SHA-256 checksums. Actions are
-pinned to commit IDs; Homebrew tools use the runner's available formula versions.
+pinned to commit IDs. The opam switch and dune cache are reused between runs;
+a cold run compiles the compiler first and takes several minutes longer.
+Homebrew tools (uv, BBEdit) use the runner's available formula versions.
 
 The package workflow needs no TeX distribution or interactive editor session.
 The separate **Real TeX engines** workflow runs the article/book/Beamer corpus

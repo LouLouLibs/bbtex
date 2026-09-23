@@ -45,8 +45,8 @@ two Unicode engines also run the fontspec fixture. Generated large-project and
 cancellation fixtures explicitly select the requested engine. Each job uploads
 its own `real-engines-ENGINE` artifact, and one failure does not cancel the other
 jobs. TeX packages and Latin Modern fonts are explicit APT dependencies.
-Ubuntu supplies [Dune 3.14](https://packages.ubuntu.com/noble/ocaml/ocaml-dune),
-which meets this repository's Dune requirement. The workflow pins uv to 0.11.2;
+OCaml and dune come from opam with the same pinned compiler as the package
+workflow. The workflow pins uv to 0.11.2;
 APT package versions follow the Ubuntu repositories and runtime versions are
 recorded in each report.
 

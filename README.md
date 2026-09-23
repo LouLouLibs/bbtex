@@ -54,11 +54,13 @@ double-click `bbtex.bbpackage`. BBEdit installs it automatically.
 
 ### From source
 
-Requires OCaml 5.0+, dune 3.0+, and uv for the editing-support build helpers.
+Requires [opam](https://opam.ocaml.org/doc/Install.html) (OCaml 4.14 or later;
+CI builds with 5.4.1) and uv for the editing-support build helpers.
 
 ```bash
 git clone <repo-url> ~/bbtex-ocaml
 cd ~/bbtex-ocaml
+opam install . --deps-only   # dune; bbtex has no other opam dependencies
 scripts/install.sh
 ```
 

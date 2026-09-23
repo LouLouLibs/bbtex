@@ -75,9 +75,11 @@ tectonic directly (tectonic handles its own multi-pass logic).
 
 ### No external OCaml dependencies
 
-The tool uses only the OCaml standard library. No opam packages. This
-keeps the build simple (`dune build` with no dependency resolution) and
-makes the code easier to audit and understand.
+The tool uses only the OCaml standard library and the vendored
+bibtexparser-ml (`vendor/`). The opam package declares no library
+dependencies, so `opam install . --deps-only` only brings dune. This keeps
+the build simple and the code easy to audit. Linking opam libraries such as
+uucp is discussed in issue #8.
 
 ### No JSON output format
 
