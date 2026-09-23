@@ -8,10 +8,10 @@ BBTEX="$PARENT/_build/default/bin/main.exe"
 if [[ -x "$PARENT/Resources/bbtex" ]]; then
     BBTEX="$PARENT/Resources/bbtex"
 fi
-# BBEdit displays this report in its shell output window. No saved report or
-# persistent state is created, and no document is required.
+# BBEdit displays this report in its shell output window. Tool version queries
+# may initialize their own caches; no document or saved report is required.
 SOURCE="${BB_DOC_PATH:-${1:-}}"
 if [[ -n "$SOURCE" && -f "$SOURCE" ]]; then
-    exec "$BBTEX" doctor "$SOURCE"
+    exec "$BBTEX" doctor --probe "$SOURCE"
 fi
-exec "$BBTEX" doctor
+exec "$BBTEX" doctor --probe

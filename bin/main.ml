@@ -5,7 +5,7 @@ open Bbtex
 let usage = {|Usage: bbtex <command> [options] <file>
 
 Commands:
-  doctor [file.tex]          Inspect setup without changing files or settings
+  doctor [--probe] [file.tex] Inspect setup; --probe runs bounded version queries
   compile <file.tex>         Compile and report results (protocol output)
   results <file.tex>         Show all diagnostics from the current project log
   paths <file.tex>           Resolve project log and PDF paths without compiling
@@ -227,9 +227,10 @@ let () =
   if verbose then Log.set_verbose ();
   match cmd with
   | Some "doctor" ->
-    (match args with
-     | [] -> Doctor.run None
-     | [source] -> Doctor.run (Some source)
+    let probe = List.mem "--probe" args in
+    (match List.filter ((<>) "--probe") args with
+     | [] -> Doctor.run ~probe None
+     | [source] -> Doctor.run ~probe (Some source)
      | _ -> Printf.eprintf "doctor accepts at most one source file\n"; exit 2)
   | None ->
     print_string usage;

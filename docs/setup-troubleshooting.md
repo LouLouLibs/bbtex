@@ -1,12 +1,19 @@
 # Setup and troubleshooting
 
-Run `bbtex doctor` or **Scripts → LaTeX — Doctor** in BBEdit. Supply a saved
+Run `bbtex doctor` for inspection only, or `bbtex doctor --probe` for tool launch
+and version checks. **Scripts → LaTeX — Doctor** includes the launch checks. Supply a saved
 source with `bbtex doctor path/to/main.tex` to resolve its engine and inspect its
 latest bbtex build log. The menu uses `BB_DOC_PATH` when BBEdit supplies it; without
 that value it checks the default setup. The report appears as shell output.
 
-This first diagnostic tier is strictly read-only: no tool execution, compilation,
-settings changes, directory creation or installation. `OK` means the stated
+Without `--probe`, inspection is strictly read-only: no tool execution,
+compilation, settings changes, directory creation or installation. With `--probe`,
+Doctor directly executes the first discovered tool with its version flag, without
+a shell, with disconnected stdin, a three-second limit per tool, and a 16 KiB
+combined stdout/stderr limit. Timeout/output-limit cleanup kills the probe process
+group. Probes run sequentially (up to seven tools, roughly 21 seconds of timeouts).
+External tools may initialize caches; no document is compiled and Doctor does not
+install or repair anything. RaTeX is never probed. `OK` means the stated
 inspection passed, not that the feature has been exercised. `WARN` needs attention;
 `OPTIONAL` is not a broken installation. `UNVERIFIED` requires a manual check.
 Exit status is zero when a report is produced, including reports containing warnings.
@@ -29,8 +36,8 @@ Exit status is zero when a report is produced, including reports containing warn
 - Biber control-file version mismatch: use a compatible Biber/biblatex pair.
   Tectonic's selected bundle supplies biblatex independently of the system TeX
   installation. The observed bundle biblatex 3.17 and Biber 2.20 are incompatible.
-  Doctor recognizes this only if the evidence remains in the latest build log;
-  it does not run Biber or infer compatibility from its executable path.
+  Doctor recognizes this if evidence remains in the latest build log. A successful
+  Biber version query does not prove compatibility with a project's biblatex.
 - Duplicate commands: inspect both BBEdit's Scripts folder and the `bbtex.bbpackage`
   package. Keep one active workflow installation. `bbtex-support.bbpackage` is a
   separate editing package and is expected alongside the workflow commands.
@@ -41,8 +48,10 @@ Exit status is zero when a report is produced, including reports containing warn
   and other runtime failures remain possible).
 
 RaTeX remains an experimental placeholder. No installation is recommended by doctor.
-Tool versions, launchability, arbitrary custom package names, compiled attachment
-ownership, and native integration are deliberately unverified in this first tier.
+Tool versions and launchability require `--probe`. Arbitrary custom package names,
+compiled attachment ownership, bibliography compatibility and native integration
+remain unverified. Version output is bounded and reduced to its first nonempty
+line; failure signatures are examined separately.
 
 ## Disposable smoke check and sharing
 

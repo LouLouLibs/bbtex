@@ -44,4 +44,11 @@ with tempfile.TemporaryDirectory(prefix='bbtex doctor ') as tmp:
         assert expected in result.stdout, result.stdout
     assert tmp not in result.stdout
     assert snapshot() == before, 'Doctor changed the inspected installation'
+    result = subprocess.run([BINARY, 'doctor', '--probe'], capture_output=True, text=True,
+                            check=True, timeout=10,
+                            env=dict(os.environ, HOME=tmp, PATH=str(tools),
+                                     BBTEX_STATE_DIR=str(home / 'absent/state')))
+    assert '[WARN] pdflatex launch: exit 99' in result.stdout, result.stdout
+    assert tmp not in result.stdout
+    assert snapshot() == before, 'Probe with a non-writing fixture changed files'
 print('Doctor partial/conflicting installation and read-only checks passed')

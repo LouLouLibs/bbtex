@@ -1,6 +1,7 @@
 # bbtex — LaTeX for BBEdit
 
 Setup checks: `bbtex doctor [file.tex]` or **Scripts → LaTeX — Doctor**.
+Add `--probe` for bounded tool-version checks (included in the menu command).
 See [setup troubleshooting](docs/setup-troubleshooting.md) for scope and fixes.
 
 Compile LaTeX, see errors in BBEdit's results browser, and jump between

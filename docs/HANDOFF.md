@@ -1,5 +1,20 @@
 # BBEdit LaTeX handoff — updated 2026-09-22
 
+## Doctor launch checks — 2026-09-22
+
+User confirmed the Doctor menu works. Added `doctor --probe`; the installed menu
+now uses it through its existing development symlink. Plain `doctor` remains
+inspection-only. Direct version queries use the first PATH executable, closed
+stdin, three seconds/tool and 16 KiB combined output; cleanup kills the probe
+process group. RaTeX is never launched. External tools may initialize caches,
+which is stated in the report/guide. Successful launch does not establish
+Biber/biblatex compatibility or a successful compile.
+
+Local live checks reproduced Biber's exit 255 / arm64 extraction failure with an
+actionable warning; all other probed tools returned versions. Tests cover stderr,
+nonzero exit, output flood and descendants holding a pipe open. Remaining Phase 6
+work is broader installation/attachment discovery and fresh-machine acceptance.
+
 ## Doctor inspection tier — 2026-09-22
 
 Added `bbtex doctor [file.tex]` and **LaTeX — Doctor** (development shortcut

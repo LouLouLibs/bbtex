@@ -1,4 +1,4 @@
-(** Read-only setup inspection: no subprocesses, writes or repairs. *)
+(** Read-only setup inspection, with optional bounded tool version queries. *)
 let exists p = Sys.file_exists p
 let directory p = try Sys.is_directory p with Sys_error _ -> false
 let access p modes = try Unix.access p modes; true with Unix.Unix_error _ -> false
@@ -24,7 +24,7 @@ let log_findings text =
     ["Biber launcher failed before bibliography processing. Repair/reinstall Biber through your TeX distribution."] else []) @
   (if contains text "control file version" && contains text "expected version" then
     ["Biber/biblatex version mismatch. Match Biber to biblatex in the selected TeX distribution or Tectonic bundle."] else [])
-let inspect ~home ~path ~state ~binary ?source () =
+let inspect ~home ~path ~state ~binary ?source ?(probe=false) () =
   let lines = ref [] in
   let add status name detail = lines := Printf.sprintf "[%s] %s: %s" status name detail :: !lines in
   let engine = match source with
@@ -49,9 +49,19 @@ let inspect ~home ~path ~state ~binary ?source () =
     | [] -> add (if List.mem name required then "WARN" else "OPTIONAL") name
         "Not on PATH. See setup troubleshooting for feature-specific installation."
     | first :: rest -> add "OK" name first;
+        if probe && name <> "ratex" then begin
+          try
+            let result = Doctor_probe.run first (if name = "pdftoppm" then "-v" else "--version") in
+            add (if result.outcome = "ok" then "OK" else "WARN") (name ^ " launch")
+              (result.outcome ^ ": " ^ Doctor_probe.summary result.output);
+            List.iter (add "WARN" name) (log_findings result.output)
+          with Unix.Unix_error (error, _, _) -> add "WARN" (name ^ " launch") (Unix.error_message error)
+        end;
         if rest <> [] then add "INFO" (name ^ " alternatives") (String.concat ", " rest))
     (List.sort_uniq String.compare (required @ ["pdftoppm"; "bibtex"; "biber"; "texlab"; "uv"]));
-  add "UNVERIFIED" "Versions and launchability" "Tools were located, not executed. Version compatibility and compilation are unverified. RaTeX remains experimental; its absence is normally expected.";
+  add "UNVERIFIED" "Versions and compatibility"
+    (if probe then "Version queries do not establish bibliography compatibility or successful compilation. RaTeX is never probed."
+     else "Tools were located, not executed. Use doctor --probe for bounded launch/version checks. RaTeX remains experimental.");
   let parent = existing_parent state in
   add (if directory parent && access parent [Unix.W_OK; Unix.X_OK] then "OK" else "WARN")
     "State access" (parent ^ " (permission inspection; no write attempted)");
@@ -81,9 +91,10 @@ let inspect ~home ~path ~state ~binary ?source () =
   add (if List.exists directory ["/Applications/Skim.app"; Filename.concat home "Applications/Skim.app"] then "OK" else "OPTIONAL")
     "Skim" "Standard application locations checked; launch and SyncTeX behavior unverified.";
   add "UNVERIFIED" "BBEdit integration" "TexLab configuration, Automation permission, shortcuts and UI behavior require a native smoke check.";
-  "bbtex doctor — read-only inspection\nHome paths redacted; review other paths before sharing.\n\n" ^
+  (if probe then "bbtex doctor — tool launch checks (tools may initialize caches)\n" else "bbtex doctor — read-only inspection\n") ^
+  "Home paths redacted; review other paths before sharing.\n\n" ^
   redact home (String.concat "\n" (List.rev !lines)) ^ "\n\nSee docs/setup-troubleshooting.md for next actions.\n"
-let run source =
+let run ?(probe=false) source =
   print_string (inspect ~home:(Option.value ~default:"" (Sys.getenv_opt "HOME"))
     ~path:(Option.value ~default:"" (Sys.getenv_opt "PATH")) ~state:(Build_job.state_dir ())
-    ~binary:Sys.executable_name ?source ())
+    ~binary:Sys.executable_name ?source ~probe ())

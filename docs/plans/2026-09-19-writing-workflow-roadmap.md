@@ -234,8 +234,10 @@ First inspection tier implemented: `bbtex doctor [file.tex]`, BBEdit menu entry,
 read-only PATH/configuration/layout/state checks, Biber failure-log recognition,
 home-path redaction, and a troubleshooting/smoke-check guide. Unit and isolated
 conflicting-installation tests verify the inspected files remain unchanged.
-Active version/launch probes, broader custom-layout discovery, and fresh-machine
-acceptance remain; the report explicitly marks those capabilities unverified.
+Bounded version/launch probes are now available through `doctor --probe` and the
+menu (accepted by the user before this extension). Plain inspection stays read-only;
+probe tools may initialize caches. Broader custom-layout discovery, compatibility
+validation and fresh-machine acceptance remain explicitly unverified.
 
 **Outcome:** a new installation can explain what works and how to fix what does not.
 
