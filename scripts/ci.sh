@@ -77,6 +77,7 @@ step() { # name, command...
         echo "ok ($((SECONDS - began))s)"
     else
         echo "FAILED — see $LOG"
+        echo "  checkout kept at $CHECKOUT (remove: git worktree remove --force \"$CHECKOUT\")"
         report failure "$CURRENT failed"
         KEEP=true
         exit 1
