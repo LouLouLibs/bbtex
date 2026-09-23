@@ -3,7 +3,10 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""Project resolution, output paths, profiles, locking, cancellation, and cleanup."""
+"""Overlapping builds, cancellation of compiler process groups, and lock reuse.
+
+Resolution, profiles, output paths, engine switching and cleanup are cram
+tests in test/projects.t."""
 import os
 from pathlib import Path
 import subprocess
@@ -32,24 +35,7 @@ with tempfile.TemporaryDirectory(prefix="bbtex-project-") as directory:
         if "applescript_file" in output:
             Path(output["applescript_file"]).unlink()
         return output
-    result = run("paths", chapter)
-    assert result["root"] == str(main) and result["engine"] == "lualatex"
-    middle.write_text("%!TEX root = chapter.tex\n")
-    assert "Cyclic" in run("paths", chapter, expected=2)["message"]
-    middle.write_text("%!TEX root = absent.tex\n")
-    assert "not found" in run("paths", chapter, expected=2)["message"]
-    middle.write_text("%!TEX root = main.tex\n")
-    print("Root chains, self-root, missing roots, and cycles verified")
-
-    settings = root / ".bbtex"
-    settings.write_text("root = main.tex\noutput_directory = build output\n\n[profile Draft]\nengine = xelatex\noptions = -halt-on-error\n\n[profile Tectonic]\nengine = tectonic\noptions = --reruns=1\n")
-    expected_pdf = root / "build output/main.pdf"
-    result = run("paths", "--profile", "Draft", chapter)
-    assert result["engine"] == "xelatex" and result["pdf"] == str(expected_pdf)
-    assert run("paths", "--profile", "Draft", "--engine", "pdflatex", chapter)["engine"] == "pdflatex"
-    assert "Unknown build profile" in run("paths", "--profile", "Nope", chapter, expected=2)["message"]
-    print("Named profiles, explicit engine override, shared output paths verified")
-
+    (root / ".bbtex").write_text("root = main.tex\noutput_directory = build output\n")
     fake = '''#!/bin/bash
 set -eu
 printf '%s\\n' "$0" "$@" > "$BBTEX_TEST_ROOT/args"
@@ -82,20 +68,6 @@ fi
         file = commands / engine
         file.write_text(fake)
         file.chmod(0o755)
-    result = run("compile", "--profile", "Draft", chapter)
-    assert result["status"] == "success" and expected_pdf.is_file()
-    args = (root / "args").read_text()
-    assert "-pdfxelatex" in args and "-halt-on-error" in args
-    assert "duration" in result and Path(result["build_log"]).exists()
-    run("compile", "--profile", "Tectonic", chapter)
-    assert "--outdir" in (root / "args").read_text()
-    assert run("paths", chapter)["pdf"] == str(expected_pdf)
-    run("clean", chapter)
-    assert expected_pdf.is_file() and not expected_pdf.with_suffix(".aux").exists()
-    run("clean-all", chapter)
-    assert not expected_pdf.exists()
-    print("Engine switching, per-project logs, and PDF-preserving/full cleanup verified")
-
     process = subprocess.Popen([str(BINARY), "compile", str(chapter)],
                                env={**env, "BBTEX_TEST_SLOW": "1"},
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

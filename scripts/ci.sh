@@ -92,7 +92,6 @@ integration() {
     uv run test/integration/check_project_builds.py
     uv run test/integration/check_preview_cancellation.py
     node test/integration/check_snippet_page.mjs
-    uv run test/integration/check_draft_release.py
 }
 lint() {
     shellcheck -s bash scripts/*.sh test/integration/*.sh
@@ -118,8 +117,9 @@ package() {
     (cd dist/release && shasum -a 256 bbtex-macos-arm64.bbpackage.zip > SHA256SUMS-arm64.txt)
 }
 engine() { uv run test/integration/check_real_engines.py --engine "$1"; }
+previews() { uv run test/integration/check_preview.py; }
 export SHA
-export -f build integration lint package engine
+export -f build integration lint package engine previews
 
 step "build and unit tests" build
 step "integration checks" integration
@@ -127,6 +127,7 @@ step "shellcheck and syntax" lint
 step "package and archive checks" package
 if $ENGINES; then
     for name in pdflatex xelatex lualatex; do step "real engines: $name" engine "$name"; done
+    step "selection previews" previews
 fi
 if $TECTONIC; then
     step "real engines: tectonic" uv run test/integration/check_tectonic.py

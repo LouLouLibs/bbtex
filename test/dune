@@ -5,3 +5,7 @@
 
 (cram
  (deps %{bin:bbtex}))
+
+(cram
+ (applies_to release)
+ (deps ../scripts/draft-release.sh))
