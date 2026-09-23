@@ -9,7 +9,22 @@ for resource in with-preview-lock.pl preview-save-hook.applescript snippet-windo
     unzip -p dist/bbtex.bbpackage.zip "bbtex.bbpackage/Contents/Resources/$resource" | cmp - "scripts/$resource"
 done
 unzip -tq dist/bbtex.bbpackage.zip
-uv run test/integration/check_package_archive.py
+# The archive keeps the license, executable bits and stationery flags.
+ARCHIVE="$(mktemp -d)"
+ditto -x -k dist/bbtex.bbpackage.zip "$ARCHIVE"
+CONTENTS="$ARCHIVE/bbtex.bbpackage/Contents"
+cmp LICENSE "$ARCHIVE/bbtex.bbpackage/LICENSE"
+test -x "$CONTENTS/Resources/bbtex"
+for script in "$CONTENTS"/Scripts/*.sh; do test -x "$script"; done
+templates=0
+for template in "$CONTENTS"/Stationery/*.tex; do
+    info="$(xattr -px com.apple.FinderInfo "$template" | tr -d ' \n')"
+    (( 16#${info:16:2} & 0x08 )) || { echo "Stationery flag missing: $template" >&2; exit 1; }
+    templates=$((templates + 1))
+done
+(( templates > 0 ))
+rm -rf "$ARCHIVE"
+echo "Release archive preserves the license, executable bits and stationery flags"
 BBTEX_TEST_BINARY="$PKG/Contents/Resources/bbtex" uv run test/integration/check_doctor.py
 "$PKG/Contents/Scripts/LaTeX — Doctor.sh" | grep -q 'bbtex doctor'
 bash "$PKG/Contents/Resources/install-preview-save-hook.sh"
