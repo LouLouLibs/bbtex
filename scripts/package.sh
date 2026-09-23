@@ -51,7 +51,6 @@ cp "$PROJECT_ROOT/scripts/snippet-window.applescript" "$PKG/Contents/Resources/s
 cp "$PROJECT_ROOT/scripts/preview-save-hook.applescript" "$PKG/Contents/Resources/preview-save-hook.applescript"
 cp "$PROJECT_ROOT/scripts/with-preview-lock.pl" "$PKG/Contents/Resources/with-preview-lock.pl"
 cp "$PROJECT_ROOT/scripts/install-preview-save-hook.sh" "$PKG/Contents/Resources/install-preview-save-hook.sh"
-cp "$PROJECT_ROOT/scripts/install-preview-service.py" "$PKG/Contents/Resources/install-preview-service.py"
 cp "$PROJECT_ROOT/docs/selection-preview.md" "$PKG/Contents/Resources/selection-preview.md"
 cp "$PROJECT_ROOT/docs/project-navigation.md" "$PKG/Contents/Resources/project-navigation.md"
 cp "$PROJECT_ROOT/docs/setup-troubleshooting.md" "$PKG/Contents/Resources/setup-troubleshooting.md"

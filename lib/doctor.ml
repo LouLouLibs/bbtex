@@ -58,7 +58,7 @@ let inspect ~home ~path ~state ~binary ?source ?(probe=false) () =
           with Unix.Unix_error (error, _, _) -> add "WARN" (name ^ " launch") (Unix.error_message error)
         end;
         if rest <> [] then add "INFO" (name ^ " alternatives") (String.concat ", " rest))
-    (List.sort_uniq String.compare (required @ ["pdftoppm"; "bibtex"; "biber"; "texlab"; "uv"]));
+    (List.sort_uniq String.compare (required @ ["pdftoppm"; "bibtex"; "biber"; "texlab"]));
   add "UNVERIFIED" "Versions and compatibility"
     (if probe then "Version queries do not establish bibliography compatibility or successful compilation. RaTeX is never probed."
      else "Tools were located, not executed. Use doctor --probe for bounded launch/version checks. RaTeX remains experimental.");

@@ -55,7 +55,8 @@ double-click `bbtex.bbpackage`. BBEdit installs it automatically.
 ### From source
 
 Requires [opam](https://opam.ocaml.org/doc/Install.html) (OCaml 4.14 or later;
-CI builds with 5.4.1) and uv for the editing-support build helpers.
+CI builds with 5.4.1). Running the integration tests also needs
+[uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone <repo-url> ~/bbtex-ocaml
@@ -264,8 +265,8 @@ migration. See [editing commands and TexLab setup](docs/bbedit-editing.md),
 [asset attribution](support/THIRD-PARTY-NOTICES.md), and the
 [implementation plan](docs/plans/2026-09-17-bbedit-latex-workflow.md).
 
-Build helpers are bash. The remaining Python utilities run through `uv run`;
-see [AGENTS.md](AGENTS.md) for the language policy.
+Build and install helpers are bash; Python is used only for integration tests,
+through `uv run`. See [AGENTS.md](AGENTS.md) for the language policy.
 
     scripts/build-support.sh
     scripts/install-support.sh                 # preview the install

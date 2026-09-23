@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 bash scripts/package.sh
 PKG="$PWD/dist/bbtex.bbpackage"
-for resource in with-preview-lock.pl preview-save-hook.applescript snippet-window.applescript project-outline.applescript insert-picker.applescript bbtex-bbedit-pick.sh install-preview-save-hook.sh install-preview-service.py; do
+for resource in with-preview-lock.pl preview-save-hook.applescript snippet-window.applescript project-outline.applescript insert-picker.applescript bbtex-bbedit-pick.sh install-preview-save-hook.sh; do
     cmp "scripts/$resource" "$PKG/Contents/Resources/$resource"
     unzip -p dist/bbtex.bbpackage.zip "bbtex.bbpackage/Contents/Resources/$resource" | cmp - "scripts/$resource"
 done
@@ -13,7 +13,10 @@ uv run test/integration/check_package_archive.py
 BBTEX_TEST_BINARY="$PKG/Contents/Resources/bbtex" uv run test/integration/check_doctor.py
 "$PKG/Contents/Scripts/LaTeX — Doctor.sh" | grep -q 'bbtex doctor'
 bash "$PKG/Contents/Resources/install-preview-save-hook.sh"
-uv run "$PKG/Contents/Resources/install-preview-service.py"
+SERVICE_BUILD="$(mktemp -d)"
+"$PKG/Contents/Resources/bbtex" preview-service build "$SERVICE_BUILD"
+plutil -lint "$SERVICE_BUILD/LaTeX — Preview Selection.workflow/Contents/"*
+rm -rf "$SERVICE_BUILD"
 BBTEX_TEST_WRAPPER="$PKG/Contents/Scripts/LaTeX — Compile.sh" uv run test/integration/check_build_workflow.py
 uv run test/integration/check_save_preview_worker.py
 BBTEX_TEST_BINARY="$PKG/Contents/Resources/bbtex" uv run test/integration/check_project_outline.py
@@ -23,7 +26,7 @@ if [[ "${BBTEX_TEST_NATIVE:-0}" == 1 ]]; then
     osascript test/integration/check_wrapping.applescript "$PKG/Contents/Resources" "$PKG/Contents/Clippings/Latex.tex"
     BBTEX_TEST_RESOURCES="$PKG/Contents/Resources" uv run test/integration/check_structure_dialogs.py
     BBTEX_TEST_PREVIEW_WRAPPER="$PKG/Contents/Scripts/LaTeX — Preview Selection.sh" uv run test/integration/check_live_preview.py
-    uv run scripts/install-preview-service.py
+    _build/default/bin/main.exe preview-service build dist
     BBTEX_TEST_PREVIEW_SERVICE="$PWD/dist/LaTeX — Preview Selection.workflow" uv run test/integration/check_live_preview.py
 fi
 echo "Release preview checks passed."

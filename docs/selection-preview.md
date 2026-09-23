@@ -10,7 +10,7 @@ does not activate BBEdit when another app is active.
 For right-click access, install the BBEdit-only Quick Action:
 
 ```sh
-uv run scripts/install-preview-service.py --apply
+_build/default/bin/main.exe preview-service install
 ```
 
 Then select text and choose **right-click → Services → LaTeX — Preview Selection**.
@@ -148,7 +148,7 @@ For the optional save hook and contextual service, run the bundled installers:
 
 ```sh
 "$HOME/Library/Application Support/BBEdit/Packages/bbtex.bbpackage/Contents/Resources/install-preview-save-hook.sh" --apply
-uv run "$HOME/Library/Application Support/BBEdit/Packages/bbtex.bbpackage/Contents/Resources/install-preview-service.py" --apply
+"$HOME/Library/Application Support/BBEdit/Packages/bbtex.bbpackage/Contents/Resources/bbtex" preview-service install
 ```
 
 The attachment is not activated merely by copying a package into BBEdit.
