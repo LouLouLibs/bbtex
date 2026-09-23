@@ -15,33 +15,22 @@ APPLESCRIPT
 }
 [[ -n "${BB_DOC_PATH:-}" ]] || { alert "Open a saved TeX document first."; exit 1; }
 PROJECT_OUTPUT=$("$BBTEX" paths "$BB_DOC_PATH") || { alert "$PROJECT_OUTPUT"; exit 1; }
-PROJECT="" ROOT=""
-while IFS= read -r line; do
-    case "$line" in
-        project:*) PROJECT="${line#project: }" ;;
-        root:*) ROOT="${line#root: }" ;;
-    esac
-done <<< "$PROJECT_OUTPUT"
-CAPTURE=$(osascript - "$PROJECT/" "$ROOT" "$BB_DOC_PATH" <<'APPLESCRIPT'
-on run argv
-    tell application "BBEdit"
-        repeat with d in (get text documents)
-            set p to ""
-            try
-                set f to get file of d
-                set p to POSIX path of f
-            end try
-            if p is not "" and modified of d then
-                if p starts with item 1 of argv or p is item 2 of argv or p is item 3 of argv then
-                    error "Save modified project inputs before previewing. Preview does not save your work automatically."
-                end if
-            end if
-        end repeat
-        return (ID of front window as text) & linefeed & (startLine of selection as text) & linefeed & (contents of selection as text)
-    end tell
-end run
-APPLESCRIPT
-) || { alert "Save modified project inputs before previewing, then select the snippet again."; exit 1; }
+# Refuse while any project input has unsaved changes (the build's own rule:
+# bbtex save-project --check), then read the selection, in one AppleScript run.
+CHECK_SCRIPT=$("$BBTEX" save-project --check "$BB_DOC_PATH") || { alert "$CHECK_SCRIPT"; exit 1; }
+CAPTURE_ERROR="$(mktemp)"
+trap 'rm -f "$CAPTURE_ERROR"' EXIT
+if ! CAPTURE=$(osascript -e "$CHECK_SCRIPT" -e 'tell application "BBEdit"
+    return (ID of front window as text) & linefeed & (startLine of selection as text) & linefeed & (contents of selection as text)
+end tell' 2>"$CAPTURE_ERROR"); then
+    MESSAGE="$(cat "$CAPTURE_ERROR")"
+    MESSAGE="${MESSAGE#*execution error: }"
+    MESSAGE="${MESSAGE% \(-*}"
+    [[ "$MESSAGE" == "Save modified project inputs"* ]] ||
+        MESSAGE="Could not read the selection in the front BBEdit window: $MESSAGE"
+    alert "$MESSAGE"
+    exit 1
+fi
 SOURCE_ID="${CAPTURE%%$'\n'*}"
 SELECTION="${CAPTURE#*$'\n'}"
 SOURCE_LINE="${SELECTION%%$'\n'*}"
