@@ -10,7 +10,8 @@ TAG="${RELEASE_TAG:?Expected RELEASE_TAG}"
 }
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ASSETS"
-for arch in arm64; do
+ARCHES=(arm64)
+for arch in "${ARCHES[@]}"; do
     test -s "bbtex-macos-$arch.bbpackage.zip"
     test -s "build-info-$arch.txt"
     shasum -a 256 -c "SHA256SUMS-$arch.txt"
