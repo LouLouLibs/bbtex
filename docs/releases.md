@@ -1,58 +1,58 @@
 # CI and releases
 
-The **Build and package** GitHub Actions workflow tests and packages every push
-to `main`, pull request, version tag, and manual workflow run. It builds separate
-Apple Silicon (`arm64`, `macos-15`) and Intel (`x86_64`, `macos-15-intel`) packages.
-Runner labels follow [GitHub's hosted-runner documentation](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+bbtex supports Apple Silicon Macs. Checks run locally on an Apple Silicon Mac
+with `scripts/ci.sh`; the GitHub Actions workflows are kept but run only when
+started by hand (Actions → workflow → Run workflow), because Actions minutes
+are limited on this private repository.
 
-Each job installs OCaml and dune through opam (`ocaml/setup-ocaml`, compiler
-pinned by `OCAML_COMPILER` in the workflow), then uv and BBEdit's scripting
-dictionary. It runs
-unit tests, mocked project/build/cancellation and save-worker tests, compiles
-the editing assets and optional hook, and validates the package ZIP, including
-Finder stationery flags and executable permissions after extraction. The
-package binary must link only system libraries. Tool versions and the source
-commit are recorded beside the ZIP, along with SHA-256 checksums. Actions are
-pinned to commit IDs. The opam switch and dune cache are reused between runs;
-a cold run compiles the compiler first and takes several minutes longer.
-Homebrew tools (uv, BBEdit) use the runner's available formula versions.
+## Local CI
 
-The package workflow needs no TeX distribution or interactive editor session.
-The separate **Real TeX engines** workflow runs the article/book/Beamer corpus
-with pdfLaTeX, XeLaTeX, and LuaLaTeX in separate Ubuntu jobs, each exercising
-BibTeX/Biber and Poppler. It retains diagnostic artifacts
-on failure; see [real-engine coverage](real-engine-regressions.md).
-Skim, save attachments, and native focus/selection checks remain local integration
-tests; passing CI does not replace those checks. The current
-packages are built and tested on macOS 15; older macOS versions are unverified.
+```sh
+scripts/ci.sh                   # check HEAD
+scripts/ci.sh --report          # ... and post the result on GitHub
+scripts/ci.sh --engines REF     # also compile the corpus with real TeX engines
+```
 
-## Download a build
+The script checks out the commit into a temporary git worktree, so uncommitted
+changes in your working folder never affect the result, then runs:
 
-Open the successful workflow run under the repository's **Actions** tab and
-download `bbtex-macos-arm64` or `bbtex-macos-x86_64`. Each artifact contains its
-package ZIP, checksum, and build information. Extract the package ZIP and install
-`bbtex.bbpackage`. Artifacts are retained for 14 days. Optional attachment/service
-installation is described in [selection preview](selection-preview.md#release-installation).
+1. `dune build` and `dune runtest` (unit and cram tests).
+2. Integration checks that need no editor session: project builds, preview
+   cancellation, the snippet page, and draft-release gating.
+3. shellcheck and `bash -n` on every script, `perl -c` on the preview lock, and
+   `git diff --check` on the commit's changes relative to `main`.
+4. The release package: `test/integration/check_preview_release.sh`, an arm64
+   architecture check, and a check that the binary links only system libraries.
+   The package ZIP, its SHA-256 checksum and build information (commit, macOS,
+   OCaml, dune and uv versions) are written to `dist/release/`.
+5. With `--engines`: the article/book/Beamer corpus with pdfLaTeX, XeLaTeX and
+   LuaLaTeX, including BibTeX/Biber and Poppler. With `--tectonic`: the Tectonic
+   tier, which downloads bundle resources and uses the installed Biber; see
+   [real-engine coverage](real-engine-regressions.md).
+
+`--report` posts the commit status `local-ci/macos-arm64` (or
+`local-ci/macos-arm64+engines`) through `gh`, so pull requests show the local
+result. Statuses use no Actions minutes. The output of every step goes to a log
+next to the temporary checkout; a failing run keeps both for inspection
+(`--keep` keeps them after a pass too). The script notes when the local OCaml
+differs from the version CI pins (`OCAML_COMPILER` in `.github/workflows/ci.yml`).
+
+Skim, save attachments, and native focus/selection checks remain separate local
+integration tests (`BBTEX_TEST_NATIVE=1`). Packages are built and tested on the
+macOS version of the Mac running the checks; older versions are unverified.
 
 ## Prepare a release
 
-1. Update [release notes](release-notes.md), complete local native checks, and
-   commit/push the intended changes to `main`. Wait for both package and real-engine
-   checks to pass for that commit (manually dispatch the latter if path filters skipped it).
-2. Choose the next version, then create and push an annotated tag, for example:
+1. Update [release notes](release-notes.md), complete the native checks, and
+   merge the intended changes into `main`.
+2. Choose the next version, then create and push an annotated tag:
 
    ```sh
    git tag -a v0.2.0 -m 'bbtex v0.2.0'
    git push origin v0.2.0
    ```
 
-3. The tag workflow rebuilds both architectures. Only after both pass does it
-   create a **draft** GitHub release containing both package ZIPs, checksums,
-   and build information. The separate real-engine workflow is not a dependency
-   of draft creation; verify its result too before publishing manually.
-
-A normal push or manual workflow run produces artifacts only. The workflow
-does not choose a version, create a tag, or publish a release. Rerunning a tag
-build can refresh its draft's assets but refuses to modify a published release.
-Release creation uses the built-in `GITHUB_TOKEN` with write permission limited
-to the release job; no personal access token is required.
+3. Run `scripts/ci.sh --engines --report --release v0.2.0 v0.2.0`. After every
+   check passes, it creates or updates a **draft** GitHub release with the arm64
+   package ZIP, checksum and build information. It refuses to change a release
+   that is already published. Publishing the draft is manual.

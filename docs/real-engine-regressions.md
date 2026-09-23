@@ -39,6 +39,11 @@ The expanded Unicode-inclusive corpus took 16.2 seconds with XeLaTeX and
 
 ## CI tier
 
+Locally, `scripts/ci.sh --engines` runs this corpus with the installed TeX Live
+for pdfLaTeX, XeLaTeX and LuaLaTeX, and `--tectonic` adds the Tectonic tier; see
+[CI and releases](releases.md). The GitHub workflow below is kept for manual
+runs only.
+
 **Real TeX engines** runs a three-job Ubuntu 24.04 matrix for pdfLaTeX, XeLaTeX,
 and LuaLaTeX. Every job exercises BibTeX/Biber and the full shared corpus; the
 two Unicode engines also run the fontspec fixture. Generated large-project and
@@ -50,11 +55,8 @@ workflow. The workflow pins uv to 0.11.2;
 APT package versions follow the Ubuntu repositories and runtime versions are
 recorded in each report.
 
-The job runs on relevant source/corpus/workflow changes, version tags, and manual
-workflow dispatch. It uploads evidence on success or failure for 14 days. The
-existing two-architecture macOS package workflow stays separate and fast. Draft
-release creation currently waits for those package jobs; verify this real-engine
-workflow for the same commit before publishing a release.
+The workflow runs only when dispatched by hand. It uploads evidence on success or
+failure for 14 days.
 
 An additional Tectonic job runs `uv run test/integration/check_tectonic.py --bundle
 https://data1.fullyjustified.net/tlextras-2022.0r0.tar --biber /path/to/compatible/biber`.
