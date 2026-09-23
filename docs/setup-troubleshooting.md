@@ -31,7 +31,8 @@ Exit status is zero when a report is produced, including reports containing warn
   `/Library/TeX/texbin`, `/opt/homebrew/bin` and `/usr/local/bin` before inherited PATH.
   The terminal command inspects the terminal's PATH, which may differ.
 - Missing `pdftoppm`: install Poppler if you want equation previews.
-- Missing `uv`: install uv for the citation picker and Python-based installers.
+- Missing `uv`: install uv for the Python-based installers (selection preview
+  service and save hook). Citation search does not need it.
 - Missing `texlab`: check the TexLab installation and BBEdit language-server
   configuration; executable discovery alone does not verify that BBEdit uses it.
 - Missing BibTeX/Biber: install the backend required by your bibliography. A

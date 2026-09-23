@@ -221,7 +221,8 @@ harden insertion. Phase 4 remains in progress; RaTeX stays experimental.
 Phase 3 implements and installs **LaTeX — Insert Citation** and **LaTeX — Insert
 Reference**, also included in release packages. References reuse the saved project
 index with label type/context; citations search author/title/year/key across
-declared bibliographies using pinned BibtexParser through uv. See
+declared bibliographies. Since 2026-09-23 this runs in the binary through the
+vendored bibtexparser-ml port; it previously used pinned BibtexParser through uv. See
 `docs/citation-reference-pickers.md` for dependencies, scope, and limitations.
 
 Insertion preserves supported command names/options, merges multiple citation

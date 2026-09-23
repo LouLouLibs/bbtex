@@ -13,4 +13,4 @@ if [[ -x "$PARENT/Resources/bbtex" ]]; then
     BBTEX="$PARENT/Resources/bbtex"
     RESOURCE_DIR="$PARENT/Resources"
 fi
-exec osascript "$RESOURCE_DIR/insert-picker.applescript" "$BBTEX" "$MODE" "$RESOURCE_DIR/citation-picker.py"
+exec osascript "$RESOURCE_DIR/insert-picker.applescript" "$BBTEX" "$MODE"

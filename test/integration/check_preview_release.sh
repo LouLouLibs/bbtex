@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 bash scripts/package.sh
 PKG="$PWD/dist/bbtex.bbpackage"
-for resource in with-preview-lock.pl preview-save-hook.applescript snippet-window.applescript project-outline.applescript insert-picker.applescript citation-picker.py bbtex-bbedit-pick.sh install-preview-save-hook.py install-preview-service.py; do
+for resource in with-preview-lock.pl preview-save-hook.applescript snippet-window.applescript project-outline.applescript insert-picker.applescript bbtex-bbedit-pick.sh install-preview-save-hook.py install-preview-service.py; do
     cmp "scripts/$resource" "$PKG/Contents/Resources/$resource"
     unzip -p dist/bbtex.bbpackage.zip "bbtex.bbpackage/Contents/Resources/$resource" | cmp - "scripts/$resource"
 done

@@ -28,7 +28,7 @@ source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
   labels across included files. See [navigation](docs/project-navigation.md).
 - **LaTeX — Insert Citation / Insert Reference** search bibliography metadata or
   label context and insert keys without changing existing command styles.
-  See [picker details](docs/citation-reference-pickers.md); citation search uses uv.
+  See [picker details](docs/citation-reference-pickers.md).
 - **LaTeX — Clean** (menu only) removes build artifacts (`.aux`, `.log`, `.synctex.gz`,
   etc.), preserving the PDF. **Clean All Build Output** also removes the PDF,
   after confirmation.
