@@ -1,0 +1,2 @@
+# Real TeX logs: trailing spaces are part of the output (padded context lines).
+testdata/logs/*.log -whitespace
