@@ -1,4 +1,19 @@
-# BBEdit LaTeX handoff — updated 2026-09-22
+# BBEdit LaTeX handoff — updated 2026-09-23
+
+## Biber repair investigation and Tectonic expansion — 2026-09-23
+
+Tectonic now passes generated 40-file build/outline checks and real-process
+cancellation/recovery locally (full tier 6.2 seconds). Console readiness avoids
+Tectonic's deferred virtual-file publication. Biber-book pairing remains open.
+
+Installed Biber's launcher contains `-extract_family`, rejected by this Mac's
+`lipo`. Extracting its own arm64 slice with `lipo -thin arm64` produces working
+Biber 2.20. Root installation was NOT changed: user canceled the administrator
+prompt because provenance was unclear and asked for step-by-step manual guidance.
+The user has been given commands to extract/verify their own installed binary
+under `~/biber-repair`, with no replacement yet. Do not retry an administrator
+prompt; continue guiding their manual repair after verification. The prepared
+workspace copy is `dist/biber-repair/biber`. No downloaded replacement was used.
 
 ## Doctor launch checks — 2026-09-22
 

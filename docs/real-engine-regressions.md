@@ -69,7 +69,11 @@ text/geometry, article SyncTeX, source/output isolation, and preview macro updat
 Tectonic intentionally renders previews afresh (no recorder manifest), and the
 test asserts cache misses. It does not require `.bbl` persistence: Tectonic removes
 intermediates by default; the bibliography is checked in the rendered PDF.
-Reports explicitly list omitted Biber-book, cancellation and large-project cases.
+The tier also builds/indexes a generated 40-file project and cancels a real
+Tectonic process after console evidence confirms TeX reached its infinite loop.
+It verifies cancellation status, released ownership and a successful recovery build.
+Readiness uses flushed console messages because Tectonic buffers virtual files
+until processing finishes. The Biber-book case remains explicitly omitted.
 The existing local four-engine preview test remains available. Native BBEdit/Skim,
 focus/selection, save attachments, and editing acceptance remain local checks;
 Linux rendering success does not establish native macOS behavior.

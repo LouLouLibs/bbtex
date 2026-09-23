@@ -28,7 +28,7 @@ shutil.copytree(ROOT / 'test/corpus', project)
 binary = Path(os.environ.get('BBTEX_TEST_BINARY', ROOT / '_build/default/bin/main.exe')).resolve()
 env = dict(os.environ, BBTEX_STATE_DIR=str(run / 'state'))
 report = {'status': 'running', 'engine': 'tectonic', 'bundle': args.bundle or 'installed default',
-          'versions': {}, 'cases': [], 'not_covered': ['Biber book', 'cancellation', '40-file project']}
+          'versions': {}, 'cases': [], 'not_covered': ['Biber book']}
 started = time.monotonic()
 print('Artifacts:', run, flush=True)
 
@@ -125,6 +125,62 @@ try:
     assert changed['cache'] == 'miss' and Path(changed['png']).read_bytes() != image
     assert pdf.read_bytes() == original_pdf
     report['cases'].append('preview offline, fresh render, changed external macro, output isolation')
+
+    large = project / 'larger project'
+    large.mkdir()
+    configure('larger project', True)
+    inputs = []
+    for i in range(40):
+        name = f'part-{i:02}.tex'
+        (large / name).write_text(f'\\section{{Section {i}}}\\label{{sec:{i}}}\nCorpusPart{i:02}.\n')
+        inputs.append('\\input{' + name + '}')
+    (large / 'main.tex').write_text('\\documentclass{article}\n\\begin{document}\n' + '\n'.join(inputs) + '\n\\end{document}\n')
+    result = invoke('larger', 'compile', large / 'main.tex')
+    assert 'CorpusPart39' in pdf_details(result['pdf'])[3]
+    index = command([binary, 'outline', large / 'main.tex'])
+    assert index.returncode == 0, index.stderr
+    assert len([e for e in json.loads(index.stdout)['entries'] if e['kind'] == 'label']) == 40
+    report['cases'].append('40-file project and outline')
+    print('Passed: 40-file project and outline', flush=True)
+
+    cancelled = project / 'cancellation'
+    cancelled.mkdir()
+    configure('cancellation', True)
+    config = cancelled / '.bbtex'
+    config.write_text(config.read_text().replace('options = ', 'options = --print '))
+    source = cancelled / 'main.tex'
+    # Tectonic's virtual filesystem publishes files only after processing. Print
+    # enough readiness messages to flush its console pipe before the infinite loop.
+    source.write_text('\\documentclass{article}\n\\begin{document}\n'
+                      + '\\immediate\\write16{BBTEX-CANCELLATION-READY}\n' * 1000
+                      + '\\loop\\iftrue\\repeat\n\\end{document}\n')
+    process = subprocess.Popen([str(binary), 'compile', str(source)], env=env,
+                               text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        deadline = time.monotonic() + 20
+        while True:
+            logs = list((run / 'state').glob('build-*.log'))
+            if any('BBTEX-CANCELLATION-READY' in log.read_text(errors='replace') for log in logs):
+                break
+            assert process.poll() is None, 'Tectonic exited before cancellation readiness'
+            assert time.monotonic() < deadline, 'Tectonic did not reach cancellation readiness'
+            time.sleep(.05)
+        request = command([binary, 'cancel', source])
+        assert request.returncode == 0, request.stderr
+        output, errors = process.communicate(timeout=10)
+        (run / 'cancel-result.stdout').write_text(output)
+        (run / 'cancel-result.stderr').write_text(errors)
+        assert process.returncode == 3 and 'status: cancelled' in output, (output, errors)
+        assert not list((run / 'state').glob('*.active'))
+    finally:
+        if process.poll() is None:
+            command([binary, 'cancel', source])
+            process.communicate(timeout=10)
+    source.write_text('\\documentclass{article}\n\\begin{document}Recovered.\\end{document}\n')
+    recovery = invoke('cancel-recovery', 'compile', source)
+    assert 'Recovered.' in pdf_details(recovery['pdf'])[3]
+    report['cases'].append('real Tectonic cancellation and recovery')
+    print('Passed: real Tectonic cancellation and recovery', flush=True)
     report['status'] = 'success'
 except BaseException as error:
     report['status'] = 'failure'
