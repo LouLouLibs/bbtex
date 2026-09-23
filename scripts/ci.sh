@@ -3,7 +3,8 @@
 # checkout of a commit (never the working folder).
 #   scripts/ci.sh [options] [REF]          REF defaults to HEAD
 #     --engines        also compile the corpus with pdfLaTeX, XeLaTeX and LuaLaTeX
-#     --tectonic       also run the Tectonic tier (network; uses installed Biber)
+#     --tectonic       also run the Tectonic tier (network; fetches and caches
+#                      the Biber 2.17 its bundle needs, about 90 MB once)
 #     --report         post the result as the commit status "local-ci/macos-arm64"
 #     --release TAG    after passing, create or update the draft GitHub release TAG
 #                      (REF must be that tag)
@@ -117,9 +118,34 @@ package() {
     (cd dist/release && shasum -a 256 bbtex-macos-arm64.bbpackage.zip > SHA256SUMS-arm64.txt)
 }
 engine() { uv run test/integration/check_real_engines.py --engine "$1"; }
+
+# The Tectonic bundle (pinned as in .github/workflows/real-engines.yml) ships
+# biblatex 3.17, which needs Biber 2.17; MacTeX's newer Biber refuses its files.
+TECTONIC_BUNDLE="https://data1.fullyjustified.net/tlextras-2022.0r0.tar"
+BIBER="${XDG_CACHE_HOME:-$HOME/Library/Caches}/bbtex/biber-2.17/biber"
+biber_2_17() {
+    [[ -x "$BIBER" ]] && "$BIBER" --version | grep -q 'version: 2.17' && return
+    local download
+    download="$(mktemp -d)"
+    curl --fail --location --retry 3 -o "$download/biber.tar.gz" \
+        https://downloads.sourceforge.net/project/biblatex-biber/biblatex-biber/2.17/binaries/MacOS/biber-darwin_universal.tar.gz
+    echo "182e1efa074d8a2a23a8893f2a22440d4e463cce55e4ed02076ac4c0ee0614b2  $download/biber.tar.gz" |
+        shasum -a 256 -c
+    tar -xzf "$download/biber.tar.gz" -C "$download" biber
+    # The universal build extracts itself with a lipo call current Xcode
+    # rejects; take the arm64 slice directly.
+    mkdir -p "$(dirname "$BIBER")"
+    lipo -thin arm64 "$download/biber" -output "$BIBER.new"
+    mv "$BIBER.new" "$BIBER"
+    rm -rf "$download"
+    "$BIBER" --version | grep -q 'version: 2.17'
+}
+tectonic_tier() {
+    uv run test/integration/check_tectonic.py --bundle "$TECTONIC_BUNDLE" --biber "$BIBER"
+}
 previews() { uv run test/integration/check_preview.py; }
-export SHA
-export -f build integration lint package engine previews
+export SHA TECTONIC_BUNDLE BIBER
+export -f build integration lint package engine previews biber_2_17 tectonic_tier
 
 step "build and unit tests" build
 step "integration checks" integration
@@ -130,7 +156,8 @@ if $ENGINES; then
     step "selection previews" previews
 fi
 if $TECTONIC; then
-    step "real engines: tectonic" uv run test/integration/check_tectonic.py
+    step "Biber 2.17 for Tectonic" biber_2_17
+    step "real engines: tectonic" tectonic_tier
 fi
 if [[ -n "$RELEASE" ]]; then
     step "draft release $RELEASE" env RELEASE_TAG="$RELEASE" bash scripts/draft-release.sh dist/release

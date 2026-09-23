@@ -40,7 +40,8 @@ The expanded Unicode-inclusive corpus took 16.2 seconds with XeLaTeX and
 ## CI tier
 
 Locally, `scripts/ci.sh --engines` runs this corpus with the installed TeX Live
-for pdfLaTeX, XeLaTeX and LuaLaTeX, and `--tectonic` adds the Tectonic tier; see
+for pdfLaTeX, XeLaTeX and LuaLaTeX, and `--tectonic` adds the Tectonic tier with
+a cached Biber 2.17, which the pinned bundle's biblatex requires; see
 [CI and releases](releases.md). The GitHub workflow below is kept for manual
 runs only.
 
