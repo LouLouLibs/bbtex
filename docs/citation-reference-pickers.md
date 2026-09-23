@@ -62,8 +62,11 @@ duplicates, and malformed-block recovery. A bounded value resolver handles
 metadata supports direct `crossref` and comma-separated `xdata` inheritance with
 child values taking precedence; missing/ambiguous parents and cycles are reported.
 This is metadata fallback for search, not a full implementation of biblatex's
-type-specific inheritance rules. TeX markup is retained. Search ignores case for
-ASCII and Latin-1 letters (for example `É` and `é`); other scripts match exactly.
+type-specific inheritance rules. TeX markup is retained. Search uses full Unicode
+case folding, like Python's `str.casefold`: `σοφία` finds `ΣΟΦΊΑ` and `strasse`
+finds `Straße`. Accents still count, so `garcia` does not find `García`. The
+folding table is generated from Unicode's `CaseFolding.txt` by
+`scripts/gen-casefold.sh`.
 UTF-8 (including BOM) bibliography files are supported.
 
 Each bibliography is limited to 32 MiB, inheritance/string expansion to 32 levels,

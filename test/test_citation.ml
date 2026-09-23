@@ -28,6 +28,9 @@ let () =
 @article{valid, title={Valid after broken}}
 |};
     Build_job.write (path "two.bib") ("\xef\xbb\xbf" ^ {|@article{later, title=prefix # " Work", author={ZOË}}
+@article{greek, author={ΣΩΚΡΆΤΗΣ}, title={Περὶ ψυχῆς}}
+@article{russian, author={ПУШКИН, А.}, title={Евгений Онегин}}
+@article{german, title={Die Straße}}
 @article{loopA, crossref={loopB}}
 @article{loopB, crossref={loopA}}
 |});
@@ -39,6 +42,11 @@ let () =
     assert (first "collected work zoë" = "later");
     assert (first "valid after broken" = "valid");
     assert (Citation.search data "shared" = []);
+    (* Full Unicode case folding: final sigma, Cyrillic, and ß as "ss". *)
+    assert (first "σωκράτης" = "greek");
+    assert (first "пушкин ОНЕГИН" = "russian");
+    assert (first "STRASSE" = "german" && first "straße" = "german");
+    assert (Casefold.fold "ΣΟΦΊΑ Straße ﬁ İ" = "σοφία strasse fi i̇");
     let duplicates = Citation.search data "duplicate" in
     assert (List.length duplicates = 2 && List.for_all (fun e -> e.Citation.ambiguous) duplicates);
     let has text = List.exists (fun issue -> Project_index.find issue 0 text < String.length issue) data.issues in
@@ -71,5 +79,5 @@ let () =
     let large = Citation.bibliography (Project_index.build (path "large.tex")) in
     assert (List.length large.entries = 10000 && List.length (Citation.search large "number 9999") = 1);
     assert (raises (fun () -> Citation.picker ~binary:"/bin/bbtex" large ""));
-    Printf.printf "Citations: strings/concatenation, inheritance, Unicode folding, duplicates, recovery and bounds passed \
+    Printf.printf "Citations: strings/concatenation, inheritance, Unicode case folding, duplicates, recovery and bounds passed \
                    (10,000 entries in %.3fs)\n" (Unix.gettimeofday () -. started))
