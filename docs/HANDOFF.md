@@ -14,6 +14,8 @@ Local live checks reproduced Biber's exit 255 / arm64 extraction failure with an
 actionable warning; all other probed tools returned versions. Tests cover stderr,
 nonzero exit, output flood and descendants holding a pipe open. Remaining Phase 6
 work is broader installation/attachment discovery and fresh-machine acceptance.
+Ubuntu's older Dune rejected overlapping test stanzas; Doctor now belongs to the
+existing tests stanza. Real-engine CI also watches test/dune changes.
 
 ## Doctor inspection tier — 2026-09-22
 

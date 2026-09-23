@@ -8,6 +8,7 @@ on:
     paths:
       - 'lib/**'
       - 'bin/**'
+      - 'test/dune'
       - 'test/corpus/**'
       - 'test/integration/check_real_engines.py'
       - 'test/integration/check_tectonic.py'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'lib/**'
       - 'bin/**'
+      - 'test/dune'
       - 'test/corpus/**'
       - 'test/integration/check_real_engines.py'
       - 'test/integration/check_tectonic.py'
