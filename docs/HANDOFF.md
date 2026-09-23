@@ -1,5 +1,27 @@
 # BBEdit LaTeX handoff — updated 2026-09-23
 
+## Biber repaired; old distributions removed — 2026-09-23
+
+User completed the manual native-Biber installation. `/Library/TeX/texbin/biber`
+is now an arm64 executable reporting 2.21. The full pdfLaTeX corpus, including
+the biblatex/Biber book, passes in 13.9 seconds WITHOUT a temporary Biber PATH
+override (`dist/real-engines/pdflatex-1c0sj9vp`). Prior XeLaTeX/LuaLaTeX and native
+preview verification against MacTeX 2026 also passed (see below).
+
+Verified removal of TeX Live 2024 and the 2022/2024 .texdist and .FactoryDefaults
+registrations. TeX Live 2026 remains selected; shared texmf-local is preserved.
+Removed the stale 2022 PATH line through chezmoi's
+`.chezmoitemplates/zshrc_darwin.tmpl`; `chezmoi diff ~/.zshrc` is empty. The
+chezmoi source change is not committed. User instructions: managed dotfiles must
+be edited through chezmoi; scratch work belongs in a temporary directory, not HOME.
+Biber preparation/original-launcher backup: `/tmp/bbtex-biber-2026.iiWjHc`.
+
+Tectonic cold-cache fix `98d8fdb` passed all engine jobs and both package builds:
+https://github.com/LouLouLibs/bbtex/actions/runs/35833006342
+https://github.com/LouLouLibs/bbtex/actions/runs/35833006383
+Remaining Tectonic work: a compatible Biber/bundle pair for the book fixture;
+the repaired system Biber does not resolve the older bundle's version mismatch.
+
 ## MacTeX 2026 installation verification — 2026-09-23
 
 User installed MacTeX 2026 and asked to verify it, then circle back together to
