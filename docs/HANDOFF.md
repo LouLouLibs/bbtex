@@ -1,5 +1,22 @@
 # BBEdit LaTeX handoff — updated 2026-09-23
 
+## Tectonic Biber coverage — 2026-09-23
+
+The Tectonic runner now requires a working compatible Biber and exercises the
+multi-file biblatex book online and cached, alongside all prior cases. A `--biber`
+argument exposes an explicit executable only in the test subprocess PATH; no
+installed tool or user shell configuration is changed. Version/path evidence is
+recorded, final citations must converge, bibliography text must appear in the
+PDF, external Biber invocation and included-chapter SyncTeX are asserted.
+
+Verified pair: Tectonic 0.17.0, tlextras-2022.0r0 (biblatex 3.17), Biber 2.17.
+Full local corpus passed in 14.1 seconds. The historical Biber was downloaded
+from its official SourceForge release into `/tmp/bbtex-tectonic-tools.gBOms9`;
+its arm64 slice was used only for this test. System Biber remains 2.21.
+CI provisions the Linux Biber 2.17 archive with SHA-256 verification in runner
+temporary storage, separately from the TeX Live matrix. This is a regression
+fixture pairing, not a downgrade recommendation for the supported MacTeX setup.
+
 ## Biber repaired; old distributions removed — 2026-09-23
 
 Documented baseline for the supported MacTeX setup: **Biber ≥ 2.21**, with a

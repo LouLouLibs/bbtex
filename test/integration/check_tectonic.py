@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""Tectonic rendering/cache tier; Biber compatibility is tested separately."""
+"""Tectonic rendering/cache tier, including a compatible external Biber."""
 import argparse
 import gzip
 import hashlib
@@ -19,6 +19,7 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--bundle', help='Explicit Tectonic bundle URL or local path')
+parser.add_argument('--biber', type=Path, help='Compatible Biber executable, exposed only to this test run')
 parser.add_argument('--artifacts', type=Path, default=ROOT / 'dist/real-engines')
 args = parser.parse_args()
 args.artifacts.mkdir(parents=True, exist_ok=True)
@@ -27,8 +28,15 @@ project = run / 'paper with spaces é'
 shutil.copytree(ROOT / 'test/corpus', project)
 binary = Path(os.environ.get('BBTEX_TEST_BINARY', ROOT / '_build/default/bin/main.exe')).resolve()
 env = dict(os.environ, BBTEX_STATE_DIR=str(run / 'state'))
+tool_override = None
+if args.biber:
+    tool_override = tempfile.TemporaryDirectory(prefix='bbtex-tectonic-tools-')
+    tools = Path(tool_override.name)
+    (tools / 'biber').symlink_to(args.biber.resolve(strict=True))
+    env['PATH'] = str(tools) + os.pathsep + env.get('PATH', '')
 report = {'status': 'running', 'engine': 'tectonic', 'bundle': args.bundle or 'installed default',
-          'versions': {}, 'cases': [], 'not_covered': ['Biber book']}
+          'biber': str(args.biber.resolve()) if args.biber else shutil.which('biber'),
+          'versions': {}, 'cases': []}
 started = time.monotonic()
 print('Artifacts:', run, flush=True)
 
@@ -74,13 +82,14 @@ def pdf_details(path):
 
 
 try:
-    for tool in ['tectonic', 'pdfinfo', 'pdftotext', 'pdftoppm']:
-        version = command([tool, '--version' if tool == 'tectonic' else '-v'])
+    for tool in ['tectonic', 'biber', 'pdfinfo', 'pdftotext', 'pdftoppm']:
+        version = command([tool, '--version' if tool in ['tectonic', 'biber'] else '-v'])
         assert version.returncode == 0, version.stderr
         report['versions'][tool] = (version.stdout + version.stderr).splitlines()[:3]
     sources = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in project.rglob('*')
                if p.suffix in ['.tex', '.bib']}
     for case, marker, minimum, maximum in [('article', 'Corpus Bibliography Evidence', 1, 3),
+                                          ('book', 'Book Bibliography Evidence', 4, 8),
                                           ('beamer', 'Literal text', 2, 2),
                                           ('unicode', 'naïve façade', 1, 1)]:
         for offline in [False, True]:
@@ -96,10 +105,13 @@ try:
             else:
                 assert 550 < width < 650 and 750 < height < 900, (width, height)
             log = Path(result['log']).read_text(errors='replace')
-            assert not re.search(r'(Citation|Reference) .*undefined|There were undefined', log), log[-3000:]
-            if case == 'article':
+            assert not re.search(r'(Citation|Reference) .*undefined|There were undefined|Please \(re\)run Biber', log), log[-3000:]
+            if case in ['article', 'book']:
                 sync = gzip.open(pdf.with_suffix('.synctex.gz'), 'rt', errors='replace').read()
-                assert 'sections/results.tex' in sync
+                assert ('sections/results.tex' if case == 'article' else 'chapters/results.tex') in sync
+            if case == 'book':
+                build_log = Path(result['build_log']).read_text(errors='replace')
+                assert 'Running external tool biber' in build_log, 'Biber was not invoked'
             report['cases'].append(label)
             print('Passed:', label, flush=True)
     assert all(hashlib.sha256(p.read_bytes()).hexdigest() == value for p, value in sources.items())
@@ -189,6 +201,8 @@ except BaseException as error:
     report['error'] = repr(error)
     raise
 finally:
+    if tool_override:
+        tool_override.cleanup()
     report['seconds'] = round(time.monotonic() - started, 3)
     (run / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     print(f"Tectonic tier {report['status']} in {report['seconds']}s; artifacts: {run}", flush=True)

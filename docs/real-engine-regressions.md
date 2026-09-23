@@ -57,15 +57,16 @@ release creation currently waits for those package jobs; verify this real-engine
 workflow for the same commit before publishing a release.
 
 An additional Tectonic job runs `uv run test/integration/check_tectonic.py --bundle
-https://data1.fullyjustified.net/tlextras-2022.0r0.tar`. It downloads the official
+https://data1.fullyjustified.net/tlextras-2022.0r0.tar --biber /path/to/compatible/biber`.
+It downloads the official
 0.17.0 Linux musl binary and verifies its release SHA-256. The dated bundle is
 selected explicitly; resources are downloaded on demand on the fresh CI runner,
 then each fixture is rebuilt with `--only-cached`. This checks Tectonic's cached
 resource mode, not a network firewall. The bundle server remains a dependency;
 the archive itself is not vendored or independently checksum-pinned here.
 
-This narrower tier covers the BibTeX article, Beamer and Unicode/fontspec, PDF
-text/geometry, article SyncTeX, source/output isolation, and preview macro updates.
+This tier covers the BibTeX article, biblatex/Biber book, Beamer and Unicode/fontspec,
+PDF text/geometry, article/book SyncTeX, source/output isolation, and preview macro updates.
 Tectonic intentionally renders previews afresh (no recorder manifest), and the
 test asserts cache misses. It does not require `.bbl` persistence: Tectonic removes
 intermediates by default; the bibliography is checked in the rendered PDF.
@@ -73,7 +74,21 @@ The tier also builds/indexes a generated 40-file project and cancels a real
 Tectonic process after console evidence confirms TeX reached its infinite loop.
 It verifies cancellation status, released ownership and a successful recovery build.
 Readiness uses flushed console messages because Tectonic buffers virtual files
-until processing finishes. The Biber-book case remains explicitly omitted.
+until processing finishes. The book checks rendered bibliography text, resolved
+citations and actual external Biber invocation on both online and cached runs.
+
+The pinned 2022 bundle contains biblatex 3.17 and is tested with Biber 2.17.
+CI downloads the [official Biber 2.17 Linux release](https://sourceforge.net/projects/biblatex-biber/files/biblatex-biber/2.17/binaries/Linux/)
+into runner temporary storage and checks SHA-256
+`129d2e0332a57e985ffa253e5e9fbd28ef99af5a068d1b141145211969aa8999`.
+The runner's `--biber` option creates a private executable link and changes PATH
+only for its own subprocesses. Without it, the runner uses Biber from PATH and
+fails if that version cannot launch or compile with the selected bundle.
+This historical test dependency is separate from the supported MacTeX baseline
+of Biber ≥ 2.21; do not replace system Biber with this older test tool.
+The official macOS universal archive used locally has SHA-256
+`182e1efa074d8a2a23a8893f2a22440d4e463cce55e4ed02076ac4c0ee0614b2`;
+its arm64 slice in temporary storage passed the full tier in 14.1 seconds.
 The existing local four-engine preview test remains available. Native BBEdit/Skim,
 focus/selection, save attachments, and editing acceptance remain local checks;
 Linux rendering success does not establish native macOS behavior.
@@ -97,4 +112,5 @@ Tectonic's local book probe exposed a second, distinct Biber problem: the curren
 cached bundle supplies biblatex 3.17 / control-file version 3.8, while the working
 temporary Biber 2.20 expects version 3.11. Tectonic does launch Biber automatically,
 but that pair fails. Biber-book coverage needs a compatible pinned tool/bundle pair;
-it is not claimed by the Tectonic job. No installed TeX tools were changed.
+the Tectonic job now uses the isolated compatible pair described above. No
+installed TeX tools were changed for this coverage work.
