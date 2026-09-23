@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # One pinned compiler for every job; opam builds it once per runner, then caches it.
+  OCAML_COMPILER: '5.4.1'
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref_type != 'tag' }}
@@ -35,9 +39,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install build tools and BBEdit scripting dictionary
+      - uses: ocaml/setup-ocaml@93303b622b2522e4411e295f9e77411a24912ac7 # v3.9.0
+        with:
+          ocaml-compiler: ${{ env.OCAML_COMPILER }}
+          dune-cache: true
+      - name: Install OCaml dependencies
         run: |
-          brew install ocaml dune uv
+          opam install . --deps-only --with-test
+          # Later steps and scripts call dune and ocamlc directly.
+          opam var bin >> "$GITHUB_PATH"
+      - name: Install uv and BBEdit scripting dictionary
+        run: |
+          brew install uv
           brew install --cask bbedit
           /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/BBEdit.app
           uv python install 3.13
