@@ -37,12 +37,12 @@ contains superseded plans and evidence; its old “remaining” lists are not cu
   refresh. 9,600 entries: BBEdit readiness ~1.23 s, update ~1.53 s including polling;
   Chromium search ~255 ms, down from ~3.7 s. See the explicit native/browser tests.
 - [Issue #2](https://github.com/LouLouLibs/bbtex/issues/2): opt-in preview that
-  follows the selection, implemented on branch `live-selection`. Plan:
+  follows the selection (Toggle Live Selection Preview), implemented. Plan:
   [live selection preview](plans/2026-09-24-live-selection-preview.md). The
-  native check `check_live_selection.py` measured 1.23 s cold / 0.76 s warm
+  native check [`check_live_selection.py`](../test/integration/check_live_selection.py) measured 1.23 s cold / 0.76 s warm
   (cached) from selection to Current, including the 0.35 s debounce and the
   poll (2026-09-24, Apple Silicon, BBEdit 15.5.5, pdfLaTeX; local timings, not
-  guarantees).
+  guarantees). Docs: [live selection](selection-preview.md#live-selection).
 
 ## Setup and diagnostics (merged in PR #27)
 
@@ -78,7 +78,9 @@ await deletion by the user. The [editor comparison](editor-comparison.md) now
 covers LaTeXTools and AUCTeX against current features.
 
 Optional follow-ups: outline state across closing/reopening, unsaved dependency
-snapshots, richer citation UI. No new renderer or RaTeX adoption is required.
+snapshots, richer citation UI, and measuring live selection's prefix capture (the
+whole buffer before the selection goes through AppleScript on every render) on
+multi-megabyte documents. No new renderer or RaTeX adoption is required.
 
 ## Useful entry points
 

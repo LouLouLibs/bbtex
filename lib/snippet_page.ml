@@ -187,8 +187,9 @@ let finish generation ~status ~png ~log ~message =
   with_state (fun dir s ->
     if generation <> s.generation then None else
     let changed = not (tracking s) || s.fingerprint <> fingerprint s.source in
-    let status, message = if changed then "stale", "Source or tracking changed. Save an equation to refresh."
-      else status, message in
+    let status, message = if not changed then status, message
+      else if s.mode = "live" then "stale", "Source changed. Select again to refresh."
+      else "stale", "Source or tracking changed. Save an equation to refresh." in
     let status, message, image = if status <> "current" then status, message, s.image else
       try status, message, "data:image/png;base64," ^ base64 (read_file png)
       with Sys_error error -> "error", "Could not read rendered image: " ^ error, s.image in

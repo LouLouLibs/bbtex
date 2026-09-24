@@ -186,7 +186,10 @@ A poller watches BBEdit's front window and selection: every 0.15 s while
 BBEdit is frontmost, every 1 s otherwise. A selection renders once it has been
 unchanged for 0.35 s, so drags and shift-arrow extension render only their
 final state. Moving the cursor without selecting, or selecting only
-whitespace, leaves the last preview unchanged.
+whitespace, leaves the last preview unchanged. Reselecting a range after the
+selection moved renders it again, so an edited fragment refreshes; switching
+to another application and back does not. Unchanged fragments come from the
+render cache.
 
 The selected fragment comes from the live, unsaved buffer; the preamble and
 dependencies still come from saved files, as in manual preview. Unlike manual
@@ -203,8 +206,17 @@ a selection containing `\documentclass`, `\begin{document}`, or
 `\end{document}` are rejected with a message; the previous image stays,
 dimmed. Selections over 20 KB are rejected.
 
-A full build pauses live rendering — the window shows **Project busy** — and
-the build is never cancelled for it.
+Live renders queue behind save previews and full builds on the same lock,
+so back-to-back selections never race for the project build lock and a build
+waits for a running render instead of being refused. While a full build is
+active, live rendering pauses — the window shows **Project busy** — and the
+settled selection renders once the build ends. The build is never cancelled
+for live preview. A render cancelled by a save or a build shows
+**Preview cancelled**; select again to retry.
+
+Manual **Preview Selection** and a live render still share the project's build
+lock without queueing: if both run at once, the one that loses reports
+**Project busy** (manual preview as an alert).
 
 The watcher stops when live mode is toggled off, when the preview window has
 been closed for 2 s, when no preview window appears within 10 s of starting,

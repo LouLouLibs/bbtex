@@ -16,6 +16,8 @@ on run argv
     set expectedOffset to (item 2 of argv) as integer
     set expectedLength to (item 3 of argv) as integer
     set workDirectory to item 4 of argv
+    -- Referring to BBEdit in a tell block would launch it again after it quit.
+    if application "BBEdit" is not running then error "BBEdit is not running."
     tell application "BBEdit"
         set w to text window id windowID
         set d to document of w
