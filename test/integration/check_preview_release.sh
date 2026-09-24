@@ -28,6 +28,7 @@ echo "Release archive preserves the license, executable bits and stationery flag
 BBTEX_TEST_BINARY="$PKG/Contents/Resources/bbtex" uv run test/integration/check_doctor.py
 "$PKG/Contents/Scripts/LaTeX — Doctor.sh" | grep -q 'bbtex doctor'
 bash "$PKG/Contents/Resources/install-preview-save-hook.sh"
+bash test/integration/check_installation.sh
 SERVICE_BUILD="$(mktemp -d)"
 "$PKG/Contents/Resources/bbtex" preview-service build "$SERVICE_BUILD"
 plutil -lint "$SERVICE_BUILD/LaTeX — Preview Selection.workflow/Contents/"*

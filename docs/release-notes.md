@@ -1,3 +1,9 @@
+The persistent **Project Outline Window** adds an expandable searchable tree,
+automatic saved-source refresh and one window per project. Source jumps retain
+dirty/stale checks; HTML escaping and a nonce CSP protect displayed TeX text.
+Doctor now discovers custom package layouts and reports save-hook receipt changes
+and attachment conflicts. See setup troubleshooting for fresh-machine acceptance.
+
 BBEdit equation previews now use a compact reusable image window, with cached
 single-pass rendering for pdfLaTeX, XeLaTeX, and LuaLaTeX. Tectonic is also
 supported. Full-document PDFs continue to use Skim.
@@ -40,7 +46,8 @@ index. Both use saved project definitions and reject ambiguous duplicate keys.
 - Bundled installers support optional save attachments and the contextual service.
 - RaTeX remains an experimental placeholder, with no installation or default change.
 
-Choose the `arm64` ZIP for Apple Silicon or `x86_64` for Intel. Extract it and
+Current releases support Apple Silicon (`arm64`); Intel artifacts are not currently
+verified. Extract the ZIP and
 install `bbtex.bbpackage`; use the bundled `Contents/Resources/selection-preview.md`
 for optional feature setup. Keep either development scripts or the full package
 installed to avoid duplicate menus. Packages are built/tested on macOS 15.

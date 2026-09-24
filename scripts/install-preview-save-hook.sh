@@ -6,15 +6,18 @@ set -Eeuo pipefail
 trap 'echo "${0##*/}: failed at line $LINENO: $BASH_COMMAND" >&2' ERR
 
 fail() { echo "${0##*/}: $*" >&2; exit 1; }
-for tool in osacompile osadecompile; do
+for tool in osacompile osadecompile /sbin/md5 /usr/bin/cmp; do
     command -v "$tool" >/dev/null || fail "$tool not found"
 done
 APPLY=false
-case "${1:-}" in
-    "") ;;
-    --apply) APPLY=true ;;
-    *) fail "usage: ${0##*/} [--apply]" ;;
-esac
+SUPPORT_DIR="$HOME/Library/Application Support/BBEdit"
+while (( $# > 0 )); do
+    case "$1" in
+        --apply) APPLY=true; shift ;;
+        --bbedit-support) SUPPORT_DIR="${2:?--bbedit-support requires a directory}"; shift 2 ;;
+        *) fail "usage: ${0##*/} [--apply] [--bbedit-support DIRECTORY]" ;;
+    esac
+done
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SOURCE="$HERE/preview-save-hook.applescript"
@@ -33,7 +36,7 @@ osacompile -o "$OUTPUT" "$SOURCE"
 echo "Built: $OUTPUT"
 $APPLY || exit 0
 
-FOLDER="$HOME/Library/Application Support/BBEdit/Attachment Scripts"
+FOLDER="$SUPPORT_DIR/Attachment Scripts"
 TARGET="$FOLDER/${OUTPUT##*/}"
 mkdir -p "$FOLDER"
 for existing in "$FOLDER"/*; do
@@ -44,12 +47,25 @@ for existing in "$FOLDER"/*; do
         *) continue ;;
     esac
     # Our own earlier install is replaced; anything else needs a human.
-    if [[ "$existing" == "$TARGET" ]] &&
-        osadecompile "$existing" 2>/dev/null | grep -q 'LaTeX — Toggle Preview on Save.sh'; then
-        continue
+    if [[ "$existing" == "$TARGET" && -f "$existing" ]]; then
+        RECEIPT="$TARGET.bbtex-receipt"
+        if [[ -f "$RECEIPT" ]] &&
+            [[ "$(cat "$RECEIPT")" == "bbtex-save-hook-v1:$(/sbin/md5 -q "$TARGET")" ]]; then
+            continue
+        fi
+        # A legacy hook without a receipt is only adopted when its full
+        # decompiled source matches the current installer output.
+        if [[ ! -e "$RECEIPT" ]] &&
+            osadecompile "$existing" >"$BUILD/existing-hook.applescript" 2>/dev/null &&
+            osadecompile "$OUTPUT" >"$BUILD/current-hook.applescript" 2>/dev/null &&
+            /usr/bin/cmp -s "$BUILD/existing-hook.applescript" "$BUILD/current-hook.applescript"; then
+            continue
+        fi
     fi
     fail "Existing attachment needs manual integration: $existing"
 done
 /bin/cp "$OUTPUT" "$TARGET.tmp"
 /bin/mv -f "$TARGET.tmp" "$TARGET"
+printf 'bbtex-save-hook-v1:%s\n' "$(/sbin/md5 -q "$TARGET")" >"$TARGET.bbtex-receipt.tmp"
+/bin/mv -f "$TARGET.bbtex-receipt.tmp" "$TARGET.bbtex-receipt"
 echo "Installed: $TARGET"

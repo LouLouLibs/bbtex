@@ -1,39 +1,12 @@
 # BBEdit LaTeX writing-workflow roadmap
 
-Status: Phases 1 and 2 complete; Phase 3 implemented and locally tested;
-Phase 4 structural editing implemented and locally tested; Phase 5 TeX Live matrix implemented,
-updated 2026-09-22.
-
-Completed in the first implementation slice: rendering/current/stale/error/busy
-status, source/line context, old-image labeling, HTML migration, serialized
-generation-aware publication, delayed-image guards, Open Preview Log, and
-ownership-aware supersession/full-build interruption. Unit, worker, browser,
-process-cancellation, four-engine rendering/cache, and native BBEdit checks cover
-this slice. Native timing: 1.506 s first open, 0.321 s cached reuse on the fixture.
-Dependency-save refresh is implemented: resolved roots and recorder inputs route
-foreground/background saves to the retained equation anchor. Changed source
-contents require a fresh equation save; unrelated saves are ignored. Recorder
-inputs persist separately from the cache, including after failed renders.
-Deterministic routing and native macro-save/focus checks pass. Unsaved snapshots
-remain deferred; engines without recorder output guarantee only root refresh.
-Latest packaged native timings: 1.478 s first open, 0.336 s cached reuse.
-Phase 2 now supplies **LaTeX — Project Outline**, a native saved-file search and
-picker backed by a bounded shared OCaml index. It follows literal inputs, shows
-hierarchy/equation/caption context, preserves duplicate labels, reports incomplete
-inputs, and refuses stale or dirty jump targets. The capability audit and data
-contract are in `docs/project-navigation.md`. Unit tests, native script compilation,
-all fixture row-to-location mappings, and dirty/stale target checks pass. The user
-confirmed that the installed command searches and opens a result with Return on
-2026-09-21.
-
-Phase 3 now provides installed and packaged citation/reference menus. Citation
-search supports metadata and multiple keys; references show type and context from
-the shared index. Pinned BibtexParser handles bibliography blocks, with bounded
-string expansion and metadata inheritance. Native insertion checks cover command
-and option retention, UTF-16 offsets, one Undo, cancellation, and changed buffers
-or selections. Metadata and release-package checks pass, including a 10,000-entry
-fixture. The new-menu user walkthrough is pending; next planned phase is
-structural editing. See `docs/citation-reference-pickers.md` for scope and limits.
+Status updated 2026-09-24: phases 1–5 are implemented and tested. Phase 6 has
+Doctor inspection/probes, custom-layout discovery and safe attachment checks;
+a physical fresh-machine walkthrough remains unverified. The persistent outline
+is merged in PR #26 and accepted by the user, including automatic refresh.
+Biber/MacTeX repair and the compatible Tectonic bibliography tier are complete.
+The original phase descriptions below specify scope, not a list of unfinished work.
+See [the current handoff](../HANDOFF.md) for remaining tasks and verification limits.
 
 The user's priority order is **3 → 4 → 1 → 2 → 5 → 6** from the feature
 comparison: preview polish, project navigation, citation/reference selection,
@@ -232,14 +205,15 @@ push versus release preparation or scheduled runs.
 
 ## Phase 6 — Setup and troubleshooting (original priority 6)
 
-First inspection tier implemented: `bbtex doctor [file.tex]`, BBEdit menu entry,
+Implemented (the paragraph below records the original inspection tier): `bbtex doctor [file.tex]`, BBEdit menu entry,
 read-only PATH/configuration/layout/state checks, Biber failure-log recognition,
 home-path redaction, and a troubleshooting/smoke-check guide. Unit and isolated
 conflicting-installation tests verify the inspected files remain unchanged.
 Bounded version/launch probes are now available through `doctor --probe` and the
 menu (accepted by the user before this extension). Plain inspection stays read-only;
-probe tools may initialize caches. Broader custom-layout discovery, compatibility
-validation and fresh-machine acceptance remain explicitly unverified.
+probe tools may initialize caches. Custom-layout discovery and checksummed attachment receipts are now implemented.
+Bibliography compatibility still requires a real build; physical fresh-machine
+acceptance remains explicitly unverified.
 
 **Outcome:** a new installation can explain what works and how to fix what does not.
 
@@ -259,14 +233,15 @@ installations using isolated fixtures. Diagnosis leaves files/settings unchanged
 and identifies the correct remedy. A fresh-machine walkthrough can install,
 compile, preview, and uninstall using only the instructions.
 
-## Delivery and first implementation slice
+## Delivery policy
 
 Make small commits within each phase, run checks appropriate to each change,
-and keep both CI architectures passing. Update this plan with completed work,
+and run the current Apple Silicon local CI. Intel artifacts are not presently claimed.
+Update this plan with completed work,
 evidence, and deferred items. Tagging produces a draft release; publication is
 a separate action. Do not re-request acceptance of already verified workflows.
 
-Start with **Phase 1's status/publication model and HTML migration**, then add
-ownership-aware cancellation, then dependency-save refresh. That establishes a
-reliable preview foundation before introducing the navigation UI. No date or
-effort estimate is committed until the editor capability checks are complete.
+The original first slice (preview status/publication, ownership-aware cancellation
+and dependency-save refresh) is complete, as are the subsequent navigation and
+editing phases. Current next work is setup acceptance and release preparation;
+live-selection preview is a separate follow-up tracked in issue #2.

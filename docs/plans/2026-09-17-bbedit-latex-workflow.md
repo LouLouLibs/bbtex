@@ -1,5 +1,8 @@
 # BBEdit LaTeX workflow implementation plan
 
+Historical implementation plan. For current completion status and remaining work,
+see [the handoff](../HANDOFF.md) and [writing-workflow roadmap](2026-09-19-writing-workflow-roadmap.md).
+
 Preserve ⌘K (Compile) and ⇧⌘K (Compile With…). Use native BBEdit completion,
 navigation, clippings, results browsers, and Skim. Keep bbtex responsible for builds.
 

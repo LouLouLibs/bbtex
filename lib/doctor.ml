@@ -24,7 +24,71 @@ let log_findings text =
     ["Biber launcher failed before bibliography processing. Repair/reinstall Biber through your TeX distribution."] else []) @
   (if contains text "control file version" && contains text "expected version" then
     ["Biber/biblatex version mismatch. Match Biber to biblatex in the selected TeX distribution or Tectonic bundle."] else [])
-let inspect ~home ~path ~state ~binary ?source ?(probe=false) () =
+let present p = try ignore (Unix.lstat p); true with Unix.Unix_error _ -> false
+let bounded_read limit p =
+  if (Unix.stat p).Unix.st_size > limit then raise (Sys_error "Inspection size limit exceeded");
+  In_channel.with_open_bin p In_channel.input_all
+
+let attachment_identity hook =
+  let receipt = hook ^ ".bbtex-receipt" in
+  if not (present receipt) then "UNVERIFIED", "No bbtex installer receipt; preserve the attachment until inspected."
+  else try
+    let expected = String.trim (bounded_read 128 receipt) in
+    let actual = "bbtex-save-hook-v1:" ^ Digest.to_hex (Digest.string (bounded_read (1024 * 1024) hook)) in
+    if expected = actual then "OK", "Matches bbtex installer receipt (content identity, not a security attestation)."
+    else "WARN", "Attachment differs from its bbtex receipt; preserve it and review before upgrading."
+  with Sys_error _ | Unix.Unix_error _ -> "WARN", "Attachment or receipt is unreadable/oversized; preserve it."
+
+let installation ~base ~add =
+  let commands = ["LaTeX — Compile.sh"; "LaTeX — Project Outline.sh";
+    "LaTeX — Project Outline Window.sh"; "LaTeX — Insert Citation.sh"; "LaTeX — Doctor.sh"] in
+  let found = Hashtbl.create 16 and seen = Hashtbl.create 32 in
+  let editing = ref false in
+  let remaining = ref 2048 and limited = ref false in
+  let rec scan depth dir =
+    if depth > 8 || !remaining <= 0 then limited := true
+    else if directory dir then try
+      let canonical = Unix.realpath dir in
+      if not (Hashtbl.mem seen canonical) then begin
+        Hashtbl.add seen canonical ();
+        Array.iter (fun name ->
+          if !remaining <= 0 then limited := true else begin
+            decr remaining;
+            let p = Filename.concat dir name in
+            if name = "environments-lib.scpt" && exists p then editing := true;
+            if List.mem name commands then begin
+              let previous = Option.value ~default:[] (Hashtbl.find_opt found name) in
+              Hashtbl.replace found name (p :: previous);
+              if not (exists p) then add "WARN" "Broken command link" p
+            end;
+            if directory p then scan (depth + 1) p
+          end) (Sys.readdir dir)
+      end
+    with Sys_error _ | Unix.Unix_error _ -> add "UNVERIFIED" "Installation directory" (dir ^ " could not be read")
+  in
+  List.iter (scan 0) [Filename.concat base "Scripts"; Filename.concat base "Packages"];
+  List.iter (fun name -> match Hashtbl.find_opt found name with
+    | Some paths ->
+      add "OK" "Installed command" (name ^ ": " ^ String.concat ", " (List.rev paths));
+      if List.length paths > 1 then add "WARN" "Duplicate command"
+        (name ^ " appears in multiple menu locations; keep one workflow installation active.")
+    | None -> add "OPTIONAL" "Menu command" (name ^ " not found in inspected Scripts/Packages")) commands;
+  if !limited then add "UNVERIFIED" "Installation scan" "Stopped at 2,048 entries or 8 directory levels; inspect remaining folders manually.";
+  let attachments = Filename.concat base "Attachment Scripts" in
+  (try Array.iter (fun name ->
+    let stem = try Filename.chop_extension name with Invalid_argument _ -> name in
+    if List.mem stem ["Document"; "BBEdit"; "Document.documentDidSave"] then begin
+      let hook = Filename.concat attachments name in
+      if name = "Document.documentDidSave.scpt" then
+        let status, detail = attachment_identity hook in add status "Save attachment" (hook ^ ": " ^ detail)
+      else add "WARN" "Attachment conflict" (hook ^ ": may handle documentDidSave; do not replace without manual integration.")
+    end) (Sys.readdir attachments)
+   with Sys_error _ -> if present attachments then add "UNVERIFIED" "Attachments" "Attachment directory could not be read.");
+  if not (present (Filename.concat attachments "Document.documentDidSave.scpt")) then
+    add "OPTIONAL" "Save attachment" "No standard save hook; preview on save is optional.";
+  !editing
+
+let inspect ~home ~path ~state ~binary ?source ?support ?(probe=false) () =
   let lines = ref [] in
   let add status name detail = lines := Printf.sprintf "[%s] %s: %s" status name detail :: !lines in
   let engine = match source with
@@ -63,36 +127,25 @@ let inspect ~home ~path ~state ~binary ?source ?(probe=false) () =
   let parent = existing_parent state in
   add (if directory parent && access parent [Unix.W_OK; Unix.X_OK] then "OK" else "WARN")
     "State access" (parent ^ " (permission inspection; no write attempted)");
-  let base = Filename.concat home "Library/Application Support/BBEdit" in
-  let scripts = Filename.concat base "Scripts" in
+  let base = Option.value ~default:(Filename.concat home "Library/Application Support/BBEdit") support in
   let packages = Filename.concat base "Packages" in
+  add (if directory base then "INFO" else "UNVERIFIED") "BBEdit support directory" base;
   add "INFO" "Running binary" binary;
   add "INFO" "Layout" (if contains binary "/Contents/Resources/" then "Packaged executable"
     else if contains binary "/_build/" then "Development executable" else "Custom executable location");
-  List.iter (fun name ->
-    let loose = Filename.concat scripts name in
-    let bundled = Filename.concat (Filename.concat packages "bbtex.bbpackage/Contents/Scripts") name in
-    let present p = try ignore (Unix.lstat p); true with Unix.Unix_error _ -> false in
-    if present loose && present bundled then add "WARN" "Duplicate command"
-      (name ^ " exists in Scripts and bbtex package; keep one installation active.");
-    List.iter (fun p -> if present p && not (exists p) then add "WARN" "Broken command link" p) [loose; bundled])
-    ["LaTeX — Compile.sh"; "LaTeX — Project Outline.sh"; "LaTeX — Insert Citation.sh"; "LaTeX — Doctor.sh"];
-  let support = directory (Filename.concat packages "bbtex-support.bbpackage") ||
+  let discovered_support = installation ~base ~add in
+  let support = discovered_support || directory (Filename.concat packages "bbtex-support.bbpackage") ||
     exists (Filename.concat packages "bbtex.bbpackage/Contents/Resources/environments-lib.scpt") in
   add (if support then "OK" else "OPTIONAL") "Editing support"
     (if support then "Editing support is installed separately or bundled with the workflow package."
      else "Editing support was not found in the standard packages; install it for structural editing and clippings.");
-  let hook = Filename.concat base "Attachment Scripts/Document.documentDidSave.scpt" in
-  add (if exists hook then "UNVERIFIED" else "OPTIONAL") "Save attachment"
-    (if exists hook then "Attachment exists; ownership/conflicts need manual inspection. Do not overwrite an unrelated hook."
-     else "No attachment; automatic preview on save is optional.");
   add (if List.exists directory ["/Applications/Skim.app"; Filename.concat home "Applications/Skim.app"] then "OK" else "OPTIONAL")
     "Skim" "Standard application locations checked; launch and SyncTeX behavior unverified.";
   add "UNVERIFIED" "BBEdit integration" "TexLab configuration, Automation permission, shortcuts and UI behavior require a native smoke check.";
   (if probe then "bbtex doctor — tool launch checks (tools may initialize caches)\n" else "bbtex doctor — read-only inspection\n") ^
   "Home paths redacted; review other paths before sharing.\n\n" ^
   redact home (String.concat "\n" (List.rev !lines)) ^ "\n\nSee docs/setup-troubleshooting.md for next actions.\n"
-let run ?(probe=false) source =
+let run ?(probe=false) ?support source =
   print_string (inspect ~home:(Option.value ~default:"" (Sys.getenv_opt "HOME"))
     ~path:(Option.value ~default:"" (Sys.getenv_opt "PATH")) ~state:(Build_job.state_dir ())
-    ~binary:Sys.executable_name ?source ~probe ())
+    ~binary:Sys.executable_name ?source ?support ~probe ())
