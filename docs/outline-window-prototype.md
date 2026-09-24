@@ -32,8 +32,11 @@ poll includes the displayed revision, so a missed response is retried. This firs
 implementation checks metadata first, rebuilding on changes, every 30 seconds,
 or while index warnings exist (including missing-input recovery). A 121-file,
 9,600-entry benchmark took 39 ms to index and 33 ms to render; idle metadata
-checks averaged 0.116 ms on the development Mac. Browser rendering latency for
-that many entries has not been benchmarked.
+checks averaged 0.116 ms on the development Mac. Native BBEdit startup/readback
+for 9,600 entries measured 1.23 s, with an automatic update applied in 1.53 s
+including the polling interval. Headless Chrome search through the next paint
+measured about 255 ms after batching filter mutations (previously 3.7 seconds).
+These are measurements on the development Mac, not release performance guarantees.
 
 To try it from a development checkout:
 
@@ -106,8 +109,19 @@ stops the worker and removes its page. Browser click/Return behavior needs a rea
 interaction check; HTTP-driven navigation alone does not establish keyboard UX.
 Native tests are intentionally not part of unattended CI.
 
-The user accepted automatic updates. Remaining polish includes browser rendering
-measurements for very large outlines and persistence across closing/reopening.
+The user accepted automatic updates. Remaining optional polish includes persistence
+across closing/reopening. Automatic refresh preserves focused entry/summary controls
+when the outline already has focus; native tests verify it leaves another editing
+window in front. The 16-request startup burst regression covers listener queueing.
 The window is now included in menu installation and release packaging.
 No unsaved indexing, source saving, or RaTeX changes were
 introduced. This prototype stays pinned to its initial project.
+
+Explicit browser test (Playwright may be installed in a temporary directory):
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs \
+OUTLINE_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
+node test/integration/check_outline_browser.mjs
+uv run test/integration/check_outline_large.py
+```

@@ -1,5 +1,27 @@
 # BBEdit LaTeX handoff — updated 2026-09-24
 
+## Outline startup, large-tree responsiveness and keyboard focus
+
+Startup diagnostics placed the intermittent reset before the listener accepted
+requests. Increased the listen backlog from 4 to 64 for WebKit/reopen bursts and
+removed a redundant native-window check before draining the queue. Three native
+regression passes succeeded, each queuing 16 simultaneous startup requests.
+The test now inspects the disposable document's own window selection, avoiding
+front-window races and unrelated unsaved documents.
+
+Browser testing found refresh discarded keyboard focus and 9,601-entry search
+took 3.7 seconds. Restore the focused entry/summary by stable key only when the
+outline document already has focus; batch filter mutations off-document and use
+offscreen rendering containment. Chrome headless search through the next paint
+now measures about 255 ms, with initial readiness about 220 ms. Native BBEdit:
+9,600 entries ready in 1.23 s; saved update applied in 1.53 s (includes polling).
+The separate editing window remained in front throughout automatic refresh.
+
+New explicit tests: `check_outline_browser.mjs` uses a temporary Playwright
+installation and isolated Chromium context; `check_outline_large.py` measures
+the real BBEdit preview. Headless Chromium's cross-tab focus reporting is not
+reliable here, so native window-focus validation lives in the latter test.
+
 ## Outline injection review
 
 Reviewed all TeX-controlled HTML sinks: title/display, context, file/root paths,
@@ -8,7 +30,7 @@ Added malicious-payload tests for initial and refreshed rendering, plus a nonce
 CSP restricting scripts and session-endpoint network requests. Unit tests and
 native navigation/automatic-refresh checks passed with CSP. Several earlier native
 attempts hit an intermittent startup connection reset; test cleanup now prints
-worker diagnostics on failure. This timing issue is not proven resolved.
+worker diagnostics on failure. See the startup regression results above.
 Existing open windows acquire the CSP only after closing/reopening their session.
 
 ## Persistent outline: menu integration and performance

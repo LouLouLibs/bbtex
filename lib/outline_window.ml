@@ -51,6 +51,7 @@ let page ?(revision=0) ~endpoint (index : Project_index.t) =
   "<meta http-equiv=\"Content-Security-Policy\" content=\"" ^ html policy ^ "\">" ^
   "<style>body{font:14px system-ui;margin:16px;color:#222;background:#fafafa}button{font:inherit;text-align:left;border:0;background:none;padding:6px;cursor:pointer}button:hover,button:focus{background:#ddeaff}iframe{border:1px solid #bbb;width:100%;height:65px}form{margin:0}header{position:sticky;top:0;background:#fafafa;padding-bottom:10px}small{display:block}</style></head><body>" ^
   "<style>ul{list-style:none;padding-left:20px;margin:0}#outline{padding-left:0}li[hidden]{display:none}summary{cursor:pointer}summary button{max-width:calc(100% - 24px)}button{overflow-wrap:anywhere}input{font:inherit;padding:6px;width:calc(100% - 16px)}button[aria-current=true]{background:#ddeaff}small{overflow-wrap:anywhere}</style>" ^
+  "<style>#outline>li{content-visibility:auto;contain-intrinsic-size:auto 36px}</style>" ^
   "<header><h2>Project Outline</h2><small>" ^ html index.root ^
   "</small><p>Saved sources only. Tab to an entry, then Return to open. Close the window to stop the session.</p><button type=\"button\" id=\"refresh\">Refresh saved outline</button>" ^
   "<label for=\"search\">Search outline</label><input id=\"search\" type=\"search\" placeholder=\"Heading, label, context or file\"><p id=\"matches\" role=\"status\"></p>" ^
@@ -67,14 +68,21 @@ const normalize=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLow
 let savedExpansion=null;
 function filter(){
   const query=normalize(search.value.trim());
+  // Batch visibility changes off-document. Updating thousands of attached
+  // details rows individually makes WebKit/Chromium repeatedly invalidate layout.
+  const outline=document.getElementById('outline');
+  const placeholder=document.createComment('outline filtering');
+  outline.replaceWith(placeholder);
+  try{
   if(query && savedExpansion===null)savedExpansion=new Set(branches.filter(b=>b.open).map(key));
   const matches=items.filter(item=>!query || normalize(item.dataset.search).includes(query));
   const visible=new Set(matches);
   matches.forEach(item=>{for(let parent=item.parentElement.closest('li');parent;parent=parent.parentElement.closest('li'))visible.add(parent);});
   items.forEach(item=>{item.hidden=!visible.has(item);});
-  if(query)branches.forEach(branch=>{branch.open=true;});
-  else if(savedExpansion!==null){branches.forEach(branch=>{branch.open=savedExpansion.has(key(branch));});savedExpansion=null;}
+  if(query)branches.forEach(branch=>{if(!branch.open)branch.open=true;});
+  else if(savedExpansion!==null){branches.forEach(branch=>{const open=savedExpansion.has(key(branch));if(branch.open!==open)branch.open=open;});savedExpansion=null;}
   document.getElementById('matches').textContent=query ? matches.length+' matching entries' : items.length+' entries';
+  }finally{placeholder.replaceWith(outline);}
 }
 search.addEventListener('input',filter);
 search.addEventListener('keydown',event=>{
@@ -126,6 +134,10 @@ async function refresh(automatic=false){
     const known=new Set(branches.map(key));
     const selected=document.querySelector('button[aria-current]');
     const selectedKey=selected ? key(selected) : null;
+    const active=document.activeElement;
+    const focused=active.closest('#outline li');
+    const focusKey=document.hasFocus() && focused ? focused.dataset.key : null;
+    const focusSelector=active.matches('summary') ? 'summary' : 'button[data-entry]';
     const scroll=window.scrollY;
     document.getElementById('outline').replaceWith(updated.getElementById('outline'));
     document.getElementById('issues').textContent=updated.getElementById('issues').textContent;
@@ -134,7 +146,13 @@ async function refresh(automatic=false){
     branches.forEach(branch=>{branch.open=!known.has(key(branch)) || expansion.has(key(branch));});
     savedExpansion=null;
     items.forEach(item=>{if(item.dataset.key===selectedKey)item.querySelector('button[data-entry]').setAttribute('aria-current','true');});
-    bindEntries();filter();window.scrollTo(0,scroll);
+    bindEntries();filter();
+    if(focusKey && document.hasFocus()){
+      const item=items.find(item=>item.dataset.key===focusKey);
+      const target=item && !item.hidden ? item.querySelector(focusSelector) : search;
+      if(target)target.focus({preventScroll:true});
+    }
+    window.scrollTo(0,scroll);
     feedback.textContent=(automatic?'Updated automatically':'Refreshed')+' from saved sources. Unsaved edits are not included.';
     await fetch(endpoint+'/applied/'+document.getElementById('outline').dataset.revision,
       {method:'POST',mode:'cors',credentials:'omit',cache:'no-store'});
@@ -273,7 +291,10 @@ let run ?(launch=true) ?(on_ready=fun () -> ()) source dir =
       Fun.protect ~finally:(fun () -> Unix.close sock; Build_job.remove page_file;
         Build_job.remove (Filename.concat dir "root");
         Build_job.remove (Filename.concat dir "window-check.applescript")) (fun () ->
-        Unix.bind sock (Unix.ADDR_INET (Unix.inet_addr_loopback, 0)); Unix.listen sock 4;
+        (* WebKit may issue both old-page and new-page requests during reuse.
+           Queue them while startup checks the native window, rather than letting
+           macOS reset connections when the listen backlog fills. *)
+        Unix.bind sock (Unix.ADDR_INET (Unix.inet_addr_loopback, 0)); Unix.listen sock 64;
         let port = match Unix.getsockname sock with Unix.ADDR_INET (_, p) -> p | _ -> assert false in
         let secret = token () in
         let host = Printf.sprintf "127.0.0.1:%d" port in
@@ -294,7 +315,7 @@ let run ?(launch=true) ?(on_ready=fun () -> ()) source dir =
         on_ready ();
         let stop = ref false and last = ref (Unix.gettimeofday () +. 20.) in
         let connected = ref false in
-        let seen_window = ref launch and next_window_check = ref 0. in
+        let seen_window = ref launch and next_window_check = ref (Unix.gettimeofday () +. 2.) in
         let old = List.map (fun signal -> signal, Sys.signal signal (Sys.Signal_handle (fun _ -> stop := true)))
           [Sys.sigterm; Sys.sigint] in
         let old_pipe = Sys.signal Sys.sigpipe Sys.Signal_ignore in

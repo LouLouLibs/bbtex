@@ -5,6 +5,7 @@
 # ///
 """Disposable native outline window/navigation proof; run explicitly on macOS."""
 import os
+from concurrent.futures import ThreadPoolExecutor
 import re
 import sys
 from pathlib import Path
@@ -20,6 +21,9 @@ BINARY = ROOT / '_build/default/bin/main.exe'
 def apple(body, *args):
     return subprocess.check_output(['osascript', '-', *map(str, args)], input=body,
                                    text=True, timeout=15).strip()
+
+def selected_line(source):
+    return apple('on run argv\ntell application "BBEdit"\nrepeat with d in (get text documents)\ntry\nif (file of d as alias) is (POSIX file (item 1 of argv) as alias) then return startLine of selection of window of d\nend try\nend repeat\nend tell\nerror "Disposable document missing"\nend run', source)
 
 with tempfile.TemporaryDirectory(prefix='bbtex-outline-window-') as tmp:
     folder = Path(tmp)
@@ -37,6 +41,13 @@ with tempfile.TemporaryDirectory(prefix='bbtex-outline-window-') as tmp:
         endpoint = process.stdout.readline().removeprefix('endpoint: ').strip()
         assert page.is_file() and endpoint.startswith('http://127.0.0.1:'), (page, endpoint)
         title = 'Preview: ' + page.name
+        # WebKit/reuse can queue requests before the native window check finishes.
+        # A tiny listen backlog reset these connections on macOS.
+        def startup_ping(_):
+            with urllib.request.urlopen(endpoint + '/ping', timeout=15) as result:
+                assert result.read().startswith(b'alive ')
+        with ThreadPoolExecutor(max_workers=16) as pool:
+            list(pool.map(startup_ping, range(16)))
         def window_count():
             return apple('on run argv\ntell application "BBEdit" to return count of (web_preview_windows whose name is item 1 of argv)\nend run', title)
         deadline = time.monotonic() + 10
@@ -63,7 +74,7 @@ with tempfile.TemporaryDirectory(prefix='bbtex-outline-window-') as tmp:
             except urllib.error.HTTPError as error:
                 assert error.code == 403
         assert 'Opened saved source' in request('/jump/0/1', origin='x-bbedit-preview://')
-        line = apple('tell application "BBEdit" to return startLine of selection')
+        line = selected_line(source)
         assert line == '5', line
         apple('on run argv\ntell application "BBEdit"\nopen (POSIX file (item 1 of argv))\nif (file of front text document as alias) is not (POSIX file (item 1 of argv) as alias) then error "Wrong disposable document"\nset contents of front text document to "Unsaved changes"\nend tell\nend run', source)
         assert 'unsaved edits' in request('/jump/0/0')
@@ -82,7 +93,7 @@ with tempfile.TemporaryDirectory(prefix='bbtex-outline-window-') as tmp:
         except urllib.error.HTTPError as error:
             assert error.code == 403
         assert 'Opened saved source' in request(f'/jump/{revision}/2')
-        assert apple('tell application "BBEdit" to return startLine of selection') == '6'
+        assert selected_line(source) == '6'
         # A disk save must reach the live preview without an explicit refresh.
         # Closing this disposable source also avoids an external-change dialog.
         apple('on run argv\ntell application "BBEdit"\nset d to open POSIX file (item 1 of argv)\nclose d saving no\nend tell\nend run', source)
