@@ -6,6 +6,7 @@
 """Disposable native outline window/navigation proof; run explicitly on macOS."""
 import os
 import re
+import sys
 from pathlib import Path
 import subprocess
 import tempfile
@@ -101,7 +102,12 @@ with tempfile.TemporaryDirectory(prefix='bbtex-outline-window-') as tmp:
         assert process.returncode == 0 and not page.exists(), 'Session did not stop after window close'
         print('Outline window: reuse, native validated jumps, dirty/stale rejection, heartbeat and close passed')
     finally:
-        if process and process.poll() is None:
-            process.terminate()
-            process.communicate(timeout=15)
+        if process:
+            if process.poll() is None:
+                process.terminate()
+            output, errors = process.communicate(timeout=15)
+            if sys.exc_info()[0]:
+                print('Outline exit:', process.returncode, 'output:', output)
+            if errors:
+                print(errors)
         apple('on run argv\ntell application "BBEdit"\nrepeat with w in (get web_preview_windows)\nif name of w is item 2 of argv then close w\nend repeat\ntry\nset d to open (POSIX file (item 1 of argv))\nclose d saving no\nend try\nend tell\nend run', source, title)

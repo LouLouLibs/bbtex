@@ -1,5 +1,16 @@
 # BBEdit LaTeX handoff — updated 2026-09-24
 
+## Outline injection review
+
+Reviewed all TeX-controlled HTML sinks: title/display, context, file/root paths,
+warnings and search attributes are HTML-escaped; no source text enters JavaScript.
+Added malicious-payload tests for initial and refreshed rendering, plus a nonce
+CSP restricting scripts and session-endpoint network requests. Unit tests and
+native navigation/automatic-refresh checks passed with CSP. Several earlier native
+attempts hit an intermittent startup connection reset; test cleanup now prints
+worker diagnostics on failure. This timing issue is not proven resolved.
+Existing open windows acquire the CSP only after closing/reopening their session.
+
 ## Persistent outline: menu integration and performance
 
 User accepted tree/search/navigation and automatic saved-source updates. New

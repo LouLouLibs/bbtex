@@ -62,6 +62,16 @@ GET navigation and out-of-range entries, and bounds header reads and native jump
 Generated labels/context are HTML-escaped. This local endpoint is private to the
 prototype, not a public server or general-purpose command interface.
 
+Source-controlled titles, context, paths and warnings are escaped for HTML text
+and double-quoted attributes; they are never interpolated into JavaScript. Refresh
+uses the same renderer. Status/error strings use `textContent`. Regression tests
+cover script closing tags, injected image/SVG event handlers, attribute breakouts
+and encoded entities in each source-controlled field. A Content Security Policy
+additionally permits only the generated script's random nonce, restricts network
+requests to this session endpoint, and blocks other resources, forms and base URLs.
+These checks address outline HTML injection; they are not a sandbox for compiling
+untrusted TeX documents.
+
 The first form/iframe implementation failed the user's interaction check: BBEdit
 sent navigation to an external browser, which received “Unknown request”. Buttons
 now have no navigation target and use `fetch` instead; response text goes into an

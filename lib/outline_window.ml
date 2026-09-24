@@ -24,7 +24,17 @@ let stable_keys entries =
     Hashtbl.replace counts base (occurrence + 1);
     base ^ "-" ^ string_of_int occurrence) entries
 
+let token () =
+  let ic = open_in_bin "/dev/urandom" in
+  Fun.protect ~finally:(fun () -> close_in ic) (fun () ->
+    let bytes = really_input_string ic 24 in
+    String.concat "" (List.init 24 (fun i -> Printf.sprintf "%02x" (Char.code bytes.[i]))))
+
 let page ?(revision=0) ~endpoint (index : Project_index.t) =
+  let nonce = token () in
+  let policy = "default-src 'none'; script-src 'nonce-" ^ nonce ^
+    "'; style-src 'unsafe-inline'; connect-src " ^ endpoint ^
+    "/; base-uri 'none'; form-action 'none'; object-src 'none'" in
   let keys = Array.of_list (stable_keys index.entries) in
   let rec row {number; entry=e; children} =
     let button = Printf.sprintf {|<button type="button" data-entry="%d" title="%s">%s</button>|}
@@ -38,6 +48,7 @@ let page ?(revision=0) ~endpoint (index : Project_index.t) =
   in
   let rows = List.map row (tree index.entries) in
   "<!doctype html><html><head><meta charset=\"utf-8\"><title>Project Outline</title>" ^
+  "<meta http-equiv=\"Content-Security-Policy\" content=\"" ^ html policy ^ "\">" ^
   "<style>body{font:14px system-ui;margin:16px;color:#222;background:#fafafa}button{font:inherit;text-align:left;border:0;background:none;padding:6px;cursor:pointer}button:hover,button:focus{background:#ddeaff}iframe{border:1px solid #bbb;width:100%;height:65px}form{margin:0}header{position:sticky;top:0;background:#fafafa;padding-bottom:10px}small{display:block}</style></head><body>" ^
   "<style>ul{list-style:none;padding-left:20px;margin:0}#outline{padding-left:0}li[hidden]{display:none}summary{cursor:pointer}summary button{max-width:calc(100% - 24px)}button{overflow-wrap:anywhere}input{font:inherit;padding:6px;width:calc(100% - 16px)}button[aria-current=true]{background:#ddeaff}small{overflow-wrap:anywhere}</style>" ^
   "<header><h2>Project Outline</h2><small>" ^ html index.root ^
@@ -46,7 +57,7 @@ let page ?(revision=0) ~endpoint (index : Project_index.t) =
   "<p id=\"feedback\" role=\"status\" aria-live=\"polite\">Connecting to outline session…</p></header>" ^
   "<p id=\"issues\">" ^ (if index.issues = [] then "" else "Partial outline: " ^ html (String.concat " · " index.issues)) ^ "</p>" ^
   Printf.sprintf "<ul id=\"outline\" data-revision=\"%d\">" revision ^ String.concat "\n" rows ^ "</ul>" ^
-  "<script>const endpoint=" ^ Snippet_page.json endpoint ^ {|;
+  "<script nonce=\"" ^ nonce ^ "\">const endpoint=" ^ Snippet_page.json endpoint ^ {|;
 const feedback=document.getElementById('feedback');
 const search=document.getElementById('search');
 let items=Array.from(document.querySelectorAll('#outline li'));
@@ -134,12 +145,6 @@ document.getElementById('refresh').addEventListener('click',()=>refresh());
 setInterval(()=>refresh(true),2000);
 function pulse(){fetch(endpoint+'/ping',{mode:'no-cors',cache:'no-store'}).catch(()=>{});}
 pulse();setInterval(pulse,1000);</script></body></html>|}
-
-let token () =
-  let ic = open_in_bin "/dev/urandom" in
-  Fun.protect ~finally:(fun () -> close_in ic) (fun () ->
-    let bytes = really_input_string ic 24 in
-    String.concat "" (List.init 24 (fun i -> Printf.sprintf "%02x" (Char.code bytes.[i]))))
 
 let run_script script =
   let file = Filename.temp_file "bbtex-outline-jump-" ".applescript" in

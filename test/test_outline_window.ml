@@ -51,6 +51,24 @@ let () =
   assert (Outline_window.route ~secret:"token" ~count:2 "GET" "/token/poll/2" = `Reject);
   assert (Outline_window.route ~secret:"token" ~count:2 "POST" "/token/poll/-1" = `Reject);
   assert (Outline_window.html "<script>\"&" = "&lt;script&gt;&quot;&amp;");
+  (* Exercise every source-controlled HTML sink, including refresh's rendering
+     path. Quotes must not escape attributes; tags must remain visible text. *)
+  let attacks = ["</script><script>alert(1)</script>";
+    "\"><img src=x onerror=alert(1)>"; "</button><svg onload=alert(1)>";
+    "&lt;script&gt;alert(1)&lt;/script&gt;";
+    "\" autofocus onfocus=alert(1) x=\""] in
+  List.iter (fun attack ->
+    let malicious = {original with title=attack; context=attack; file="/tmp/" ^ attack} in
+    let index : Project_index.t = {root="/tmp/" ^ attack; entries=[malicious];
+      issues=[attack]; files=[]; bibliographies=[]} in
+    List.iter (fun revision ->
+      let rendered = Outline_window.page ~revision ~endpoint:"http://127.0.0.1:123/token" index in
+      assert (not (Doctor.contains rendered attack));
+      assert (Doctor.contains rendered (Outline_window.html attack));
+      assert (Doctor.contains rendered "Content-Security-Policy");
+      assert (not (Doctor.contains rendered "<script>"));
+      assert (not (Doctor.contains rendered "<img"));
+      assert (not (Doctor.contains rendered "<svg"))) [0; 1]) attacks;
   assert (Outline_window.route ~secret:"token" ~count:2 "POST" "/token/jump/0/1" = `Jump 1);
   List.iter (fun (meth, path) -> assert (Outline_window.route ~secret:"token" ~count:2 meth path = `Reject))
     ["GET", "/token/jump/0/1"; "POST", "/wrong/jump/0/1"; "POST", "/token/jump/0/2";
