@@ -14,6 +14,11 @@ WORK=$(mktemp -d "$STATE/live.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT
 # A selection that moved since the poll belongs to a newer request.
 osascript "$REAL_DIR/live-selection-capture.applescript" "$WINDOW_ID" "$OFFSET" "$LENGTH" "$WORK" 2>/dev/null || exit 0
+# A whitespace-only selection has nothing to render; leave the previous
+# preview as it was rather than start a render that preview-fragment will
+# reject as empty (case 6 below), which would otherwise leave the window
+# stuck on "Rendering...".
+[[ -n "$(tr -d '[:space:]' < "$WORK/selected")" ]] || exit 0
 # The watcher may have stopped between the poll and this run; a stale renderer
 # then does nothing instead of failing loudly.
 TOKEN=$("$BBTEX" snippet-begin "$SOURCE" "$LINE" live 2>/dev/null) || exit 0
@@ -39,7 +44,12 @@ case "$RESULT" in
            MESSAGE="${MESSAGE:-$FALLBACK}"
        fi
        ;;
-    3|6) exit 0 ;;
+    3) exit 0 ;;
+    6) # Safety net: the whitespace check above should already have caught
+       # this. Finish the snippet instead of leaving it stuck "Rendering...".
+       "$BBTEX" snippet-finish "$TOKEN" stale "" "" "Select math or text to preview." >/dev/null || true
+       exit 0
+       ;;
     5) STATUS=stale
        MESSAGE="${MESSAGE:-$FALLBACK}"
        ;;
