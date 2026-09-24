@@ -68,3 +68,14 @@ let () =
   assert (snd (decide s ~now:9.) = Wait);
   assert (snd (decide (initial ~now:0.) ~now:10.5) = Stop);
   print_endline "Live selection: debounce and lifetime passed"
+
+let () =
+  let dir = Filename.temp_file "bbtex-live-" "" in
+  Sys.remove dir; Unix.mkdir dir 0o700;
+  Unix.putenv "BBTEX_STATE_DIR" dir;
+  assert (not (Live_watch.running ()));
+  Out_channel.with_open_bin (Snippet_page.live_flag ()) (fun oc -> output_string oc "999999");
+  Live_watch.stop ();
+  assert (not (Sys.file_exists (Snippet_page.live_flag ())));
+  assert (not (Live_watch.build_paused ()));
+  print_endline "Live watch: stale flag cleanup passed"

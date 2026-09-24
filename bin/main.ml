@@ -16,6 +16,8 @@ Commands:
   profiles <file.tex>        List named profiles from .bbtex
   preview <file.tex>         Preview selected math read from stdin
   preview-fragment <f> <dir> Preview a live selection (reads DIR/prefix, DIR/selected)
+  live-selection watch|status|stop
+                            Follow the BBEdit selection with live previews
   outline <file.tex> [query] List the saved project outline as JSON
   outline-window <file.tex> Open or reuse the persistent BBEdit project outline
   save-project [--check] <file.tex>
@@ -292,6 +294,14 @@ let () =
          | Live_selection.Fragment fragment ->
            Preview.compile ~current:(preview_current ()) f (Live_selection.body fragment))
      | _ -> Printf.eprintf "preview-fragment requires a filename and a capture directory\n"; exit 2)
+  | Some "live-selection" ->
+    (try match args with
+     | ["watch"; poller; renderer] -> Live_watch.watch ~poller ~renderer
+     | ["status"] -> if not (Live_watch.running ()) then exit 1
+     | ["stop"] -> Live_watch.stop ()
+     | _ -> raise (Project.Error "Usage: bbtex live-selection watch POLLER RENDERER | status | stop")
+     with Project.Error message | Sys_error message | Failure message ->
+       Printf.eprintf "%s\n" message; exit 2)
   | Some "snippet-page" ->
     (match args with
      | [png] -> print_endline (Snippet_page.publish png)
