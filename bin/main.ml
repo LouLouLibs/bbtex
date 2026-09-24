@@ -236,6 +236,18 @@ let cmd_forward_search filename line_str =
     List.iter print_endline (Bbedit_format.format_error_message msg);
     exit 2
 
+(* Shared by "preview" and "preview-fragment": both watch the same cancellation
+   token and report the same error/cancelled protocol lines. *)
+let preview_current () = match Sys.getenv_opt "BBTEX_PREVIEW_TOKEN" with
+  | None -> (fun () -> true)
+  | Some generation -> (fun () -> Snippet_page.is_current generation)
+
+let run_preview body =
+  try exit (body ())
+  with
+  | Project.Error message | Sys_error message -> Printf.printf "status: error\nmessage: %s\n" message; exit 2
+  | Build_job.Cancelled -> print_endline "status: cancelled"; exit 3
+
 let () =
   let (cmd, fmt, verbose, engine, profile, args) = parse_args () in
   if (engine <> None || profile <> None) && cmd <> Some "compile" && cmd <> Some "paths" then begin
@@ -264,33 +276,21 @@ let () =
      | _ -> Printf.eprintf "compile requires a filename\n"; exit 1)
   | Some "preview" ->
     (match args with
-     | [f] -> (try
+     | [f] -> run_preview (fun () ->
          let selection = Buffer.create 256 in
          (try while true do Buffer.add_string selection (input_line stdin); Buffer.add_char selection '\n' done
           with End_of_file -> ());
-         let current = match Sys.getenv_opt "BBTEX_PREVIEW_TOKEN" with
-           | None -> (fun () -> true)
-           | Some generation -> (fun () -> Snippet_page.is_current generation) in
-         exit (Preview.compile ~current f (Preview.manual_body (Buffer.contents selection)))
-       with
-       | Project.Error message | Sys_error message -> Printf.printf "status: error\nmessage: %s\n" message; exit 2
-       | Build_job.Cancelled -> print_endline "status: cancelled"; exit 3)
+         Preview.compile ~current:(preview_current ()) f (Preview.manual_body (Buffer.contents selection)))
      | _ -> Printf.eprintf "preview requires a filename and selection on stdin\n"; exit 2)
   | Some "preview-fragment" ->
     (match args with
-     | [f; dir] -> (try
+     | [f; dir] -> run_preview (fun () ->
          let read name = Project_index.read (Filename.concat dir name) in
-         let current = match Sys.getenv_opt "BBTEX_PREVIEW_TOKEN" with
-           | None -> (fun () -> true)
-           | Some generation -> (fun () -> Snippet_page.is_current generation) in
          match Live_selection.classify ~prefix:(read "prefix") ~selected:(read "selected") with
-         | Live_selection.Empty -> print_endline "status: empty"; exit 6
-         | Live_selection.Invalid message -> Printf.printf "status: invalid\nmessage: %s\n" message; exit 5
+         | Live_selection.Empty -> print_endline "status: empty"; 6
+         | Live_selection.Invalid message -> Printf.printf "status: invalid\nmessage: %s\n" message; 5
          | Live_selection.Fragment fragment ->
-           exit (Preview.compile ~current f (Live_selection.body fragment))
-       with
-       | Project.Error message | Sys_error message -> Printf.printf "status: error\nmessage: %s\n" message; exit 2
-       | Build_job.Cancelled -> print_endline "status: cancelled"; exit 3)
+           Preview.compile ~current:(preview_current ()) f (Live_selection.body fragment))
      | _ -> Printf.eprintf "preview-fragment requires a filename and a capture directory\n"; exit 2)
   | Some "snippet-page" ->
     (match args with

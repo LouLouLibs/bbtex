@@ -110,7 +110,10 @@ let () =
   let state = Filename.temp_file "bbtex-snippet-live-" "" in
   Sys.remove state; Unix.mkdir state 0o700;
   Unix.putenv "BBTEX_STATE_DIR" state;
-  begin
+  let rec remove path =
+    if Sys.is_directory path then (Array.iter (fun name -> remove (Filename.concat path name)) (Sys.readdir path); Unix.rmdir path)
+    else Sys.remove path in
+  Fun.protect ~finally:(fun () -> remove state) (fun () ->
     let flag = Snippet_page.live_flag () in
     assert (Filename.dirname flag = state);
     Out_channel.with_open_bin flag (fun oc -> output_string oc "123");
@@ -119,6 +122,5 @@ let () =
     Sys.remove flag;
     assert (not (Snippet_page.is_current token));
     Snippet_page.stop_live ~message:"Live selection preview is off.";
-    assert (Snippet_page.finish token ~status:"current" ~png:"" ~log:"" ~message:"" = None)
-  end;
+    assert (Snippet_page.finish token ~status:"current" ~png:"" ~log:"" ~message:"" = None));
   print_endline "Snippet: live tracking follows the live flag passed"
