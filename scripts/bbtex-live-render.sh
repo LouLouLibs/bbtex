@@ -27,18 +27,25 @@ while IFS= read -r line; do
         message:*) MESSAGE="${line#message: }" ;;
     esac
 done <<< "$OUTPUT"
+# A fallback message is only for failure statuses: an empty MESSAGE on a
+# successful render must stay empty, not be replaced by the error fallback.
+FALLBACK="Could not render the selection. See Open Preview Log."
 case "$RESULT" in
     0) if [[ -f "$PNG" ]]; then
            STATUS=current
            MESSAGE=""
        else
            STATUS=error
+           MESSAGE="${MESSAGE:-$FALLBACK}"
        fi
        ;;
     3|6) exit 0 ;;
-    5) STATUS=stale ;;
+    5) STATUS=stale
+       MESSAGE="${MESSAGE:-$FALLBACK}"
+       ;;
     *) STATUS=error
-       [[ "$MESSAGE" != *"already building"* ]] || STATUS=busy ;;
+       [[ "$MESSAGE" != *"already building"* ]] || STATUS=busy
+       MESSAGE="${MESSAGE:-$FALLBACK}"
+       ;;
 esac
-"$BBTEX" snippet-finish "$TOKEN" "$STATUS" "$PNG" "$LOG" \
-    "${MESSAGE:-Could not render the selection. See Open Preview Log.}" >/dev/null || true
+"$BBTEX" snippet-finish "$TOKEN" "$STATUS" "$PNG" "$LOG" "$MESSAGE" >/dev/null || true

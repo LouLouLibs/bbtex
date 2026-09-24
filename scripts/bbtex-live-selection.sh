@@ -25,12 +25,27 @@ rm -f "$BBTEX_STATE_DIR/preview-on-save-source" "$BBTEX_STATE_DIR/preview-on-sav
 "$BBTEX" snippet-stop - "Live selection preview replaced preview on save."
 nohup "$BBTEX" live-selection watch "$RESOURCES/live-selection-poll.applescript" \
     "$RESOURCES/bbtex-live-render.sh" </dev/null >>"$BBTEX_STATE_DIR/live-selection.log" 2>&1 &
+# From here on, any failure must stop the watcher it just started rather than
+# leave it running with no window to show for it.
+STARTED=0
+cleanup() {
+    [[ "$STARTED" == 1 ]] && return
+    "$BBTEX" live-selection stop || true
+    notify "Could not start live selection preview. See live-selection.log."
+}
+trap cleanup EXIT
+RUNNING=0
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-    "$BBTEX" live-selection status && break
+    if "$BBTEX" live-selection status; then
+        RUNNING=1
+        break
+    fi
     sleep 0.1
 done
+[[ "$RUNNING" == 1 ]] || exit 1
 SOURCE_ID=$(osascript -e 'tell application "BBEdit" to return ID of front window as text')
 TOKEN=$("$BBTEX" snippet-begin "$BB_DOC_PATH" 0 live)
 PAGE=$("$BBTEX" snippet-finish "$TOKEN" stale "" "" "Live selection on. Select math or text to preview.") || exit 0
 osascript "$RESOURCES/snippet-window.applescript" "$PAGE" "$SOURCE_ID" "${PAGE##*/}" "$BB_DOC_PATH"
+STARTED=1
 notify "Live selection preview on"
