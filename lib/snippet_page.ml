@@ -133,9 +133,13 @@ let token dir =
   let path = Filename.temp_file ~temp_dir:dir "request-" "" in
   Build_job.remove path; Filename.basename path
 
-let tracking s = s.mode <> "auto" ||
-  (try read_file (Filename.concat (Build_job.state_dir ()) "preview-on-save-source") = s.source
-   with Sys_error _ -> false)
+let live_flag () = Filename.concat (Build_job.state_dir ()) "live-selection"
+
+let tracking s = match s.mode with
+  | "auto" -> (try read_file (Filename.concat (Build_job.state_dir ()) "preview-on-save-source") = s.source
+     with Sys_error _ -> false)
+  | "live" -> Sys.file_exists (live_flag ())
+  | _ -> true
 
 let is_current generation =
   try
@@ -153,7 +157,7 @@ let begin_locked dir previous ~source ~line ~mode =
     ignore (save dir s); generation
 
 let begin_request ~source ~line ~mode =
-  if not (List.mem mode ["auto"; "manual"]) || line < 0 then
+  if not (List.mem mode ["auto"; "manual"; "live"]) || line < 0 then
     raise (Project.Error "Invalid preview request.");
   with_state (fun dir previous -> begin_locked dir previous ~source ~line ~mode)
 
@@ -189,6 +193,11 @@ let finish generation ~status ~png ~log ~message =
 
 let stop_auto ~matches ~message = with_state (fun dir s ->
   if s.mode = "auto" && matches s.source then
+    ignore (save dir { s with generation = token dir; revision = s.revision + 1;
+      status = "stale"; message; log = "" }))
+
+let stop_live ~message = with_state (fun dir s ->
+  if s.mode = "live" then
     ignore (save dir { s with generation = token dir; revision = s.revision + 1;
       status = "stale"; message; log = "" }))
 

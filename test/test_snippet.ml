@@ -105,3 +105,20 @@ let () =
     assert (Preview_cache.key "formula" "pdflatex" [] <> key);
     Unix.putenv "TEXINPUTS" (Option.value ~default:"" original);
     print_endline "Snippet state: migration, generations, stale/error output, ownership, and cache identity passed")
+
+let () =
+  let state = Filename.temp_file "bbtex-snippet-live-" "" in
+  Sys.remove state; Unix.mkdir state 0o700;
+  Unix.putenv "BBTEX_STATE_DIR" state;
+  begin
+    let flag = Snippet_page.live_flag () in
+    assert (Filename.dirname flag = state);
+    Out_channel.with_open_bin flag (fun oc -> output_string oc "123");
+    let token = Snippet_page.begin_request ~source:"" ~line:0 ~mode:"live" in
+    assert (Snippet_page.is_current token);
+    Sys.remove flag;
+    assert (not (Snippet_page.is_current token));
+    Snippet_page.stop_live ~message:"Live selection preview is off.";
+    assert (Snippet_page.finish token ~status:"current" ~png:"" ~log:"" ~message:"" = None)
+  end;
+  print_endline "Snippet: live tracking follows the live flag passed"

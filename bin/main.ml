@@ -15,6 +15,7 @@ Commands:
   cancel <file.tex>          Cancel the running build for this project
   profiles <file.tex>        List named profiles from .bbtex
   preview <file.tex>         Preview selected math read from stdin
+  preview-fragment <f> <dir> Preview a live selection (reads DIR/prefix, DIR/selected)
   outline <file.tex> [query] List the saved project outline as JSON
   outline-window <file.tex> Open or reuse the persistent BBEdit project outline
   save-project [--check] <file.tex>
@@ -270,11 +271,27 @@ let () =
          let current = match Sys.getenv_opt "BBTEX_PREVIEW_TOKEN" with
            | None -> (fun () -> true)
            | Some generation -> (fun () -> Snippet_page.is_current generation) in
-         exit (Preview.compile ~current f (Buffer.contents selection))
+         exit (Preview.compile ~current f (Preview.manual_body (Buffer.contents selection)))
        with
        | Project.Error message | Sys_error message -> Printf.printf "status: error\nmessage: %s\n" message; exit 2
        | Build_job.Cancelled -> print_endline "status: cancelled"; exit 3)
      | _ -> Printf.eprintf "preview requires a filename and selection on stdin\n"; exit 2)
+  | Some "preview-fragment" ->
+    (match args with
+     | [f; dir] -> (try
+         let read name = Project_index.read (Filename.concat dir name) in
+         let current = match Sys.getenv_opt "BBTEX_PREVIEW_TOKEN" with
+           | None -> (fun () -> true)
+           | Some generation -> (fun () -> Snippet_page.is_current generation) in
+         match Live_selection.classify ~prefix:(read "prefix") ~selected:(read "selected") with
+         | Live_selection.Empty -> print_endline "status: empty"; exit 6
+         | Live_selection.Invalid message -> Printf.printf "status: invalid\nmessage: %s\n" message; exit 5
+         | Live_selection.Fragment fragment ->
+           exit (Preview.compile ~current f (Live_selection.body fragment))
+       with
+       | Project.Error message | Sys_error message -> Printf.printf "status: error\nmessage: %s\n" message; exit 2
+       | Build_job.Cancelled -> print_endline "status: cancelled"; exit 3)
+     | _ -> Printf.eprintf "preview-fragment requires a filename and a capture directory\n"; exit 2)
   | Some "snippet-page" ->
     (match args with
      | [png] -> print_endline (Snippet_page.publish png)
