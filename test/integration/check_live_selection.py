@@ -27,6 +27,8 @@ BBTEX = ROOT / "_build/default/bin/main.exe"
 TOGGLE = ROOT / "scripts/bbtex-live-selection.sh"
 COLD_BUDGET = 3.0
 WARM_BUDGET = 1.0
+OSA_TIMEOUT = 15.0
+STATUS_TIMEOUT = 5.0
 FINAL = ("current", "stale", "error", "busy")
 FIELDS = ["generation", "revision", "status", "source", "line", "image",
           "image_line", "message", "log", "fingerprint", "mode"]
@@ -46,9 +48,18 @@ def check(condition: bool, message: str) -> None:
         raise Failure(message)
 
 
+def call(command: list[str], timeout: float, **options) -> subprocess.CompletedProcess:
+    """subprocess.run with a deadline. A hang (for example BBEdit not answering
+    AppleScript) becomes a Failure, so it cannot outlast any wait_for deadline
+    and still reaches cleanup."""
+    try:
+        return subprocess.run(command, capture_output=True, timeout=timeout, **options)
+    except subprocess.TimeoutExpired:
+        raise Failure(f"{Path(command[0]).name} did not finish within {timeout:.0f}s") from None
+
+
 def osa(script: str, *args: str) -> str:
-    result = subprocess.run(["osascript", "-", *args], input=script, text=True,
-                            capture_output=True)
+    result = call(["osascript", "-", *args], OSA_TIMEOUT, input=script, text=True)
     if result.returncode != 0:
         raise Failure(f"AppleScript failed: {result.stderr.strip()}")
     return result.stdout.strip()
@@ -92,8 +103,8 @@ class Check:
         return self.state().get("revision", 0)
 
     def watcher_running(self) -> bool:
-        code = subprocess.run([str(BBTEX), "live-selection", "status"], env=self.env,
-                              capture_output=True).returncode
+        code = call([str(BBTEX), "live-selection", "status"], STATUS_TIMEOUT,
+                   env=self.env).returncode
         check(code in (0, 1), f"bbtex live-selection status exited {code}")
         return code == 0
 
@@ -157,12 +168,22 @@ class Check:
             return n
         end run''', self.preview_name))
 
+    def close_preview(self) -> None:
+        """Close only this check's preview window, by its exact name."""
+        osa('''on run argv
+            tell application "BBEdit"
+                repeat with p in (get web_preview_windows)
+                    if name of p is item 1 of argv then close p
+                end repeat
+            end tell
+        end run''', self.preview_name)
+
     # -- scenarios ---------------------------------------------------------
 
     def preflight(self) -> None:
         check(BBTEX.exists(), f"{BBTEX} is missing: run `opam exec -- dune build` first")
-        leftovers = subprocess.run(["pgrep", "-fl", "live-selection-poll"],
-                                   capture_output=True, text=True).stdout.strip()
+        leftovers = call(["pgrep", "-fl", "live-selection-poll"], STATUS_TIMEOUT,
+                        text=True).stdout.strip()
         check(not leftovers, "a live selection poller is already running; turn live "
               f"selection preview off before this check:\n{leftovers}")
         # The poller treats any snippet preview as open, so another one would
@@ -187,8 +208,8 @@ class Check:
                 return ID of front window as text
             end tell
         end run''', str(self.source))
-        result = subprocess.run([str(TOGGLE)], env={**self.env, "BB_DOC_PATH": str(self.source)},
-                                capture_output=True, text=True, timeout=60)
+        result = call([str(TOGGLE)], 60, env={**self.env, "BB_DOC_PATH": str(self.source)},
+                     text=True)
         check(result.returncode == 0,
               f"toggle script failed ({result.returncode}): {result.stderr.strip()}")
         check(self.watcher_running(), "watcher is not running after the toggle script")
@@ -267,17 +288,11 @@ class Check:
         check(selected == "Mass is", f"source selection changed to {selected!r}")
 
         # 6. Closing the preview stops the watcher and its poller.
-        osa('''on run argv
-            tell application "BBEdit"
-                repeat with p in (get web_preview_windows)
-                    if name of p is item 1 of argv then close p
-                end repeat
-            end tell
-        end run''', self.preview_name)
+        self.close_preview()
         self.wait_for(lambda: not self.watcher_running(), "the watcher to exit after the preview closed",
                       timeout=5)
-        self.wait_for(lambda: subprocess.run(["pgrep", "-f", "live-selection-poll"],
-                                             capture_output=True).returncode == 1,
+        self.wait_for(lambda: call(["pgrep", "-f", "live-selection-poll"],
+                                  STATUS_TIMEOUT).returncode == 1,
                       "the poller to exit", timeout=1)
         return f"live selection: cold {cold:.2f}s, warm {warm:.2f}s"
 
@@ -297,17 +312,11 @@ class Check:
                 action()
             except Exception as error:  # keep cleaning up after any one failure
                 problems.append(f"{what}: {error}")
-        attempt("stop watcher", lambda: subprocess.run(
-            [str(BBTEX), "live-selection", "stop"], env=self.env, capture_output=True, timeout=10))
+        attempt("stop watcher", lambda: call(
+            [str(BBTEX), "live-selection", "stop"], 10, env=self.env))
         attempt("wait for watcher", lambda: self.wait_for(
             lambda: not self.watcher_running(), "the watcher to stop", timeout=5))
-        attempt("close preview", lambda: osa('''on run argv
-            tell application "BBEdit"
-                repeat with p in (get web_preview_windows)
-                    if name of p is item 1 of argv then close p
-                end repeat
-            end tell
-        end run''', self.preview_name))
+        attempt("close preview", self.close_preview)
         attempt("close document", lambda: osa('''on run argv
             tell application "BBEdit"
                 repeat with d in (get text documents)
@@ -335,10 +344,9 @@ def main() -> int:
         problems = test.cleanup()
     for problem in problems:
         print(f"cleanup problem: {problem}", file=sys.stderr)
-    if summary is None or problems:
-        return 1
-    print(summary)
-    return 0
+    if summary is not None:
+        print(summary)
+    return 0 if summary is not None and not problems else 1
 
 
 if __name__ == "__main__":
