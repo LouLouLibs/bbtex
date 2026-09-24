@@ -16,7 +16,7 @@ Commands:
   profiles <file.tex>        List named profiles from .bbtex
   preview <file.tex>         Preview selected math read from stdin
   preview-fragment <f> <dir> Preview a live selection (reads DIR/prefix, DIR/selected)
-  live-selection watch|status|stop
+  live-selection watch|status|stop|build-active
                             Follow the BBEdit selection with live previews
   outline <file.tex> [query] List the saved project outline as JSON
   outline-window <file.tex> Open or reuse the persistent BBEdit project outline
@@ -299,7 +299,8 @@ let () =
      | ["watch"; poller; renderer] -> Live_watch.watch ~poller ~renderer
      | ["status"] -> if not (Live_watch.running ()) then exit 1
      | ["stop"] -> Live_watch.stop ()
-     | _ -> raise (Project.Error "Usage: bbtex live-selection watch POLLER RENDERER | status | stop")
+     | ["build-active"] -> if not (Live_watch.build_paused ()) then exit 1
+     | _ -> raise (Project.Error "Usage: bbtex live-selection watch POLLER RENDERER | status | stop | build-active")
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2
      | Unix.Unix_error (e, fn, _) -> Printf.eprintf "%s: %s\n" fn (Unix.error_message e); exit 2)
