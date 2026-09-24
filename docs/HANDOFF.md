@@ -37,7 +37,7 @@ contains superseded plans and evidence; its old “remaining” lists are not cu
   refresh. 9,600 entries: BBEdit readiness ~1.23 s, update ~1.53 s including polling;
   Chromium search ~255 ms, down from ~3.7 s. See the explicit native/browser tests.
 
-## Setup work in this branch
+## Setup and diagnostics (merged in PR #27)
 
 Doctor adds `--bbedit-support DIRECTORY`, bounded discovery of renamed packages
 and nested menu folders, broken/duplicate commands, and save-hook conflict checks.
@@ -58,14 +58,24 @@ fresh-account/Mac walkthrough and explicit verification boundaries.
 
 ## Remaining work
 
-1. Finish and review this setup/documentation branch and its validation evidence.
-2. Perform the documented fresh-account/Mac acceptance with only the release
+1. Perform the documented fresh-account/Mac acceptance with only the release
    instructions: install, compile, preview, upgrade/rollback and uninstall.
-3. [Issue #2](https://github.com/LouLouLibs/bbtex/issues/2): opt-in preview that follows
-   selection changes. Selection-event feasibility, debounce and arbitrary text/math
-   fragment support remain open; manual and save-driven preview already work.
-4. Prepare the next release after accepted changes merge: release notes, full
-   engine checks and draft artifacts. Publishing remains a separate step.
+   This needs the user on a clean account; it cannot be automated here.
+2. [Issue #2](https://github.com/LouLouLibs/bbtex/issues/2): opt-in preview that follows
+   the selection. Plan: [live selection preview](plans/2026-09-24-live-selection-preview.md).
+   BBEdit (15.5.5, and 16.0–16.0.3 per release notes) has no selection-change
+   attachment point, so the plan uses one bounded `osascript` poller, an OCaml
+   debounce/watcher, and the existing generation/cache/cancellation pipeline.
+   Task 1 is a go/no-go spike on polling cost and prose rendering; review the
+   plan's "Decisions for review" before executing it.
+3. Prepare the first release (no tags or GitHub releases exist yet): release
+   notes, full engine checks and a draft via `scripts/ci.sh --engines --report
+   --release vX vX`. Publishing remains a separate step.
+
+Housekeeping 2026-09-24: merged local branches were deleted; 18 merged remote
+branches (and `origin/python-cleanup`, whose content is already in `main`) still
+await deletion by the user. The [editor comparison](editor-comparison.md) now
+covers LaTeXTools and AUCTeX against current features.
 
 Optional follow-ups: outline state across closing/reopening, unsaved dependency
 snapshots, richer citation UI. No new renderer or RaTeX adoption is required.

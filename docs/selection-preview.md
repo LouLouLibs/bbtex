@@ -157,8 +157,8 @@ save tracking. Existing development menu links take precedence; use either the
 development setup (with its support package) or the full release package to
 avoid duplicate menus. Do not install the full package alongside development
 scripts. Package-only installs must retain the standard name and location above.
-The serialization helper uses macOS's `/usr/bin/perl`; optional installers use
-`uv` with dependencies declared inline.
+The serialization helper uses macOS's `/usr/bin/perl`. The optional installers
+are a bash script and a `bbtex` subcommand; they need no Python or uv.
 
 `test/integration/check_save_preview_worker.py` covers rapid saves, source
 switching, disabling tracking, saves during publication, build suppression,

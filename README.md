@@ -260,7 +260,7 @@ bbtex forward-search myfile.tex 42
 ## Further reading
 
 - [Architecture and design decisions](docs/architecture.md)
-- [LaTeXTools feature comparison](docs/latextools-comparison.md)
+- [Comparison with LaTeXTools and AUCTeX](docs/editor-comparison.md)
 
 ## Editing support and development plan
 

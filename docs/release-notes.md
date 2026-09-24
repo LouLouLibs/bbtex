@@ -50,8 +50,10 @@ Current releases support Apple Silicon (`arm64`); Intel artifacts are not curren
 verified. Extract the ZIP and
 install `bbtex.bbpackage`; use the bundled `Contents/Resources/selection-preview.md`
 for optional feature setup. Keep either development scripts or the full package
-installed to avoid duplicate menus. Packages are built/tested on macOS 15.
+installed to avoid duplicate menus. Packages are built and tested on the macOS
+version of the Mac that ran the release checks; older versions are unverified.
 
 Preview requires a TeX distribution with `preview.sty` and Poppler's `pdftoppm`.
-The optional installers require uv. Preview-on-save uses saved preambles and
+The optional installers are bash and the bbtex binary; they need no Python or
+uv. Preview-on-save uses saved preambles and
 dependencies, is off by default, and does not capture unsaved dependency edits.
