@@ -97,8 +97,12 @@ XeLaTeX, LuaLaTeX, and Tectonic, including a relative preamble input. It checks 
 dimensions, unchanged project files, empty selections, and failure logs.
 `test/integration/check_live_preview.py` exercises selection capture, PNG
 publication, preview-window reuse, and source-focus preservation in BBEdit.
+`test/integration/check_live_selection.py` exercises the live-selection watcher
+end to end — selection to **Current**, cached reuse, an invalid selection, and
+watcher shutdown on window close — and measures the latencies in
+[Live selection](#live-selection).
 The actual HTML image refresh still benefits from user visual verification.
-Run both with `uv run`; their dependencies are declared inline.
+Run all three with `uv run`; their dependencies are declared inline.
 # Refresh on save
 
 Run **LaTeX — Toggle Preview on Save** from BBEdit’s Scripts menu for a saved
@@ -157,8 +161,8 @@ save tracking. Existing development menu links take precedence; use either the
 development setup (with its support package) or the full release package to
 avoid duplicate menus. Do not install the full package alongside development
 scripts. Package-only installs must retain the standard name and location above.
-The serialization helper uses macOS's `/usr/bin/perl`; optional installers use
-`uv` with dependencies declared inline.
+The serialization helper uses macOS's `/usr/bin/perl`. The optional installers
+are a bash script and a `bbtex` subcommand; they need no Python or uv.
 
 `test/integration/check_save_preview_worker.py` covers rapid saves, source
 switching, disabling tracking, saves during publication, build suppression,
@@ -170,3 +174,60 @@ checks the browser's ordering and safe text rendering with controlled image load
 macro saves, focus preservation, and a rendering error with disposable documents.
 It retains a temporary recovery backup and restores the prior
 tracking flag/image with a fresh publication revision.
+
+# Live selection
+
+Run **LaTeX — Toggle Live Selection Preview** from BBEdit's Scripts menu in a
+saved TeX file to make the preview window follow the selection. Run the
+command again to turn it off. Enabling live selection turns off Preview on
+Save, and enabling Preview on Save turns off live selection.
+
+A poller watches BBEdit's front window and selection: every 0.15 s while
+BBEdit is frontmost, every 1 s otherwise. A selection renders once it has been
+unchanged for 0.35 s, so drags and shift-arrow extension render only their
+final state. Moving the cursor without selecting, or selecting only
+whitespace, leaves the last preview unchanged. Reselecting a range after the
+selection moved renders it again, so an edited fragment refreshes; switching
+to another application and back does not. Unchanged fragments come from the
+render cache.
+
+The selected fragment comes from the live, unsaved buffer; the preamble and
+dependencies still come from saved files, as in manual preview. Unlike manual
+preview, live mode does not refuse dirty buffers — the current document is
+almost always dirty while editing. **Current** means the preview matches the
+selection and was rendered with the saved preamble.
+
+Delimited math (`$…$`, `\(…\)`, `\[…\]`, and math environments such as
+`equation` or `align*`) is used as selected. Raw text renders as math when the
+selection starts inside math in the buffer — as `align*` if it contains `&` or
+`\\`, otherwise as `\[...\]` — and as a prose paragraph at text width
+otherwise. Unbalanced braces or environments, an unclosed math delimiter, and
+a selection containing `\documentclass`, `\begin{document}`, or
+`\end{document}` are rejected with a message; the previous image stays,
+dimmed. Selections over 20 KB are rejected.
+
+Live renders queue behind save previews and full builds on the same lock,
+so back-to-back selections never race for the project build lock and a build
+waits for a running render instead of being refused. While a full build is
+active, live rendering pauses — the window shows **Project busy** — and the
+settled selection renders once the build ends. The build is never cancelled
+for live preview. A render cancelled by a save or a build shows
+**Preview cancelled**; select again to retry.
+
+Manual **Preview Selection** and a live render still share the project's build
+lock without queueing: if both run at once, the one that loses reports
+**Project busy** (manual preview as an alert).
+
+The watcher stops when live mode is toggled off, when the preview window has
+been closed for 2 s, when no preview window appears within 10 s of starting,
+or when BBEdit quits. If the toggle fails to start the watcher, it notifies
+and stops the watcher rather than leaving it running with no window.
+
+Diagnostics are in `$BBTEX_STATE_DIR/live-selection.log`
+(`~/.local/state/bbtex/` by default). Manual **Preview Selection** is
+unchanged.
+
+Measured locally on 2026-09-24 (Apple Silicon, BBEdit 15.5.5, pdfLaTeX) with
+`test/integration/check_live_selection.py`: 1.23 s from selection to
+**Current** on a cold render, 0.76 s when the render is cached, both including
+the debounce and poll. These are local timings, not guarantees.

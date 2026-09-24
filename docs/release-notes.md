@@ -1,3 +1,11 @@
+**LaTeX — Toggle Live Selection Preview** makes the reusable preview window
+follow the BBEdit selection instead of waiting for a save. Delimited math
+renders as selected; raw text renders as math inside a math selection and as
+a prose paragraph otherwise. The fragment comes from the live buffer, while
+the preamble and dependencies still come from saved files. Enabling it turns
+off Preview on Save, and a full build pauses rendering ("Project busy")
+without cancelling it. See [live selection](selection-preview.md#live-selection).
+
 The persistent **Project Outline Window** adds an expandable searchable tree,
 automatic saved-source refresh and one window per project. Source jumps retain
 dirty/stale checks; HTML escaping and a nonce CSP protect displayed TeX text.
@@ -50,8 +58,10 @@ Current releases support Apple Silicon (`arm64`); Intel artifacts are not curren
 verified. Extract the ZIP and
 install `bbtex.bbpackage`; use the bundled `Contents/Resources/selection-preview.md`
 for optional feature setup. Keep either development scripts or the full package
-installed to avoid duplicate menus. Packages are built/tested on macOS 15.
+installed to avoid duplicate menus. Packages are built and tested on the macOS
+version of the Mac that ran the release checks; older versions are unverified.
 
 Preview requires a TeX distribution with `preview.sty` and Poppler's `pdftoppm`.
-The optional installers require uv. Preview-on-save uses saved preambles and
+The optional installers are bash and the bbtex binary; they need no Python or
+uv. Preview-on-save uses saved preambles and
 dependencies, is off by default, and does not capture unsaved dependency edits.

@@ -91,6 +91,11 @@ if [[ -L "$BBEDIT_SCRIPTS/LaTeX — Toggle Preview on Save.sh" ]]; then
 fi
 ln -s "$PROJECT_DIR/scripts/bbtex-preview-on-save.sh" \
       "$BBEDIT_SCRIPTS/LaTeX — Toggle Preview on Save.sh"
+if [[ -L "$BBEDIT_SCRIPTS/LaTeX — Toggle Live Selection Preview.sh" ]]; then
+    rm "$BBEDIT_SCRIPTS/LaTeX — Toggle Live Selection Preview.sh"
+fi
+ln -s "$PROJECT_DIR/scripts/bbtex-live-selection.sh" \
+      "$BBEDIT_SCRIPTS/LaTeX — Toggle Live Selection Preview.sh"
 "$PROJECT_DIR/scripts/install-preview-save-hook.sh" --apply
 "$PROJECT_DIR/scripts/install-workflow-commands.sh"
 

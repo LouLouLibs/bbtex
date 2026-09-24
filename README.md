@@ -24,6 +24,8 @@ source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
 - **LaTeX — Cancel Build** stops the current project's compiler and its children.
 - **LaTeX — Preview Selection** renders selected math using the project's preamble
   in a compact BBEdit image window. See [selection preview](docs/selection-preview.md).
+- **LaTeX — Toggle Live Selection Preview** makes the preview window follow the
+  selection (math or prose).
 - **LaTeX — Project Outline** searches saved headings, equations, captions, and
   labels across included files. See [navigation](docs/project-navigation.md).
 - **LaTeX — Insert Citation / Insert Reference** search bibliography metadata or
@@ -260,7 +262,7 @@ bbtex forward-search myfile.tex 42
 ## Further reading
 
 - [Architecture and design decisions](docs/architecture.md)
-- [LaTeXTools feature comparison](docs/latextools-comparison.md)
+- [Comparison with LaTeXTools and AUCTeX](docs/editor-comparison.md)
 
 ## Editing support and development plan
 

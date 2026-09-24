@@ -17,3 +17,10 @@ let () =
     assert (try ignore (Preview.document root selection); false with Project.Error _ -> true))
     [("\\begin{document}", "  "); ("missing document", "x")];
   print_endline "Preview: comments, preamble, raw/delimited math, and invalid input passed"
+
+let () =
+  let root = "\\documentclass{article}\n\\begin{document}" in
+  assert (Preview.document root "x" = Preview.wrap root (Preview.manual_body "x"));
+  let prose = Preview.wrap root (Live_selection.body (Live_selection.Text "Hi $x$.")) in
+  assert (String.ends_with ~suffix:"\\begin{preview}\n\\begin{minipage}{\\linewidth}\nHi $x$.\n\\end{minipage}\n\\end{preview}\n\\end{document}\n" prose);
+  print_endline "Preview: fragment bodies wrap into the document passed"

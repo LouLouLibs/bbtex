@@ -15,22 +15,26 @@ let preamble text =
     else scan (i + 1) false
   in scan 0 false
 
-let document root_text selection =
+let manual_body selection =
   let selection = String.trim selection in
   if selection = "" then raise (Project.Error "Select an equation or a complete math environment first.");
   let delimited = List.exists (fun prefix -> String.starts_with ~prefix selection)
     ["$"; "\\["; "\\("; "\\begin{"] in
-  let body = if delimited then selection else "\\[\n" ^ selection ^ "\n\\]" in
+  if delimited then selection else "\\[\n" ^ selection ^ "\n\\]"
+
+let wrap root_text body =
   "\\PassOptionsToPackage{active,tightpage}{preview}\n" ^ preamble root_text ^
   "\n\\usepackage{preview}\n\\setlength\\PreviewBorder{4pt}\n" ^
   "\\begin{document}\n\\begin{preview}\n" ^ body ^
   "\n\\end{preview}\n\\end{document}\n"
 
-let compile ?(current = fun () -> true) source selection =
+let document root_text selection = wrap root_text (manual_body selection)
+
+let compile ?(current = fun () -> true) source body =
   if not (current ()) then raise Build_job.Cancelled;
   let started = Unix.gettimeofday () in
   let config = Compiler.resolve_compilation source in
-  let text = document (read_file config.root_file) selection in
+  let text = wrap (read_file config.root_file) body in
   Build_job.with_job ~superseded:(fun () -> not (current ())) config.root_file (fun job ->
     let dir = Filename.concat (Build_job.state_dir ())
       ("preview-" ^ Digest.to_hex (Digest.string config.root_file)) in

@@ -105,3 +105,65 @@ let () =
     assert (Preview_cache.key "formula" "pdflatex" [] <> key);
     Unix.putenv "TEXINPUTS" (Option.value ~default:"" original);
     print_endline "Snippet state: migration, generations, stale/error output, ownership, and cache identity passed")
+
+let () =
+  let state = Filename.temp_file "bbtex-snippet-live-" "" in
+  Sys.remove state; Unix.mkdir state 0o700;
+  Unix.putenv "BBTEX_STATE_DIR" state;
+  let rec remove path =
+    if Sys.is_directory path then (Array.iter (fun name -> remove (Filename.concat path name)) (Sys.readdir path); Unix.rmdir path)
+    else Sys.remove path in
+  Fun.protect ~finally:(fun () -> remove state) (fun () ->
+    let flag = Snippet_page.live_flag () in
+    assert (Filename.dirname flag = state);
+    Out_channel.with_open_bin flag (fun oc -> output_string oc "123");
+    let token = Snippet_page.begin_request ~source:"" ~line:0 ~mode:"live" in
+    assert (Snippet_page.is_current token);
+    Sys.remove flag;
+    assert (not (Snippet_page.is_current token));
+    Snippet_page.stop_live ~message:"Live selection preview is off.";
+    assert (Snippet_page.finish token ~status:"current" ~png:"" ~log:"" ~message:"" = None));
+  print_endline "Snippet: live tracking follows the live flag passed"
+
+let () =
+  let state = Filename.temp_file "bbtex-snippet-live-off-" "" in
+  Sys.remove state; Unix.mkdir state 0o700;
+  Unix.putenv "BBTEX_STATE_DIR" state;
+  let rec remove path =
+    if Sys.is_directory path then (Array.iter (fun name -> remove (Filename.concat path name)) (Sys.readdir path); Unix.rmdir path)
+    else Sys.remove path in
+  Fun.protect ~finally:(fun () -> remove state) (fun () ->
+    let flag = Snippet_page.live_flag () in
+    Snippet_page.stop_live ~message:"Live selection preview is off.";
+    ignore (Snippet_page.begin_request ~source:"" ~line:0 ~mode:"manual");
+    let folder = Snippet_page.directory () in
+    let before = Snippet_page.load folder in
+    (match Snippet_page.begin_request ~source:"" ~line:0 ~mode:"live" with
+     | _ -> assert false
+     | exception Project.Error message -> assert (message = "Live selection preview is off."));
+    let after = Snippet_page.load folder in
+    assert (after.generation = before.generation && after.message = before.message
+            && after.revision = before.revision);
+    Out_channel.with_open_bin flag (fun oc -> output_string oc "123");
+    let token = Snippet_page.begin_request ~source:"" ~line:0 ~mode:"live" in
+    assert ((Snippet_page.load folder).generation = token));
+  print_endline "Snippet: live requests refused once live mode stops passed"
+
+(* A live render whose source changed asks for a new selection, not a save. *)
+let () =
+  let state = Filename.temp_file "bbtex-snippet-live-changed-" "" in
+  Sys.remove state; Unix.mkdir state 0o700;
+  Unix.putenv "BBTEX_STATE_DIR" state;
+  let rec remove path =
+    if Sys.is_directory path then (Array.iter (fun name -> remove (Filename.concat path name)) (Sys.readdir path); Unix.rmdir path)
+    else Sys.remove path in
+  Fun.protect ~finally:(fun () -> remove state) (fun () ->
+    let source = Filename.concat state "a.tex" in
+    Out_channel.with_open_bin source (fun oc -> output_string oc "one");
+    Out_channel.with_open_bin (Snippet_page.live_flag ()) (fun oc -> output_string oc "123");
+    let token = Snippet_page.begin_request ~source ~line:1 ~mode:"live" in
+    Out_channel.with_open_bin source (fun oc -> output_string oc "two");
+    ignore (Snippet_page.finish token ~status:"current" ~png:"" ~log:"" ~message:"");
+    let s = Snippet_page.load (Snippet_page.directory ()) in
+    assert (s.status = "stale" && s.message = "Source changed. Select again to refresh."));
+  print_endline "Snippet: live finish after a source change asks to reselect passed"

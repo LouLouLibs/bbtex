@@ -245,3 +245,5 @@ The original first slice (preview status/publication, ownership-aware cancellati
 and dependency-save refresh) is complete, as are the subsequent navigation and
 editing phases. Current next work is setup acceptance and release preparation;
 live-selection preview is a separate follow-up tracked in issue #2.
+
+Implemented 2026-09-24 on branch `live-selection`.

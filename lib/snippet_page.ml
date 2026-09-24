@@ -133,9 +133,13 @@ let token dir =
   let path = Filename.temp_file ~temp_dir:dir "request-" "" in
   Build_job.remove path; Filename.basename path
 
-let tracking s = s.mode <> "auto" ||
-  (try read_file (Filename.concat (Build_job.state_dir ()) "preview-on-save-source") = s.source
-   with Sys_error _ -> false)
+let live_flag () = Filename.concat (Build_job.state_dir ()) "live-selection"
+
+let tracking s = match s.mode with
+  | "auto" -> (try read_file (Filename.concat (Build_job.state_dir ()) "preview-on-save-source") = s.source
+     with Sys_error _ -> false)
+  | "live" -> Sys.file_exists (live_flag ())
+  | _ -> true
 
 let is_current generation =
   try
@@ -153,9 +157,14 @@ let begin_locked dir previous ~source ~line ~mode =
     ignore (save dir s); generation
 
 let begin_request ~source ~line ~mode =
-  if not (List.mem mode ["auto"; "manual"]) || line < 0 then
+  if not (List.mem mode ["auto"; "manual"; "live"]) || line < 0 then
     raise (Project.Error "Invalid preview request.");
-  with_state (fun dir previous -> begin_locked dir previous ~source ~line ~mode)
+  with_state (fun dir previous ->
+    (* Checked under the publication lock: a render detached before the watcher
+       stopped must not reopen live mode after stop_live. *)
+    if mode = "live" && not (Sys.file_exists (live_flag ())) then
+      raise (Project.Error "Live selection preview is off.");
+    begin_locked dir previous ~source ~line ~mode)
 
 (* A dependency's cursor must never replace the equation's saved anchor. Check
    and start under the publication lock so a concurrent source save wins cleanly. *)
@@ -178,8 +187,9 @@ let finish generation ~status ~png ~log ~message =
   with_state (fun dir s ->
     if generation <> s.generation then None else
     let changed = not (tracking s) || s.fingerprint <> fingerprint s.source in
-    let status, message = if changed then "stale", "Source or tracking changed. Save an equation to refresh."
-      else status, message in
+    let status, message = if not changed then status, message
+      else if s.mode = "live" then "stale", "Source changed. Select again to refresh."
+      else "stale", "Source or tracking changed. Save an equation to refresh." in
     let status, message, image = if status <> "current" then status, message, s.image else
       try status, message, "data:image/png;base64," ^ base64 (read_file png)
       with Sys_error error -> "error", "Could not read rendered image: " ^ error, s.image in
@@ -189,6 +199,11 @@ let finish generation ~status ~png ~log ~message =
 
 let stop_auto ~matches ~message = with_state (fun dir s ->
   if s.mode = "auto" && matches s.source then
+    ignore (save dir { s with generation = token dir; revision = s.revision + 1;
+      status = "stale"; message; log = "" }))
+
+let stop_live ~message = with_state (fun dir s ->
+  if s.mode = "live" then
     ignore (save dir { s with generation = token dir; revision = s.revision + 1;
       status = "stale"; message; log = "" }))
 

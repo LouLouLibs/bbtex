@@ -37,3 +37,16 @@ is not part of the PDF) instead of claiming page 1; the PDF is still given.
   status: no-position
   pdf: doc.pdf
   message: No SyncTeX position for line 2
+
+preview-fragment rejects incomplete selections before compiling.
+
+  $ printf '\\documentclass{article}\n\\begin{document}\nx\n\\end{document}\n' > frag.tex
+  $ mkdir frag && printf 'Intro ' > frag/prefix && printf '\\frac{a}{b' > frag/selected
+  $ bbtex preview-fragment frag.tex frag
+  status: invalid
+  message: Selection has unbalanced braces or environments.
+  [5]
+  $ printf '  ' > frag/selected
+  $ bbtex preview-fragment frag.tex frag
+  status: empty
+  [6]

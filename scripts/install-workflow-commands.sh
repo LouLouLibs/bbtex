@@ -22,6 +22,7 @@ COMMANDS=(
     "LaTeX — Preview Selection.sh|bbtex-bbedit-preview.sh"
     "LaTeX — Open Preview Log.sh|bbtex-bbedit-preview-log.sh"
     "LaTeX — Toggle Preview on Save.sh|bbtex-preview-on-save.sh"
+    "LaTeX — Toggle Live Selection Preview.sh|bbtex-live-selection.sh"
 )
 
 # Check every target before changing anything.
