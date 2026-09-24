@@ -54,6 +54,8 @@ cp "$PROJECT_ROOT/scripts/install-preview-save-hook.sh" "$PKG/Contents/Resources
 cp "$PROJECT_ROOT/docs/selection-preview.md" "$PKG/Contents/Resources/selection-preview.md"
 cp "$PROJECT_ROOT/docs/project-navigation.md" "$PKG/Contents/Resources/project-navigation.md"
 cp "$PROJECT_ROOT/docs/setup-troubleshooting.md" "$PKG/Contents/Resources/setup-troubleshooting.md"
+cp "$PROJECT_ROOT/docs/releases.md" "$PKG/Contents/Resources/releases.md"
+cp "$PROJECT_ROOT/docs/release-notes.md" "$PKG/Contents/Resources/release-notes.md"
 cp "$PROJECT_ROOT/docs/citation-reference-pickers.md" "$PKG/Contents/Resources/citation-reference-pickers.md"
 chmod +x "$PKG/Contents/Resources/bbtex"
 

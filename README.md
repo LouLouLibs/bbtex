@@ -45,6 +45,11 @@ source and PDF. Like LaTeXTools for Sublime, but for BBEdit.
 Optional: [Tectonic](https://tectonic-typesetting.github.io/) if you
 prefer it over latexmk.
 
+Equation previews additionally require Poppler (`pdftoppm`). TexLab is optional
+for editor completion/navigation. Run **LaTeX — Doctor** after installation;
+see [setup troubleshooting](docs/setup-troubleshooting.md) for the install,
+upgrade/rollback and uninstall acceptance checklist.
+
 ## Install
 
 ### From a package (easiest)

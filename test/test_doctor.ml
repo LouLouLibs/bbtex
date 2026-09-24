@@ -19,6 +19,41 @@ let () =
   print_endline "Doctor read-only checks passed"
 
 let () =
+  let root = Filename.temp_file "bbtex-doctor-layout-" "" in
+  Sys.remove root; Unix.mkdir root 0o700;
+  let rec remove p =
+    if (Unix.lstat p).st_kind = Unix.S_DIR then begin
+      Array.iter (fun n -> remove (Filename.concat p n)) (Sys.readdir p); Unix.rmdir p
+    end else Sys.remove p in
+  Fun.protect ~finally:(fun () -> remove root) (fun () ->
+    let rec mkdir p = if not (Sys.file_exists p) then begin mkdir (Filename.dirname p); Unix.mkdir p 0o700 end in
+    let write p text = mkdir (Filename.dirname p); let oc = open_out p in output_string oc text; close_out oc in
+    let base = Filename.concat root "custom support" in
+    let package = Filename.concat base "Packages/Renamed.bbpackage/Contents" in
+    let command = "LaTeX — Project Outline Window.sh" in
+    write (Filename.concat package ("Scripts/" ^ command)) "fixture";
+    write (Filename.concat base ("Scripts/Nested/" ^ command)) "fixture";
+    write (Filename.concat package "Resources/environments-lib.scpt") "fixture";
+    let hook = Filename.concat base "Attachment Scripts/Document.documentDidSave.scpt" in
+    write hook "compiled fixture";
+    assert (fst (Doctor.attachment_identity hook) = "UNVERIFIED");
+    write (hook ^ ".bbtex-receipt") ("bbtex-save-hook-v1:" ^ Digest.to_hex (Digest.file hook));
+    assert (fst (Doctor.attachment_identity hook) = "OK");
+    let before = Digest.file hook in
+    let report = Doctor.inspect ~home:root ~path:"" ~state:root ~binary:"bbtex" ~support:base () in
+    assert (Doctor.contains report "Renamed.bbpackage");
+    assert (Doctor.contains report "[WARN] Duplicate command");
+    assert (Doctor.contains report "[OK] Editing support");
+    assert (Doctor.contains report "[OK] Save attachment");
+    assert (Digest.file hook = before);
+    write hook "changed";
+    assert (fst (Doctor.attachment_identity hook) = "WARN");
+    write (Filename.concat base "Attachment Scripts/BBEdit.applescript") "foreign";
+    let report = Doctor.inspect ~home:root ~path:"" ~state:root ~binary:"bbtex" ~support:base () in
+    assert (Doctor.contains report "[WARN] Attachment conflict"));
+  print_endline "Doctor: custom layouts, attachment identity and conflicts passed"
+
+let () =
   let script = Filename.temp_file "bbtex-probe space " ".sh" in
   Fun.protect ~finally:(fun () -> Sys.remove script) (fun () ->
     let write body =

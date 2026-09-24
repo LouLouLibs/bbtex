@@ -25,6 +25,9 @@ changes in your working folder never affect the result, then runs:
    architecture check, and a check that the binary links only system libraries.
    The package ZIP, its SHA-256 checksum and build information (commit, macOS,
    OCaml, dune and uv versions) are written to `dist/release/`.
+   Staged installation checks also cover renamed package discovery, nested command
+   conflicts, attachment receipts, protected upgrades and removal without touching
+   the real BBEdit support folder.
 5. With `--engines`: the article/book/Beamer corpus with pdfLaTeX, XeLaTeX and
    LuaLaTeX, including BibTeX/Biber and Poppler. With `--tectonic`: the Tectonic
    tier with the same pinned bundle as the GitHub workflow. That bundle's

@@ -1,5 +1,8 @@
 # Fast selection preview in BBEdit
 
+This records the original preview implementation. Current status and separate
+live-selection follow-up work are tracked in [the handoff](../HANDOFF.md).
+
 Status updated 2026-09-20. The compact BBEdit HTML window was accepted by the
 user and replaced the original PDF-in-Skim selection prototype. Skim remains
 the viewer for full documents. No additional prototype approval is pending.

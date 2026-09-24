@@ -1,7 +1,7 @@
 # bbtex vs Sublime LaTeXTools — Feature Comparison
 
 > Historical comparison: several entries below are outdated. For current work,
-> see [the September 2026 implementation plan](plans/2026-09-17-bbedit-latex-workflow.md)
+> see [the current handoff](HANDOFF.md)
 > and [BBEdit editing integration](bbedit-editing.md). In particular, BBEdit's
 > TexLab support provides a path to citation/reference completion and navigation;
 > these are no longer considered out of scope. Clippings and editing helpers

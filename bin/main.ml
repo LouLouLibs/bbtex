@@ -6,6 +6,7 @@ let usage = {|Usage: bbtex <command> [options] <file>
 
 Commands:
   doctor [--probe] [file.tex] Inspect setup; --probe runs bounded version queries
+    [--bbedit-support DIR]   Inspect a custom BBEdit support directory
   compile <file.tex>         Compile and report results (protocol output)
   results <file.tex>         Show all diagnostics from the current project log
   paths <file.tex>           Resolve project log and PDF paths without compiling
@@ -243,10 +244,16 @@ let () =
   match cmd with
   | Some "doctor" ->
     let probe = List.mem "--probe" args in
-    (match List.filter ((<>) "--probe") args with
-     | [] -> Doctor.run ~probe None
-     | [source] -> Doctor.run ~probe (Some source)
-     | _ -> Printf.eprintf "doctor accepts at most one source file\n"; exit 2)
+    let rec options support sources = function
+      | "--bbedit-support" :: dir :: tail -> options (Some dir) sources tail
+      | "--bbedit-support" :: [] -> raise (Project.Error "--bbedit-support requires a directory")
+      | value :: tail -> options support (value :: sources) tail
+      | [] -> match List.rev sources with
+        | [] -> Doctor.run ~probe ?support None
+        | [source] -> Doctor.run ~probe ?support (Some source)
+        | _ -> raise (Project.Error "doctor accepts at most one source file") in
+    (try options None [] (List.filter ((<>) "--probe") args)
+     with Project.Error message -> Printf.eprintf "%s\n" message; exit 2)
   | None ->
     print_string usage;
     exit 1
