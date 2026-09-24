@@ -13,6 +13,7 @@ COMMANDS=(
     "LaTeX — Show Build Results.sh|bbtex-bbedit-results.sh"
     "LaTeX — Doctor.sh|bbtex-bbedit-doctor.sh"
     "LaTeX — Project Outline.sh|bbtex-bbedit-outline.sh"
+    "LaTeX — Project Outline Window.sh|bbtex-bbedit-outline-window.sh"
     "LaTeX — Insert Citation.sh|bbtex-bbedit-citation.sh"
     "LaTeX — Insert Reference.sh|bbtex-bbedit-reference.sh"
     "LaTeX — Open Build Log.sh|bbtex-bbedit-log.sh"

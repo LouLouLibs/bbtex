@@ -1,23 +1,68 @@
-# BBEdit LaTeX handoff — updated 2026-09-23
+# BBEdit LaTeX handoff — updated 2026-09-24
+
+## Persistent outline: menu integration and performance
+
+User accepted tree/search/navigation and automatic saved-source updates. New
+**LaTeX — Project Outline Window** menu command invokes `outline-window FILE`;
+the original picker remains. One detached worker/window per canonical root is
+stored in a private system-temp directory. Included files reuse that root;
+other projects get separate windows. Editor focus changes do not retarget them.
+The launcher waits for the actual preview before reporting readiness, avoiding
+an immediate-close race found by the two-project native test.
+
+Benchmark on this Mac: 121 files / 9,600 entries, index 39 ms, HTML 33 ms
+(3.68 MB). Idle metadata check averages 0.116 ms. Polling now checks file metadata
+every two seconds, with a full scan every 30 seconds and whenever partial-index
+warnings exist. Explicit refresh always scans. This preserves missing-input
+recovery and bounds stale metadata assumptions. Reproduce with
+`BBTEX_OUTLINE_BENCH=1 _build/default/test/test_outline_window.exe`.
+
+Native tests: `test/integration/check_outline_window.py` checks source jumps,
+refresh, actual preview readback and lifecycle; `check_outline_launcher.py`
+checks root reuse, independent projects and immediate close/reopen.
 
 ## Issue #1: persistent-outline navigation prototype
 
 After synchronizing Claude's merged changes through `ae6567d`, added an isolated
 `outline-window-prototype FILE PRIVATE_TEMP_DIR` capability proof. Existing menu
 and source-index contract remain unchanged. OCaml serves a token-scoped loopback
-endpoint; HTML form buttons invoke existing `Outline.jump` validation. No request
-can choose a file path or executable. Saved snapshot entries are indented, not yet
-an expandable/filterable tree. See `docs/outline-window-prototype.md`.
+endpoint; HTML buttons invoke existing `Outline.jump` validation. No request
+can choose a file path or executable. See `docs/outline-window-prototype.md` for
+the implementation history and current scope.
 
 Unit checks cover escaped markup and method/token/entry/Host/Origin restrictions.
 Disposable native checks pass for window reuse, exact jumps, dirty/stale rejection
 and closing the window stopping the worker. Found that a closed BBEdit preview can
 keep its JavaScript alive: heartbeat alone is insufficient, so this prototype also
 uses bounded window-list checks every two seconds. Evaluate this tradeoff before
-installing a production menu. Real click/Return acceptance has been requested with
-the disposable `/tmp/bbtex-outline-demo.vw96At` project; do not claim it until answered.
+installing a production menu. User click/Return testing FAILED: form navigation
+opened an external browser with “Unknown request”. Replaced forms/iframe with
+plain buttons and JavaScript POST, inline status text and local-file CORS support.
+Replacement initially failed with “Navigation unavailable”: observed BBEdit's
+actual Origin is `x-bbedit-preview://`, not `null`. Added exact-origin authorization
+and matching CORS response, plus a real preview POST/readback handshake in the
+native test. User confirmed mouse navigation works after the origin fix.
 
-Remaining issue #1 work: tree/state model, filter/navigation UI, refresh and
+Next increment adds nested expandable sections and literal search across title,
+kind, context and path, retaining ancestors and restoring expansion when cleared.
+Return in search opens the first matching entry; Escape clears it. Tree grouping
+has unit coverage; user accepted tree/search interactions.
+
+Explicit saved-source refresh now preserves search, expansion, selected entry and
+scroll through stable entry keys. Snapshot revisions reject stale entry indices.
+Unit coverage checks identity across line moves and duplicate distinction; native
+coverage exercises refreshed source locations and rejection of old snapshots.
+Refresh/state UI acceptance is pending. Refresh never saves a buffer or changes
+the pinned project, and does not rewrite the page (which would reload BBEdit).
+
+Automatic saved-source refresh now polls every two seconds, reuses the state
+preservation logic, and returns no content for unchanged indexes. Displayed
+revisions let the preview recover missed responses. No source save, jump or window
+activation occurs during refresh. Native tests now require an acknowledgement
+from the actual preview after applying an automatic update. The bounded index is
+rebuilt each poll; profile large projects before shipping.
+
+Remaining issue #1 work: refresh UI acceptance, large-project profiling and
 project-switching semantics, production lifecycle and packaging. Preserve user's
 sample edit and the newer local-CI/opam/no-shipped-Python architecture.
 

@@ -5,6 +5,7 @@
 # ///
 """Disposable native outline window/navigation proof; run explicitly on macOS."""
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -51,28 +52,52 @@ with tempfile.TemporaryDirectory(prefix='bbtex-outline-window-') as tmp:
             req = urllib.request.Request(endpoint + suffix, method=method,
                                          headers={'Origin': origin}, data=b'' if method == 'POST' else None)
             with urllib.request.urlopen(req, timeout=15) as result:
+                assert result.headers.get('Access-Control-Allow-Origin') == origin
                 return result.read().decode()
-        for suffix, method, origin in [('/jump/0', 'GET', 'null'), ('/jump/0', 'POST', 'https://example.org'),
-                                        ('/jump/999', 'POST', 'null')]:
+        for suffix, method, origin in [('/jump/0/0', 'GET', 'null'), ('/jump/0/0', 'POST', 'https://example.org'),
+                                        ('/jump/0/999', 'POST', 'null')]:
             try:
                 request(suffix, method, origin)
                 raise AssertionError('Unexpected authorization')
             except urllib.error.HTTPError as error:
                 assert error.code == 403
-        assert 'Opened saved source' in request('/jump/1')
+        assert 'Opened saved source' in request('/jump/0/1', origin='x-bbedit-preview://')
         line = apple('tell application "BBEdit" to return startLine of selection')
         assert line == '5', line
         apple('on run argv\ntell application "BBEdit"\nopen (POSIX file (item 1 of argv))\nif (file of front text document as alias) is not (POSIX file (item 1 of argv) as alias) then error "Wrong disposable document"\nset contents of front text document to "Unsaved changes"\nend tell\nend run', source)
-        assert 'unsaved edits' in request('/jump/0')
+        assert 'unsaved edits' in request('/jump/0/0')
         apple('on run argv\ntell application "BBEdit"\nset d to open (POSIX file (item 1 of argv))\nclose d saving no\nend tell\nend run', source)
         source.write_text(source.read_text() + '% changed on disk\n')
-        assert 'Source changed' in request('/jump/0')
+        assert 'Source changed' in request('/jump/0/0')
+        # Refresh shifts entry numbers and locations; old buttons must never be
+        # interpreted against the newly built snapshot.
+        source.write_text('\\documentclass{article}\n\\begin{document}\n\\section{New}\n\\section{First}\nBody.\n\\section{Second}\n\\end{document}\n')
+        refreshed = request('/refresh', origin='x-bbedit-preview://')
+        revision = int(re.search(r'data-revision="(\d+)"', refreshed).group(1))
+        assert revision >= 1 and 'New' in refreshed
+        try:
+            request('/jump/0/1')
+            raise AssertionError('Old snapshot navigation was accepted')
+        except urllib.error.HTTPError as error:
+            assert error.code == 403
+        assert 'Opened saved source' in request(f'/jump/{revision}/2')
+        assert apple('tell application "BBEdit" to return startLine of selection') == '6'
+        # A disk save must reach the live preview without an explicit refresh.
+        # Closing this disposable source also avoids an external-change dialog.
+        apple('on run argv\ntell application "BBEdit"\nset d to open POSIX file (item 1 of argv)\nclose d saving no\nend tell\nend run', source)
+        source.write_text(source.read_text().replace('\\section{Second}', '\\section{Automatically updated}'))
+        deadline = time.monotonic() + 12
+        while int(request('/ping', method='GET').split()[-1]) <= revision:
+            assert time.monotonic() < deadline, 'Saved change was not detected automatically'
+            time.sleep(.2)
         # A live HTML page must keep the server alive without test-generated pings.
         time.sleep(12)
         assert process.poll() is None, 'WebKit did not maintain the heartbeat'
         apple('on run argv\ntell application "BBEdit"\nrepeat with w in (get web_preview_windows)\nif name of w is item 1 of argv then close w\nend repeat\nend tell\nend run', title)
         output, errors = process.communicate(timeout=15)
         assert 'page-connected: true' in output, 'WebKit never reached the local endpoint'
+        assert 'page-ready: true' in output, 'BBEdit could not read the POST response (CORS handshake failed)'
+        assert any(int(n) > revision for n in re.findall(r'snapshot-applied: (\d+)', output)), 'Preview did not apply the automatic update'
         assert process.returncode == 0 and not page.exists(), 'Session did not stop after window close'
         print('Outline window: reuse, native validated jumps, dirty/stale rejection, heartbeat and close passed')
     finally:

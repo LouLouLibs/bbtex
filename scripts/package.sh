@@ -59,6 +59,7 @@ chmod +x "$PKG/Contents/Resources/bbtex"
 
 # Scripts — copy with BBEdit menu names
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-outline.sh" "$PKG/Contents/Scripts/LaTeX — Project Outline.sh"
+cp "$PROJECT_ROOT/scripts/bbtex-bbedit-outline-window.sh" "$PKG/Contents/Scripts/LaTeX — Project Outline Window.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-doctor.sh" "$PKG/Contents/Scripts/LaTeX — Doctor.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-citation.sh" "$PKG/Contents/Scripts/LaTeX — Insert Citation.sh"
 cp "$PROJECT_ROOT/scripts/bbtex-bbedit-reference.sh" "$PKG/Contents/Scripts/LaTeX — Insert Reference.sh"
