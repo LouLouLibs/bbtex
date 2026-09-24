@@ -301,7 +301,8 @@ let () =
      | ["stop"] -> Live_watch.stop ()
      | _ -> raise (Project.Error "Usage: bbtex live-selection watch POLLER RENDERER | status | stop")
      with Project.Error message | Sys_error message | Failure message ->
-       Printf.eprintf "%s\n" message; exit 2)
+       Printf.eprintf "%s\n" message; exit 2
+     | Unix.Unix_error (e, fn, _) -> Printf.eprintf "%s: %s\n" fn (Unix.error_message e); exit 2)
   | Some "snippet-page" ->
     (match args with
      | [png] -> print_endline (Snippet_page.publish png)

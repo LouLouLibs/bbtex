@@ -159,7 +159,12 @@ let begin_locked dir previous ~source ~line ~mode =
 let begin_request ~source ~line ~mode =
   if not (List.mem mode ["auto"; "manual"; "live"]) || line < 0 then
     raise (Project.Error "Invalid preview request.");
-  with_state (fun dir previous -> begin_locked dir previous ~source ~line ~mode)
+  with_state (fun dir previous ->
+    (* Checked under the publication lock: a render detached before the watcher
+       stopped must not reopen live mode after stop_live. *)
+    if mode = "live" && not (Sys.file_exists (live_flag ())) then
+      raise (Project.Error "Live selection preview is off.");
+    begin_locked dir previous ~source ~line ~mode)
 
 (* A dependency's cursor must never replace the equation's saved anchor. Check
    and start under the publication lock so a concurrent source save wins cleanly. *)

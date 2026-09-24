@@ -116,7 +116,7 @@ let watch ~poller ~renderer =
               | Some event -> Live_selection.observe s ~now event
               | None -> s) state (take_lines pending), true
           | exception Unix.Unix_error (Unix.EINTR, _, _) -> state, true in
-        if not open_ then () else
+        if not open_ || !stopping then () else
         match Live_selection.decide state ~now with
         | _, Live_selection.Stop -> ()
         | state, Live_selection.Render o ->
