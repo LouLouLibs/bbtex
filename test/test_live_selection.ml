@@ -79,3 +79,45 @@ let () =
   assert (not (Sys.file_exists (Snippet_page.live_flag ())));
   assert (not (Live_watch.build_paused ()));
   print_endline "Live watch: stale flag cleanup passed"
+
+(* A preamble macro that opens math must not make the whole body math. *)
+let () =
+  let preamble = "\\documentclass{article}\n\\newcommand\\be{\\begin{equation}}\n" in
+  assert (not (in_math (preamble ^ "\\begin{document}\nSome prose ")));
+  assert (in_math (preamble ^ "\\begin{document}\nSome $x"));
+  assert (classify ~prefix:(preamble ^ "\\begin{document}\nIntro. ") ~selected:"Mass is $m$."
+          = Fragment (Text "Mass is $m$."));
+  print_endline "Live selection: preamble ignored after begin document passed"
+
+(* A range reselected after the selection moved renders again: its text may
+   have been edited in between. Idle polls (another app in front) do not. *)
+let () =
+  let a = { source = "/p/a.tex"; window = "1"; offset = 10; length = 6; line = 1 } in
+  let cursor = { a with length = 0 } in
+  let s = observe (initial ~now:0.) ~now:0. (Seen a) in
+  let s, r1 = decide s ~now:0.5 in
+  let s = observe s ~now:1.0 (Seen cursor) in
+  let s, w = decide s ~now:1.5 in
+  let s = observe s ~now:2.0 (Seen a) in
+  let s, r2 = decide s ~now:2.5 in
+  let s = observe s ~now:3.0 Idle in
+  let s = observe s ~now:3.1 (Seen a) in
+  let _, r3 = decide s ~now:3.5 in
+  assert (r1 = Render a && w = Wait && r2 = Render a && r3 = Wait);
+  print_endline "Live selection: edited range re-renders passed"
+
+(* During a full build a settled selection is reported busy once, then
+   rendered once the build ends. *)
+let () =
+  let a = { source = "/p/a.tex"; window = "1"; offset = 10; length = 6; line = 1 } in
+  let s = building (observe (initial ~now:0.) ~now:0. (Seen a)) true in
+  let s, b1 = decide s ~now:0.5 in
+  let s, b2 = decide s ~now:0.6 in
+  let s = building s true in
+  let s, b3 = decide s ~now:0.7 in
+  let s = building s false in
+  let s, r = decide s ~now:0.8 in
+  let s = building s false in
+  let _, w = decide s ~now:0.9 in
+  assert (b1 = Busy a && b2 = Wait && b3 = Wait && r = Render a && w = Wait);
+  print_endline "Live selection: busy during a build, render after passed"

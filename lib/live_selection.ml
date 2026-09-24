@@ -23,7 +23,17 @@ let name_after text i keyword =
   | Some stop -> Some (String.sub text start (stop - start), stop + 1)
   | None -> None
 
+(* Index of the last [needle] in [text]. *)
+let last_index text needle =
+  let m = String.length needle in
+  let rec back i = if i < 0 then None else if text.[i] = needle.[0] && matches text i needle then Some i else back (i - 1) in
+  back (String.length text - m)
+
+(* Only the body counts: a preamble macro such as \newcommand\be{\begin{equation}}
+   must not turn all prose into math. *)
 let in_math text =
+  let start = match last_index text "\\begin{document}" with
+    | Some i -> i + String.length "\\begin{document}" | None -> 0 in
   let n = String.length text in
   let toggle d = function top :: rest when top = d -> rest | stack -> d :: stack in
   let pop d = function top :: rest when top = d -> rest | stack -> stack in
@@ -43,7 +53,7 @@ let in_math text =
         scan next false (("\\end{" ^ name ^ "}") :: stack)
       | _, Some (name, next) -> scan next false (pop ("\\end{" ^ name ^ "}") stack)
       | _ -> scan (i + if text.[i] = '\\' && i + 1 < n then 2 else 1) false stack
-  in scan 0 false []
+  in scan start false []
 
 (* Braces and \begin/\end pairs nest correctly outside comments. *)
 let balanced text =
@@ -109,15 +119,16 @@ let parse_line line =
     | _ -> None)
 
 type state = { started : float; pending : observation option; changed_at : float;
-  rendered : observation option; preview_seen : bool; missing_since : float option }
-type action = Wait | Render of observation | Stop
+  rendered : observation option; preview_seen : bool; missing_since : float option;
+  building : bool }
+type action = Wait | Render of observation | Busy of observation | Stop
 
 let debounce = 0.35
 let close_grace = 2.0
 let startup_grace = 10.0
 
 let initial ~now = { started = now; pending = None; changed_at = now; rendered = None;
-  preview_seen = false; missing_since = None }
+  preview_seen = false; missing_since = None; building = false }
 
 let observe state ~now = function
   | Idle -> { state with preview_seen = true; missing_since = None }
@@ -125,7 +136,16 @@ let observe state ~now = function
     { state with missing_since = Some (Option.value state.missing_since ~default:now) }
   | Seen o ->
     let state = { state with preview_seen = true; missing_since = None } in
-    if state.pending = Some o then state else { state with pending = Some o; changed_at = now }
+    (* A new observation forgets the last render: the same range reselected
+       later may hold edited text. The render cache keeps true repeats cheap. *)
+    if state.pending = Some o then state
+    else { state with pending = Some o; changed_at = now; rendered = None }
+
+(* A full build started or ended. Its end forgets the last render, so a
+   selection reported busy (or yielded by its renderer) renders once. *)
+let building state active =
+  if state.building && not active then { state with building = false; rendered = None }
+  else { state with building = active }
 
 let decide state ~now =
   match state.missing_since with
@@ -134,5 +154,5 @@ let decide state ~now =
   | _ ->
     match state.pending with
     | Some o when o.length > 0 && state.rendered <> Some o && now -. state.changed_at >= debounce ->
-      { state with rendered = Some o }, Render o
+      { state with rendered = Some o }, if state.building then Busy o else Render o
     | _ -> state, Wait

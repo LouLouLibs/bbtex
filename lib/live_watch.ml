@@ -19,11 +19,13 @@ let running () =
 
 let stop () =
   let flag = Snippet_page.live_flag () in
-  if running () then
-    (match int_of_string_opt (String.trim (read_all flag)) with
-     | Some pid -> (try Unix.kill pid Sys.sigterm with Unix.Unix_error _ -> ())
-     | None -> ())
-  else Build_job.remove flag
+  (* A watcher that just took its lock writes its PID a moment later. *)
+  let rec signal tries =
+    match int_of_string_opt (String.trim (read_all flag)) with
+    | Some pid -> (try Unix.kill pid Sys.sigterm with Unix.Unix_error _ -> ())
+    | None when tries > 0 && running () -> Unix.sleepf 0.05; signal (tries - 1)
+    | None -> () in
+  if running () then signal 20 else Build_job.remove flag
 
 let process_start pid =
   let ic = Unix.open_process_args_in "/bin/ps" [| "/bin/ps"; "-o"; "lstart="; "-p"; string_of_int pid |] in
@@ -100,10 +102,15 @@ let watch ~poller ~renderer =
       child := Some pid;
       close_write ();
       let pending = Buffer.create 256 and chunk = Bytes.create 4096 in
+      (* The build marker is checked a few times a second, not every tick:
+         checking it runs ps while a build is active. *)
+      let checked = ref neg_infinity in
       let rec loop state =
         reap pid exited;
         if !stopping then () else
         let now = Unix.gettimeofday () in
+        let state = if now -. !checked < 0.25 then state else
+          (checked := now; Live_selection.building state (build_paused ())) in
         let ready = try let r, _, _ = Unix.select [read_end] [] [] 0.05 in r <> []
           with Unix.Unix_error (Unix.EINTR, _, _) -> false in
         let state, open_ =
@@ -119,8 +126,7 @@ let watch ~poller ~renderer =
         if not open_ || !stopping then () else
         match Live_selection.decide state ~now with
         | _, Live_selection.Stop -> ()
-        | state, Live_selection.Render o ->
-          if build_paused () then publish_busy o else spawn renderer o;
-          loop state
+        | state, Live_selection.Render o -> spawn renderer o; loop state
+        | state, Live_selection.Busy o -> publish_busy o; loop state
         | state, Live_selection.Wait -> loop state
       in loop (Live_selection.initial ~now:(Unix.gettimeofday ()))))

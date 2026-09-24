@@ -248,8 +248,9 @@ class Check:
         check(s["image_line"] == align_line, f"image line changed to {s['image_line']}")
 
         # 3. Reselect the align* range: a cache hit within the warm budget.
-        #    (Reselecting the last rendered range would not render at all, which
-        #    is why the invalid selection above sits in between.)
+        #    (Reselecting the last rendered range with nothing in between would
+        #    not render at all; the invalid selection above sits in between, and
+        #    any other selection or cursor move would do too.)
         before = self.revision()
         self.select(align_range)
         warm, s = self.settled(before, align_line, "warm render of the align* selection")
