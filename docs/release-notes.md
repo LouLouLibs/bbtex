@@ -1,3 +1,11 @@
+**LaTeX — Toggle Live Selection Preview** makes the reusable preview window
+follow the BBEdit selection instead of waiting for a save. Delimited math
+renders as selected; raw text renders as math inside a math selection and as
+a prose paragraph otherwise. The fragment comes from the live buffer, while
+the preamble and dependencies still come from saved files. Enabling it turns
+off Preview on Save, and a full build pauses rendering ("Project busy")
+without cancelling it. See [live selection](selection-preview.md#live-selection).
+
 The persistent **Project Outline Window** adds an expandable searchable tree,
 automatic saved-source refresh and one window per project. Source jumps retain
 dirty/stale checks; HTML escaping and a nonce CSP protect displayed TeX text.

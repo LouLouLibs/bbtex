@@ -105,7 +105,7 @@ as-you-type completion, and adds its own explicit commands on top.
 |---------|-----------|--------|-------|
 | Equation preview | Inline phantoms | Inline images (preview-latex) | Separate reusable BBEdit window |
 | Preview uses document preamble | Configurable | Yes | Yes, main file's saved preamble |
-| Preview follows cursor / typing | Yes (phantoms update) | On demand | Refresh on save (opt-in); selection-following planned ([#2](https://github.com/LouLouLibs/bbtex/issues/2)) |
+| Preview follows cursor / typing | Yes (phantoms update) | On demand | Refresh on save (opt-in), or live selection (opt-in) |
 | Cached rendering | Yes | Yes | Yes, keyed on inputs and `.fls` dependencies |
 | Refresh when a macro file changes | No | No | Yes, for recorded inputs |
 | Image preview on hover | Yes | No | No |

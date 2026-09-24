@@ -36,6 +36,13 @@ contains superseded plans and evidence; its old “remaining” lists are not cu
   three native passes with 16 concurrent startup requests. Keyboard focus survives
   refresh. 9,600 entries: BBEdit readiness ~1.23 s, update ~1.53 s including polling;
   Chromium search ~255 ms, down from ~3.7 s. See the explicit native/browser tests.
+- [Issue #2](https://github.com/LouLouLibs/bbtex/issues/2): opt-in preview that
+  follows the selection, implemented on branch `live-selection`. Plan:
+  [live selection preview](plans/2026-09-24-live-selection-preview.md). The
+  native check `check_live_selection.py` measured 1.23 s cold / 0.76 s warm
+  (cached) from selection to Current, including the 0.35 s debounce and the
+  poll (2026-09-24, Apple Silicon, BBEdit 15.5.5, pdfLaTeX; local timings, not
+  guarantees).
 
 ## Setup and diagnostics (merged in PR #27)
 
@@ -61,14 +68,7 @@ fresh-account/Mac walkthrough and explicit verification boundaries.
 1. Perform the documented fresh-account/Mac acceptance with only the release
    instructions: install, compile, preview, upgrade/rollback and uninstall.
    This needs the user on a clean account; it cannot be automated here.
-2. [Issue #2](https://github.com/LouLouLibs/bbtex/issues/2): opt-in preview that follows
-   the selection. Plan: [live selection preview](plans/2026-09-24-live-selection-preview.md).
-   BBEdit (15.5.5, and 16.0–16.0.3 per release notes) has no selection-change
-   attachment point, so the plan uses one bounded `osascript` poller, an OCaml
-   debounce/watcher, and the existing generation/cache/cancellation pipeline.
-   Task 1 is a go/no-go spike on polling cost and prose rendering; review the
-   plan's "Decisions for review" before executing it.
-3. Prepare the first release (no tags or GitHub releases exist yet): release
+2. Prepare the first release (no tags or GitHub releases exist yet): release
    notes, full engine checks and a draft via `scripts/ci.sh --engines --report
    --release vX vX`. Publishing remains a separate step.
 
