@@ -128,8 +128,9 @@ as-you-type completion, and adds its own explicit commands on top.
 ## Where bbtex is behind
 
 1. **Inline previews.** BBEdit has no API for images in the text view, so
-   previews live in a separate window. Following the selection is tracked in
-   [#2](https://github.com/LouLouLibs/bbtex/issues/2).
+   previews live in a separate window. Live selection mode (opt-in) can
+   follow the selection in that window; there is still no inline rendering
+   in the text view itself.
 2. **As-you-type assistance.** Completion depends on TexLab and an explicit
    Complete command; there is no math-mode detection, fill-all helper or folding.
 3. **Configuration breadth.** There is no global config file, no jobname or aux
@@ -143,7 +144,6 @@ as-you-type completion, and adds its own explicit commands on top.
 
 These gaps look worth closing; none is scheduled beyond the handoff list.
 
-- Selection-following preview ([#2](https://github.com/LouLouLibs/bbtex/issues/2)).
 - A command to open the file under an `\input`/`\include` at the cursor.
 - Unsaved-buffer snapshots for preview dependencies and the outline.
 - `jobname` in `.bbtex`, if a real project needs it.
