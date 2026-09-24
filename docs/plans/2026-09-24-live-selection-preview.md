@@ -1138,3 +1138,18 @@ git commit -m "Document live selection preview"
 
 - Spec coverage: feasibility (Task 1); debounce (Task 2); capture of document identity, range and project context (Tasks 1, 5); generation tracking, cache and cancellation reused (Tasks 3, 5); window reuse and focus (Tasks 5, 6); stop on disable, close or unavailable source (Tasks 2, 4, 6); empty, incomplete and non-TeX behaviour (Task 2); mode interaction (Task 5); latency and responsiveness measurements (Tasks 1, 6); a sturdier native test that waits on state (Task 6).
 - Not covered: rendering that depends on definitions made earlier in the document body. That limit is shared with manual preview and documented in its Limits section.
+
+## Spike results (2026-09-24, BBEdit 15.5.5, Apple Silicon)
+
+- **Per-poll cost:** 200 reads of preview-window list + selection offset/length/line
+  took 0.72 s wall (3.6 ms per poll; osascript user+sys 0.19 s). Go (≤ 15 ms).
+- **Steady-state CPU:** two 30 s runs of the poller at 0.15/1.0 s: poller 0.1–0.6 %
+  (0.14–0.15 s CPU), BBEdit +0.20–0.26 s CPU (< 1 %). Go (≤ 3 %). BBEdit was not
+  frontmost in either run, so the log showed only `idle` and these figures are for the 1 s
+  background interval. The frontmost branch's query ran correctly in a single
+  read-only probe (path, offset, length); the native check in Task 6 covers
+  the 0.15 s path end to end and must activate BBEdit first.
+- **Prose rendering:** `minipage{\linewidth}` inside `preview` gave a
+  351.7 × 18.0 pt page. Go.
+
+Decision: proceed with the plan as written.
