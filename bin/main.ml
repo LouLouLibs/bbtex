@@ -15,6 +15,7 @@ Commands:
   profiles <file.tex>        List named profiles from .bbtex
   preview <file.tex>         Preview selected math read from stdin
   outline <file.tex> [query] List the saved project outline as JSON
+  outline-window <file.tex> Open or reuse the persistent BBEdit project outline
   save-project [--check] <file.tex>
                             Emit AppleScript to save open project inputs
                             (--check: fail while any is modified instead)
@@ -39,7 +40,7 @@ Options:
    text): after the command name, nothing is parsed as an option, so a search
    for "-h" or "--verbose" is a search. *)
 let literal_commands = [
-  "outline"; "outline-picker"; "outline-jump"; "outline-check";
+  "outline"; "outline-picker"; "outline-jump"; "outline-check"; "outline-window-prototype"; "outline-window";
   "citation-picker"; "reference-picker"; "picker-insert"; "picker-check"; "picker-unchanged";
   "snippet-begin"; "snippet-refresh"; "snippet-finish"; "snippet-current"; "snippet-stop";
   "snippet-log"; "snippet-page"; "equation-at"; "environment-find"; "environment-change";
@@ -339,6 +340,17 @@ let () =
      | _ -> raise (Project.Error ("Invalid arguments for " ^ command))
      with Project.Error message | Sys_error message | Failure message ->
        Printf.eprintf "%s\n" message; exit 2)
+  | Some "outline-window" ->
+    (try match args with
+     | [source] -> Outline_window.launch source
+     | _ -> raise (Project.Error "outline-window requires a saved source file")
+     with Project.Error message | Sys_error message -> Printf.eprintf "%s\n" message; exit 1)
+  | Some "outline-window-prototype" ->
+    (try match args with
+     | [source; dir] -> Outline_window.run source dir
+     | [source; dir; "no-open"] -> Outline_window.run ~launch:false source dir
+     | _ -> Printf.eprintf "outline-window-prototype requires source and a private temporary directory\n"; exit 2
+     with Project.Error message -> Printf.eprintf "%s\n" message; exit 1)
   | Some ("outline" | "outline-picker" | "outline-jump" | "outline-check" as command) ->
     (try match command, args with
      | ("outline" | "outline-picker"), ([_] | [_; _]) ->

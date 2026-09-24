@@ -1,4 +1,103 @@
-# BBEdit LaTeX handoff — updated 2026-09-23
+# BBEdit LaTeX handoff — updated 2026-09-24
+
+## Outline startup, large-tree responsiveness and keyboard focus
+
+Startup diagnostics placed the intermittent reset before the listener accepted
+requests. Increased the listen backlog from 4 to 64 for WebKit/reopen bursts and
+removed a redundant native-window check before draining the queue. Three native
+regression passes succeeded, each queuing 16 simultaneous startup requests.
+The test now inspects the disposable document's own window selection, avoiding
+front-window races and unrelated unsaved documents.
+
+Browser testing found refresh discarded keyboard focus and 9,601-entry search
+took 3.7 seconds. Restore the focused entry/summary by stable key only when the
+outline document already has focus; batch filter mutations off-document and use
+offscreen rendering containment. Chrome headless search through the next paint
+now measures about 255 ms, with initial readiness about 220 ms. Native BBEdit:
+9,600 entries ready in 1.23 s; saved update applied in 1.53 s (includes polling).
+The separate editing window remained in front throughout automatic refresh.
+
+New explicit tests: `check_outline_browser.mjs` uses a temporary Playwright
+installation and isolated Chromium context; `check_outline_large.py` measures
+the real BBEdit preview. Headless Chromium's cross-tab focus reporting is not
+reliable here, so native window-focus validation lives in the latter test.
+
+## Outline injection review
+
+Reviewed all TeX-controlled HTML sinks: title/display, context, file/root paths,
+warnings and search attributes are HTML-escaped; no source text enters JavaScript.
+Added malicious-payload tests for initial and refreshed rendering, plus a nonce
+CSP restricting scripts and session-endpoint network requests. Unit tests and
+native navigation/automatic-refresh checks passed with CSP. Several earlier native
+attempts hit an intermittent startup connection reset; test cleanup now prints
+worker diagnostics on failure. See the startup regression results above.
+Existing open windows acquire the CSP only after closing/reopening their session.
+
+## Persistent outline: menu integration and performance
+
+User accepted tree/search/navigation and automatic saved-source updates. New
+**LaTeX — Project Outline Window** menu command invokes `outline-window FILE`;
+the original picker remains. One detached worker/window per canonical root is
+stored in a private system-temp directory. Included files reuse that root;
+other projects get separate windows. Editor focus changes do not retarget them.
+The launcher waits for the actual preview before reporting readiness, avoiding
+an immediate-close race found by the two-project native test.
+
+Benchmark on this Mac: 121 files / 9,600 entries, index 39 ms, HTML 33 ms
+(3.68 MB). Idle metadata check averages 0.116 ms. Polling now checks file metadata
+every two seconds, with a full scan every 30 seconds and whenever partial-index
+warnings exist. Explicit refresh always scans. This preserves missing-input
+recovery and bounds stale metadata assumptions. Reproduce with
+`BBTEX_OUTLINE_BENCH=1 _build/default/test/test_outline_window.exe`.
+
+Native tests: `test/integration/check_outline_window.py` checks source jumps,
+refresh, actual preview readback and lifecycle; `check_outline_launcher.py`
+checks root reuse, independent projects and immediate close/reopen.
+
+## Issue #1: persistent-outline navigation prototype
+
+After synchronizing Claude's merged changes through `ae6567d`, added an isolated
+`outline-window-prototype FILE PRIVATE_TEMP_DIR` capability proof. Existing menu
+and source-index contract remain unchanged. OCaml serves a token-scoped loopback
+endpoint; HTML buttons invoke existing `Outline.jump` validation. No request
+can choose a file path or executable. See `docs/outline-window-prototype.md` for
+the implementation history and current scope.
+
+Unit checks cover escaped markup and method/token/entry/Host/Origin restrictions.
+Disposable native checks pass for window reuse, exact jumps, dirty/stale rejection
+and closing the window stopping the worker. Found that a closed BBEdit preview can
+keep its JavaScript alive: heartbeat alone is insufficient, so this prototype also
+uses bounded window-list checks every two seconds. Evaluate this tradeoff before
+installing a production menu. User click/Return testing FAILED: form navigation
+opened an external browser with “Unknown request”. Replaced forms/iframe with
+plain buttons and JavaScript POST, inline status text and local-file CORS support.
+Replacement initially failed with “Navigation unavailable”: observed BBEdit's
+actual Origin is `x-bbedit-preview://`, not `null`. Added exact-origin authorization
+and matching CORS response, plus a real preview POST/readback handshake in the
+native test. User confirmed mouse navigation works after the origin fix.
+
+Next increment adds nested expandable sections and literal search across title,
+kind, context and path, retaining ancestors and restoring expansion when cleared.
+Return in search opens the first matching entry; Escape clears it. Tree grouping
+has unit coverage; user accepted tree/search interactions.
+
+Explicit saved-source refresh now preserves search, expansion, selected entry and
+scroll through stable entry keys. Snapshot revisions reject stale entry indices.
+Unit coverage checks identity across line moves and duplicate distinction; native
+coverage exercises refreshed source locations and rejection of old snapshots.
+Refresh/state UI acceptance is pending. Refresh never saves a buffer or changes
+the pinned project, and does not rewrite the page (which would reload BBEdit).
+
+Automatic saved-source refresh now polls every two seconds, reuses the state
+preservation logic, and returns no content for unchanged indexes. Displayed
+revisions let the preview recover missed responses. No source save, jump or window
+activation occurs during refresh. Native tests now require an acknowledgement
+from the actual preview after applying an automatic update. The bounded index is
+rebuilt each poll; profile large projects before shipping.
+
+Remaining issue #1 work: refresh UI acceptance, large-project profiling and
+project-switching semantics, production lifecycle and packaging. Preserve user's
+sample edit and the newer local-CI/opam/no-shipped-Python architecture.
 
 ## Tectonic Biber coverage — 2026-09-23
 
