@@ -19,6 +19,7 @@ if [[ "${1:-}" != "--saved" && "${1:-}" != "--locked" ]]; then
         osascript -e 'display notification "Preview on save disabled" with title "LaTeX"'
         exit 0
     fi
+    "$BBTEX" live-selection stop || true
     TEMP=$(mktemp "$BBTEX_STATE_DIR/tracking.XXXXXX")
     printf '%s' "$SOURCE" > "$TEMP"
     mv "$TEMP" "$FLAG"

@@ -4,10 +4,14 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 bash scripts/package.sh
 PKG="$PWD/dist/bbtex.bbpackage"
-for resource in with-preview-lock.pl preview-save-hook.applescript snippet-window.applescript project-outline.applescript insert-picker.applescript bbtex-bbedit-pick.sh install-preview-save-hook.sh; do
+for resource in with-preview-lock.pl preview-save-hook.applescript snippet-window.applescript project-outline.applescript insert-picker.applescript bbtex-bbedit-pick.sh install-preview-save-hook.sh live-selection-poll.applescript live-selection-capture.applescript bbtex-live-render.sh; do
     cmp "scripts/$resource" "$PKG/Contents/Resources/$resource"
     unzip -p dist/bbtex.bbpackage.zip "bbtex.bbpackage/Contents/Resources/$resource" | cmp - "scripts/$resource"
 done
+test -x "$PKG/Contents/Resources/bbtex-live-render.sh"
+test -f "$PKG/Contents/Scripts/LaTeX — Toggle Live Selection Preview.sh"
+test -x "$PKG/Contents/Scripts/LaTeX — Toggle Live Selection Preview.sh"
+cmp "scripts/bbtex-live-selection.sh" "$PKG/Contents/Scripts/LaTeX — Toggle Live Selection Preview.sh"
 unzip -tq dist/bbtex.bbpackage.zip
 # The archive keeps the license, executable bits and stationery flags.
 ARCHIVE="$(mktemp -d)"
@@ -15,6 +19,7 @@ ditto -x -k dist/bbtex.bbpackage.zip "$ARCHIVE"
 CONTENTS="$ARCHIVE/bbtex.bbpackage/Contents"
 cmp LICENSE "$ARCHIVE/bbtex.bbpackage/LICENSE"
 test -x "$CONTENTS/Resources/bbtex"
+test -x "$CONTENTS/Resources/bbtex-live-render.sh"
 for script in "$CONTENTS"/Scripts/*.sh; do test -x "$script"; done
 templates=0
 for template in "$CONTENTS"/Stationery/*.tex; do
