@@ -33,7 +33,7 @@ FINAL = ("current", "stale", "error", "busy")
 FIELDS = ["generation", "revision", "status", "source", "line", "image",
           "image_line", "message", "log", "fingerprint", "mode"]
 
-PREAMBLE = "\\documentclass{article}\n\\begin{document}\n"
+PREAMBLE = "\\documentclass{article}\n\\usepackage{amsmath}\n\\begin{document}\n"
 BODY = ("Intro text.\n\\begin{align*}\na &= b \\\\\nc &= d\n\\end{align*}\n"
         "Mass is $m$.\n")
 TEXT = PREAMBLE + BODY + "\\end{document}\n"
@@ -82,6 +82,7 @@ class Check:
                           + ".html")
         self.preview_name = "Preview: " + self.page_name
         self.window_id = ""
+        self.error_log = ""  # compiler log of the last render that reported error
 
     # -- state -------------------------------------------------------------
 
@@ -128,6 +129,8 @@ class Check:
             s = self.state()
             if s and s["revision"] > after and s["line"] == line and s["status"] in FINAL:
                 found.update(s)
+                if s["status"] == "error":
+                    self.error_log = s["log"]
                 return True
             return False
         self.wait_for(ready, what, timeout - (time.monotonic() - start))
@@ -303,6 +306,19 @@ class Check:
             print("live-selection.log (last 30 lines):", *lines[-30:], sep="\n  ", file=sys.stderr)
         except FileNotFoundError:
             print("live-selection.log: missing", file=sys.stderr)
+        # The compiler log lives in the temp state dir, which cleanup deletes.
+        s = self.state()
+        log = s["log"] if s and s["status"] == "error" and s["log"] else self.error_log
+        if log:
+            try:
+                lines = Path(log).read_text(errors="replace").splitlines()
+            except OSError as error:
+                print(f"compiler log {log}: {error}", file=sys.stderr)
+            else:
+                errors = [line for line in lines if line.startswith("!")]
+                shown = errors[-20:] if errors else lines[-20:]
+                title = "errors" if errors else "last 20 lines"
+                print(f"compiler log {log} ({title}):", *shown, sep="\n  ", file=sys.stderr)
 
     def cleanup(self) -> list[str]:
         problems = []
