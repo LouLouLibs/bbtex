@@ -7,15 +7,20 @@ documents that come from TeXShop, LaTeXTools or Overleaf where they are, and
 explaining errors in plain English. Nothing here is promised by a date; it's
 vibe coded, so it moves when I have time to try things out.
 
-## Before v0.1.0 ships
+## Finishing v0.1.0
+
+v0.1.0 is tagged (2026-09-25) and mirrored, with its docs, to the UMN copy at
+[pages.github.umn.edu/loualiche/bbtex](https://pages.github.umn.edu/loualiche/bbtex/)
+(UMN login required). Still to do:
 
 - **Walk through a clean install** on a fresh macOS account using only the
   release instructions: install, compile, preview, upgrade or roll back,
   uninstall ([checklist](setup-troubleshooting.md#fresh-account-or-fresh-mac-acceptance)).
-- **Tag and publish v0.1.0**: full engine checks, draft release, then publish
+- **Publish the release on GitHub**: run the full engine checks and create the
+  draft with the package ZIP, then publish it
   ([release steps](dev/releases.md#prepare-a-release)).
-- **Turn on the docs site**: enable GitHub Pages for the `gh-pages` branch and
-  run `scripts/docs-site.sh deploy`.
+- **Public docs site**: GitHub Pages on the private GitHub.com repository needs
+  a paid plan; until then the UMN mirror is the published copy.
 
 ## v0.2
 

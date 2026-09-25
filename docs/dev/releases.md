@@ -65,3 +65,7 @@ macOS version of the Mac running the checks; older versions are unverified.
    check passes, it creates or updates a **draft** GitHub release with the arm64
    package ZIP, checksum and build information. It refuses to change a release
    that is already published. Publishing the draft is manual.
+
+4. Mirror the release and its docs to the UMN copy:
+   `scripts/mirror-release.sh v0.1.0`. Only the tag, `main` at the tagged
+   commit and the tag's docs are pushed there.

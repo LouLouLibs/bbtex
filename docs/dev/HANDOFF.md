@@ -68,16 +68,21 @@ fresh-account/Mac walkthrough and explicit verification boundaries.
 1. Perform the documented fresh-account/Mac acceptance with only the release
    instructions: install, compile, preview, upgrade/rollback and uninstall.
    This needs the user on a clean account; it cannot be automated here.
-2. Prepare the first release (no tags or GitHub releases exist yet): release
-   notes, full engine checks and a draft via `scripts/ci.sh --engines --report
-   --release vX vX`. Publishing remains a separate step.
-3. Enable GitHub Pages for the `gh-pages` branch and run
-   `scripts/docs-site.sh deploy` (paid plan needed while the repo is private).
+2. v0.1.0 is tagged (`5d0e850`, on merge `780bfaa` of PR #35) but has no GitHub
+   release yet: run `scripts/ci.sh --engines --report --release v0.1.0 v0.1.0`
+   for the draft, then publish it by hand.
+3. Docs are published on the UMN mirror, not GitHub.com (Pages there needs a paid
+   plan while the repo is private). `scripts/mirror-release.sh vX.Y.Z` pushes a
+   release tag to github.umn.edu/loualiche/bbtex over SSH (`Host github.umn.edu`
+   in the chezmoi-managed `~/.ssh/config`, key `github_key`), fast-forwards its
+   `main`, and deploys that tag's docs to its `gh-pages`, served at
+   https://pages.github.umn.edu/loualiche/bbtex/ behind UMN login. Run it for
+   every release after tagging.
 4. v0.2 and later: see the [roadmap](../roadmap.md). Headline items are Doctor
    and build warnings for ignored magic comments, mapping `options`,
    `parameter`, `output_directory` and `% !BIB`, plain-English error hints
-   always prefixed `[bbtex]`, and main-file detection. There are no open
-   GitHub issues; the roadmap is the backlog.
+   always prefixed `[bbtex]`, and main-file detection, tracked as issues
+   #29–#33 in the v0.2 milestone (#34 is the tracking issue).
 
 Housekeeping 2026-09-24: merged local branches were deleted; 18 merged remote
 branches (and `origin/python-cleanup`, whose content is already in `main`) still

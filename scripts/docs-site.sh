@@ -31,8 +31,9 @@ build() {
 
 deploy() {
     build
-    local work remote
+    local remote
     remote="${BBTEX_DOCS_REMOTE:-$(git -C "$ROOT" remote get-url origin)}"
+    # Global, so the EXIT trap can still see it after this function returns.
     work=$(mktemp -d)
     trap 'rm -rf "$work"' EXIT
     # Publish from a throwaway clone of the gh-pages branch, so the working
