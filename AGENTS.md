@@ -28,6 +28,11 @@ AppleScript glue for BBEdit. Keep it that way.
 No Python remains outside `test/`. Moving the tests that only exercise the
 binary to dune cram tests is tracked in issue #4.
 
+- **Node is for the docs site only.** `site/` holds the VitePress config for
+  the site built from `docs/`; `scripts/docs-site.sh build|preview|deploy`
+  runs it. Nothing under `site/` ships in the package. User guides live in
+  `docs/`, internal notes (plans, status, release process) in `docs/dev/`.
+
 ## Build
 
 - OCaml comes from opam: `opam install . --deps-only`, then `dune build` and
@@ -42,4 +47,4 @@ CI runs locally on Apple Silicon: `scripts/ci.sh --report` before asking for a
 merge (`--engines` when build, log or engine code changed). GitHub Actions
 workflows are manual-only; don't re-enable push or pull-request triggers.
 
-See `docs/HANDOFF.md` for project history and user preferences.
+See `docs/dev/HANDOFF.md` for project history and user preferences.

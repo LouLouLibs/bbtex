@@ -150,7 +150,7 @@ uv run test/integration/check_live_compile.py
 
 The cancellation check needs permission to signal its own compiler process group.
 The last two checks create disposable documents and require BBEdit/Skim scripting.
-# Experimental RaTeX placeholder
+## Experimental RaTeX placeholder
 
 `ratex` is accepted in the compiler picker, Configure Document, `.bbtex`
 engine settings, and `% !TEX program = ratex`. It refers to

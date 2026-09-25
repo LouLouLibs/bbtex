@@ -8,7 +8,7 @@
 
 **Tech Stack:** OCaml (dune, `unix`), bash 3.2, AppleScript, native checks with `uv run` and PEP 723.
 
-**Spec:** [Issue #2](https://github.com/LouLouLibs/bbtex/issues/2), including the 2026-09-23 status comment. Background: [selection preview](../selection-preview.md), [handoff](../HANDOFF.md).
+**Spec:** [Issue #2](https://github.com/LouLouLibs/bbtex/issues/2), including the 2026-09-23 status comment. Background: [selection preview](../../selection-preview.md), [handoff](../HANDOFF.md).
 
 ## Global Constraints
 

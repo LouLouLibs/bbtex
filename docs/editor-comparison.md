@@ -4,7 +4,7 @@ This compares bbtex in BBEdit with the two editor integrations it is most often
 measured against: [LaTeXTools](https://latextools.readthedocs.io/) for Sublime
 Text and [AUCTeX](https://www.gnu.org/software/auctex/) (with RefTeX and
 preview-latex) for Emacs. It describes what bbtex ships on `main` as of
-2026-09-24; see the [handoff](HANDOFF.md) for open work.
+2026-09-24; see the [handoff](dev/HANDOFF.md) for open work.
 
 "Yes" means a supported, tested workflow. For LaTeXTools and AUCTeX it means
 the stock package; many gaps there can be filled with user configuration.

@@ -49,7 +49,7 @@ macOS version of the Mac running the checks; older versions are unverified.
 
 ## Prepare a release
 
-1. Update [release notes](release-notes.md), complete the native checks, and
+1. Update [release notes](../release-notes.md), complete the native checks, and
    merge the intended changes into `main`.
 2. Choose the next version, then create and push an annotated tag:
 

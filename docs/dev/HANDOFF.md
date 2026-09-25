@@ -39,10 +39,10 @@ contains superseded plans and evidence; its old “remaining” lists are not cu
 - [Issue #2](https://github.com/LouLouLibs/bbtex/issues/2): opt-in preview that
   follows the selection (Toggle Live Selection Preview), implemented. Plan:
   [live selection preview](plans/2026-09-24-live-selection-preview.md). The
-  native check [`check_live_selection.py`](../test/integration/check_live_selection.py) measured 1.23 s cold / 0.76 s warm
+  native check [`check_live_selection.py`](../../test/integration/check_live_selection.py) measured 1.23 s cold / 0.76 s warm
   (cached) from selection to Current, including the 0.35 s debounce and the
   poll (2026-09-24, Apple Silicon, BBEdit 15.5.5, pdfLaTeX; local timings, not
-  guarantees). Docs: [live selection](selection-preview.md#live-selection).
+  guarantees). Docs: [live selection](../selection-preview.md#live-selection).
 
 ## Setup and diagnostics (merged in PR #27)
 
@@ -60,7 +60,7 @@ Unit checks and staged install/upgrade/removal passed, as did a real packaged
 pdfLaTeX compilation. Native packaged preview passed at 1.587 s first render /
 0.316 s cached reuse, preserving source/selection and avoiding first-open focus
 theft after a document switch. Issue #1 was updated and closed as completed.
-Follow [setup troubleshooting](setup-troubleshooting.md) for the remaining physical
+Follow [setup troubleshooting](../setup-troubleshooting.md) for the remaining physical
 fresh-account/Mac walkthrough and explicit verification boundaries.
 
 ## Remaining work
@@ -74,7 +74,7 @@ fresh-account/Mac walkthrough and explicit verification boundaries.
 
 Housekeeping 2026-09-24: merged local branches were deleted; 18 merged remote
 branches (and `origin/python-cleanup`, whose content is already in `main`) still
-await deletion by the user. The [editor comparison](editor-comparison.md) now
+await deletion by the user. The [editor comparison](../editor-comparison.md) now
 covers LaTeXTools and AUCTeX against current features.
 
 Optional follow-ups: outline state across closing/reopening, unsaved dependency
@@ -82,12 +82,24 @@ snapshots, richer citation UI, and measuring live selection's prefix capture (th
 whole buffer before the selection goes through AppleScript on every render) on
 multi-megabyte documents. No new renderer or RaTeX adoption is required.
 
+## Documentation site
+
+User guides in `docs/` build into a VitePress site (`site/`, base `/bbtex/`)
+with `scripts/docs-site.sh build|preview|deploy`. The build fails on dead links;
+links to repository files outside `docs/` become GitHub links. `deploy` pushes
+the built site to the `gh-pages` branch from a throwaway clone. GitHub Pages
+must be enabled once for that branch; the repository is private, so Pages needs
+a paid plan and the published site is public. Screenshots in `docs/images/`
+come from headless Chrome renders of the real preview and outline pages for a
+demo paper. Skim and the LaTeX Results browser still need captures from a live
+screen (`screencapture -l` needs Screen Recording permission).
+
 ## Useful entry points
 
 - `lib/outline_window.ml`, `lib/project_index.ml`: persistent outline and saved index.
 - `lib/preview.ml`, `lib/preview_cache.ml`, `lib/snippet_page.ml`: equation rendering.
 - `lib/doctor.ml`, `scripts/install-preview-save-hook.sh`: inspection and hook safety.
-- `docs/releases.md`: current Apple Silicon/local-CI release policy.
+- `docs/dev/releases.md`: current Apple Silicon/local-CI release policy.
 - Native tests: `check_outline_window.py`, `check_outline_launcher.py`,
   `check_outline_large.py`, `check_live_preview.py`, `check_save_preview.py`.
 - Browser test: `check_outline_browser.mjs`; see outline notes for temporary
