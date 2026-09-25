@@ -8,6 +8,9 @@ const modules = fileURLToPath(new URL('../node_modules/', import.meta.url))
 
 const repo = 'https://github.com/LouLouLibs/bbtex'
 
+// GitHub Pages serves from /bbtex/; the UMN mirror sets BBTEX_DOCS_BASE=/loualiche/bbtex/.
+const base = process.env.BBTEX_DOCS_BASE || '/bbtex/'
+
 // One version for the binary and the site: lib/version.ml.
 const version = readFileSync(new URL('../../lib/version.ml', import.meta.url), 'utf8').match(/let v = "([^"]+)"/)![1]
 
@@ -33,7 +36,7 @@ export default defineConfig({
   title: 'bbtex',
   description: 'bbtex, a LaTeX package for BBEdit: builds, errors, SyncTeX, equation previews and project navigation.',
   lang: 'en-US',
-  base: '/bbtex/',
+  base,
   srcDir: '../docs',
   srcExclude: ['release-notes.md', 'dev/plans/**', 'dev/specs/**', 'dev/archive/**'],
   cleanUrls: true,
@@ -43,7 +46,7 @@ export default defineConfig({
   markdown: { config: repoLinks },
   vite: { resolve: { alias: [{ find: /^vue(\/.*)?$/, replacement: `${modules}vue$1` }] } },
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/bbtex/logo.svg' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}logo.svg` }],
   ],
   themeConfig: {
     version,

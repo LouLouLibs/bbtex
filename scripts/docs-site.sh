@@ -4,15 +4,19 @@
 #   scripts/docs-site.sh preview   # build, then serve at http://localhost:4173/bbtex/
 #   scripts/docs-site.sh deploy    # build, then push the result to the gh-pages branch
 # Node is used only here; nothing from site/ ships in the bbtex package.
+# Optional environment (used by scripts/mirror-release.sh):
+#   BBTEX_DOCS_ROOT    checkout to build from (default: this repository)
+#   BBTEX_DOCS_REMOTE  git URL to deploy to (default: this repository's origin)
+#   BBTEX_DOCS_BASE    site base path (default: /bbtex/)
 set -Eeuo pipefail
 trap 'echo "docs-site.sh: line $LINENO failed" >&2' ERR
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="${BBTEX_DOCS_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 SITE="$ROOT/site"
 DIST="$SITE/.vitepress/dist"
 BRANCH=gh-pages
 
-usage() { sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+usage() { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
 [[ $# -eq 1 ]] || usage
 for tool in npm npx git; do
     command -v "$tool" >/dev/null || { echo "docs-site.sh: $tool is required" >&2; exit 1; }
@@ -28,7 +32,7 @@ build() {
 deploy() {
     build
     local work remote
-    remote=$(git -C "$ROOT" remote get-url origin)
+    remote="${BBTEX_DOCS_REMOTE:-$(git -C "$ROOT" remote get-url origin)}"
     work=$(mktemp -d)
     trap 'rm -rf "$work"' EXIT
     # Publish from a throwaway clone of the gh-pages branch, so the working
