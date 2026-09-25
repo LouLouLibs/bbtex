@@ -19,7 +19,11 @@ vibe coded, so it moves when I have time to try things out.
 
 ## v0.2
 
+Tracked in the [v0.2 milestone](https://github.com/LouLouLibs/bbtex/milestone/1), with [#34](https://github.com/LouLouLibs/bbtex/issues/34) as the tracking issue.
+
 ### Warn about magic comments bbtex ignores
+
+Issue [#29](https://github.com/LouLouLibs/bbtex/issues/29).
 
 Documents written for TeXShop or LaTeXTools often carry `% !TEX` lines that
 bbtex doesn't read (see [the comparison](editor-comparison.md#magic-comments)).
@@ -32,6 +36,8 @@ that quietly does nothing looks like a bbtex bug.
   `[bbtex]` note in LaTeX Results, so you see it without running Doctor.
 
 ### Read the comments that change the build
+
+Issue [#30](https://github.com/LouLouLibs/bbtex/issues/30).
 
 Map the build-relevant comments onto settings bbtex already has, so the same
 document builds the same way in TeXShop, LaTeXTools and BBEdit:
@@ -53,6 +59,8 @@ log parsing and cancellation), `spellcheck` (BBEdit has its own), and TeXShop's
 window settings.
 
 ### Plain-English error explanations, always marked `[bbtex]`
+
+Issue [#31](https://github.com/LouLouLibs/bbtex/issues/31).
 
 Overleaf's best trick is telling you what an error usually means. bbtex's log
 parser already classifies errors, so it can add a short explanation under the
@@ -86,6 +94,8 @@ never guess, and are skipped when the error isn't recognised.
 
 ### Find the main file without being told
 
+Issue [#32](https://github.com/LouLouLibs/bbtex/issues/32).
+
 Overleaf just knows which file is the main document; an Overleaf zip or a
 fresh clone should build in bbtex without adding `% !TEX root` first. When a
 file has no `% !TEX root`, no `.bbtex` and no `\documentclass`, bbtex would
@@ -96,6 +106,8 @@ today. No guessing when it's ambiguous: the same table can belong to more than
 one paper.
 
 ### Check and document `latexmkrc`
+
+Issue [#33](https://github.com/LouLouLibs/bbtex/issues/33).
 
 Overleaf projects often ship a `latexmkrc`. bbtex runs latexmk from the main
 file's folder, so latexmk should already read it; the one catch is that
