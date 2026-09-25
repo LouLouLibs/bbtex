@@ -91,8 +91,15 @@ something looks wrong.
 
 **From a release:** grab `bbtex-macos-arm64.bbpackage.zip` from
 [Releases](https://github.com/LouLouLibs/bbtex/releases), unzip it, and
-double-click `bbtex.bbpackage`. Then run **Scripts → LaTeX — Doctor** to see
-if anything's missing.
+double-click `bbtex.bbpackage`. macOS will block the unsigned binary until you
+clear the download quarantine (quit BBEdit first):
+
+```sh
+xattr -dr com.apple.quarantine ~/Library/Application\ Support/BBEdit/Packages/bbtex.bbpackage
+```
+
+Then run **Scripts → LaTeX — Doctor** to see if anything's missing. On a new Mac,
+follow the [clean install walkthrough](docs/install.md).
 
 **From source**, with [opam](https://opam.ocaml.org/doc/Install.html):
 
