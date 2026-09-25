@@ -13,9 +13,11 @@ v0.1.0 is [released](https://github.com/LouLouLibs/bbtex/releases/tag/v0.1.0) (2
 [louloulibs.github.io/bbtex](https://louloulibs.github.io/bbtex/); a copy is
 mirrored to UMN's GitHub (login required). Still to do:
 
-- **Walk through a clean install** on a fresh macOS account using only the
-  release instructions: install, compile, preview, upgrade or roll back,
-  uninstall ([checklist](setup-troubleshooting.md#fresh-account-or-fresh-mac-acceptance)).
+- **Walk through a clean install** on a fresh macOS account, following the
+  [clean install walkthrough](install.md) exactly.
+- **Sign and notarize the binary.** Until bbtex is signed with an Apple
+  Developer ID and notarized, a browser download is quarantined and blocked;
+  users have to clear it with `xattr` (the walkthrough and Doctor explain how).
 
 ## v0.2
 

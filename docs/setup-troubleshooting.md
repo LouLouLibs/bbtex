@@ -120,6 +120,9 @@ package; restore that backup to roll back an upgrade.
 
 ## Fresh-account or fresh-Mac acceptance
 
+Follow the [clean install walkthrough](install.md) step by step on the fresh
+account; the checklist below is what to record while doing it.
+
 This remains a manual acceptance gate. Staged tests on an already configured Mac
 do not establish that the dependency/setup instructions suffice on a fresh machine.
 Use a disposable macOS account or a spare Mac; do not remove a working installation

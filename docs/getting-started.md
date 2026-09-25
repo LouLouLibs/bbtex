@@ -36,8 +36,14 @@ Optional:
    [Releases page](https://github.com/LouLouLibs/bbtex/releases) and unzip it.
 2. Double-click `bbtex.bbpackage`. BBEdit installs it into
    `~/Library/Application Support/BBEdit/Packages/`.
-3. Run **Scripts → LaTeX — Doctor** to check the TeX tools, Skim and the package
+3. Clear the download quarantine, or macOS blocks the unsigned binary with
+   *"Apple could not verify “bbtex” is free of malware"*. Quit BBEdit, then run
+   `xattr -dr com.apple.quarantine ~/Library/Application\ Support/BBEdit/Packages/bbtex.bbpackage`.
+4. Run **Scripts → LaTeX — Doctor** to check the TeX tools, Skim and the package
    layout.
+
+Starting from a brand-new Mac? The [clean install walkthrough](install.md) goes
+step by step, with a test document and uninstall instructions.
 
 Preview on Save and the right-click Preview Selection service are optional
 installs; see [equation previews](selection-preview.md#release-installation).

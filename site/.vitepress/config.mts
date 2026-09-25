@@ -52,7 +52,7 @@ export default defineConfig({
     version,
     logo: '/logo.svg',
     nav: [
-      { text: 'Guide', link: '/getting-started', activeMatch: '^/(about|getting-started|project-builds|bbedit-editing|project-navigation|citation-reference-pickers|selection-preview|setup-troubleshooting)' },
+      { text: 'Guide', link: '/getting-started', activeMatch: '^/(about|getting-started|install|project-builds|bbedit-editing|project-navigation|citation-reference-pickers|selection-preview|setup-troubleshooting)' },
       { text: 'Reference', link: '/cli', activeMatch: '^/(cli|editor-comparison|changelog|roadmap)' },
       { text: 'Development', link: '/dev/architecture', activeMatch: '^/dev/' },
       {
@@ -70,6 +70,7 @@ export default defineConfig({
         items: [
           { text: 'About bbtex', link: '/about' },
           { text: 'Getting started', link: '/getting-started' },
+          { text: 'Clean install walkthrough', link: '/install' },
           { text: 'Compiling projects', link: '/project-builds' },
           { text: 'Writing and editing', link: '/bbedit-editing' },
           { text: 'Project outline', link: '/project-navigation' },
