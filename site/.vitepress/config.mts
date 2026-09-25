@@ -50,12 +50,13 @@ export default defineConfig({
     logo: '/logo.svg',
     nav: [
       { text: 'Guide', link: '/getting-started', activeMatch: '^/(about|getting-started|project-builds|bbedit-editing|project-navigation|citation-reference-pickers|selection-preview|setup-troubleshooting)' },
-      { text: 'Reference', link: '/cli', activeMatch: '^/(cli|editor-comparison|changelog)' },
+      { text: 'Reference', link: '/cli', activeMatch: '^/(cli|editor-comparison|changelog|roadmap)' },
       { text: 'Development', link: '/dev/architecture', activeMatch: '^/dev/' },
       {
         text: `v${version}`,
         items: [
           { text: 'Release notes', link: '/changelog' },
+          { text: 'Roadmap', link: '/roadmap' },
           { text: 'Download from GitHub', link: `${repo}/releases` },
         ],
       },
@@ -80,6 +81,7 @@ export default defineConfig({
           { text: 'Command line', link: '/cli' },
           { text: 'vs TeXShop, LaTeXTools, AUCTeX', link: '/editor-comparison' },
           { text: 'Release notes', link: '/changelog' },
+          { text: 'Roadmap', link: '/roadmap' },
         ],
       },
       {

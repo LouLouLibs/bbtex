@@ -71,16 +71,22 @@ fresh-account/Mac walkthrough and explicit verification boundaries.
 2. Prepare the first release (no tags or GitHub releases exist yet): release
    notes, full engine checks and a draft via `scripts/ci.sh --engines --report
    --release vX vX`. Publishing remains a separate step.
+3. Enable GitHub Pages for the `gh-pages` branch and run
+   `scripts/docs-site.sh deploy` (paid plan needed while the repo is private).
+4. v0.2 and later: see the [roadmap](../roadmap.md). Headline items are Doctor
+   and build warnings for ignored magic comments, mapping `options`,
+   `parameter`, `output_directory` and `% !BIB`, plain-English error hints
+   always prefixed `[bbtex]`, and main-file detection. There are no open
+   GitHub issues; the roadmap is the backlog.
 
 Housekeeping 2026-09-24: merged local branches were deleted; 18 merged remote
 branches (and `origin/python-cleanup`, whose content is already in `main`) still
 await deletion by the user. The [editor comparison](../editor-comparison.md) now
-covers LaTeXTools and AUCTeX against current features.
+covers TeXShop, LaTeXTools and AUCTeX against current features.
 
-Optional follow-ups: outline state across closing/reopening, unsaved dependency
-snapshots, richer citation UI, and measuring live selection's prefix capture (the
-whole buffer before the selection goes through AppleScript on every render) on
-multi-megabyte documents. No new renderer or RaTeX adoption is required.
+Smaller follow-ups (unsaved snapshots, outline state, live selection polish,
+test moves) are listed under "After v0.2" in the roadmap. No new renderer or
+RaTeX adoption is required.
 
 ## Documentation site
 

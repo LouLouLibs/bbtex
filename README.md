@@ -188,7 +188,7 @@ and the same pages are in [`docs/`](docs/):
 - [Compiling projects](docs/project-builds.md) · [Writing and editing](docs/bbedit-editing.md)
 - [Project outline](docs/project-navigation.md) · [Citations and references](docs/citation-reference-pickers.md)
 - [Equation previews](docs/selection-preview.md) · [Troubleshooting](docs/setup-troubleshooting.md)
-- [How it compares to TeXShop, LaTeXTools and AUCTeX](docs/editor-comparison.md) · [Release notes](docs/release-notes.md)
+- [How it compares to TeXShop, LaTeXTools and AUCTeX](docs/editor-comparison.md) · [Release notes](docs/release-notes.md) · [Roadmap](docs/roadmap.md)
 
 ## Development
 

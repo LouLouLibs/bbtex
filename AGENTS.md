@@ -25,8 +25,9 @@ AppleScript glue for BBEdit. Keep it that way.
   another environment. If `VIRTUAL_ENV` points at a removed interpreter, use
   `env -u VIRTUAL_ENV uv run ...`.
 
-No Python remains outside `test/`. Moving the tests that only exercise the
-binary to dune cram tests is tracked in issue #4.
+No Python remains outside `test/`. Six Python checks exercise only the binary;
+moving them to dune cram tests where practical is on the
+[roadmap](docs/roadmap.md).
 
 - **Node is for the docs site only.** `site/` holds the VitePress config for
   the site built from `docs/`; `scripts/docs-site.sh build|preview|deploy`
