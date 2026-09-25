@@ -1,11 +1,15 @@
 import { defineConfig } from 'vitepress'
 import { posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
 
 // Pages live outside this package, so resolve their imports from site/node_modules.
 const modules = fileURLToPath(new URL('../node_modules/', import.meta.url))
 
 const repo = 'https://github.com/LouLouLibs/bbtex'
+
+// One version for the binary and the site: lib/version.ml.
+const version = readFileSync(new URL('../../lib/version.ml', import.meta.url), 'utf8').match(/let v = "([^"]+)"/)![1]
 
 // Links from a page to repository files outside docs/ (scripts, tests, the
 // README) point at GitHub instead of a missing page.
@@ -45,16 +49,25 @@ export default defineConfig({
     ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap' }],
   ],
   themeConfig: {
+    version,
     logo: '/logo.svg',
     nav: [
-      { text: 'Guide', link: '/getting-started', activeMatch: '^/(getting-started|project-builds|bbedit-editing|project-navigation|citation-reference-pickers|selection-preview|setup-troubleshooting)' },
+      { text: 'Guide', link: '/getting-started', activeMatch: '^/(about|getting-started|project-builds|bbedit-editing|project-navigation|citation-reference-pickers|selection-preview|setup-troubleshooting)' },
       { text: 'Reference', link: '/cli', activeMatch: '^/(cli|editor-comparison|changelog)' },
       { text: 'Development', link: '/dev/architecture', activeMatch: '^/dev/' },
+      {
+        text: `v${version}`,
+        items: [
+          { text: 'Release notes', link: '/changelog' },
+          { text: 'Download from GitHub', link: `${repo}/releases` },
+        ],
+      },
     ],
     sidebar: [
       {
         text: 'Guide',
         items: [
+          { text: 'About bbtex', link: '/about' },
           { text: 'Getting started', link: '/getting-started' },
           { text: 'Compiling projects', link: '/project-builds' },
           { text: 'Writing and editing', link: '/bbedit-editing' },

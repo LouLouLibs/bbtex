@@ -1,3 +1,8 @@
+**bbtex v0.1.0** is the first release: LaTeX builds, Skim sync, equation
+previews, a project outline and citation pickers for BBEdit on Apple Silicon.
+Like everything here, it is totally vibe coded; see
+[About bbtex](https://louloulibs.github.io/bbtex/about#totally-vibe-coded).
+
 **LaTeX — Toggle Live Selection Preview** makes the reusable preview window
 follow the BBEdit selection instead of waiting for a save. Delimited math
 renders as selected; raw text renders as math inside a math selection and as

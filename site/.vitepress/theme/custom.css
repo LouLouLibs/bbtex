@@ -58,3 +58,34 @@
   border-radius: 5px;
   background: var(--vp-c-bg-soft);
 }
+
+.release-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+  padding: 0.25rem 0.9rem 0.25rem 0.3rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.release-badge:hover { border-color: var(--vp-c-brand-2); }
+.release-badge-version {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--vp-c-brand-1);
+  color: var(--vp-c-white);
+  font-weight: 600;
+}
+
+/* Markdown below the home features: centered column like a doc page. */
+.home-tour {
+  max-width: 760px;
+  margin: 3rem auto 0;
+  padding: 0 24px;
+}

@@ -37,6 +37,7 @@ Options:
                              tectonic, or ratex (overrides document directives)
   --profile <name>           Use a named project build profile
   --verbose                  Enable verbose logging to stderr
+  --version                  Show the bbtex version
   --help                     Show this help message
 |}
 
@@ -57,6 +58,7 @@ let parse_args () =
     | [] -> (cmd, fmt, verbose, !engine, !profile, List.rev rest)
     | "--help" :: _ -> print_string usage; exit 0
     | "-h" :: _ -> print_string usage; exit 0
+    | "--version" :: _ -> print_endline ("bbtex " ^ Version.v); exit 0
     | "--verbose" :: tail -> go cmd fmt true rest tail
     | "--profile" :: name :: tail -> profile := Some name; go cmd fmt verbose rest tail
     | ["--profile"] -> Printf.eprintf "--profile requires a name\n"; exit 2

@@ -1,7 +1,14 @@
 # Getting started
 
-bbtex adds a set of **LaTeX —** commands to BBEdit's Scripts menu, backed by a
-single `bbtex` binary. This page takes you from installation to a first build.
+bbtex adds a set of **LaTeX —** commands to BBEdit's Scripts menu, all backed
+by one small `bbtex` binary. This page gets you from nothing to a compiled PDF
+in about ten minutes, most of it spent waiting for MacTeX to download.
+
+> [!TIP]
+> **Current release: v0.1.0.** This is the first release, and it's
+> [totally vibe coded](about.md#totally-vibe-coded). It works well on my Mac;
+> if it doesn't on yours, please
+> [open an issue](https://github.com/LouLouLibs/bbtex/issues).
 
 ## Requirements
 
@@ -94,6 +101,10 @@ Now ⌘-click in Skim jumps back to the source line in BBEdit.
    rebuilding; **LaTeX — Open Build Log** shows the full compiler output.
 
 A silent notification reports the root, engine, duration and diagnostic counts.
+
+![The compiled demo paper open in Skim](images/skim-sync.png)
+
+![LaTeX Results listing an undefined control sequence in model.tex, line 7](images/results-browser.png)
 
 ## Choose the engine and main file
 

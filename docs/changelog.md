@@ -1,6 +1,8 @@
 # Release notes
 
-Changes in the upcoming release. Published releases are on
+Published releases and downloads are on
 [GitHub](https://github.com/LouLouLibs/bbtex/releases).
+
+## v0.1.0: first release
 
 <!--@include: ./release-notes.md-->
