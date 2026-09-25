@@ -31,7 +31,7 @@ function repoLinks(md: any) {
 // specs and the archived handoff are not published.
 export default defineConfig({
   title: 'bbtex',
-  description: 'LaTeX for BBEdit: builds, errors, SyncTeX, equation previews and project navigation.',
+  description: 'bbtex, a LaTeX package for BBEdit: builds, errors, SyncTeX, equation previews and project navigation.',
   lang: 'en-US',
   base: '/bbtex/',
   srcDir: '../docs',
@@ -44,9 +44,6 @@ export default defineConfig({
   vite: { resolve: { alias: [{ find: /^vue(\/.*)?$/, replacement: `${modules}vue$1` }] } },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/bbtex/logo.svg' }],
-    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap' }],
   ],
   themeConfig: {
     version,
@@ -97,7 +94,7 @@ export default defineConfig({
         ],
       },
     ],
-    outline: { level: [2, 3] },
+    outline: { level: [2, 3], label: 'Contents' },
     search: { provider: 'local' },
     socialLinks: [{ icon: 'github', link: 'https://github.com/LouLouLibs/bbtex' }],
     footer: {

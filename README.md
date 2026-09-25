@@ -3,7 +3,7 @@
 <img src="docs/public/logo.svg" width="96" alt="bbtex logo">
 
 # bbtex
-### LaTeX for BBEdit: one-key builds, Skim sync, equation previews
+### LaTeX package for BBEdit
 
 [![Version](https://img.shields.io/badge/version-0.1.0-1f5f8b)](docs/release-notes.md)
 [![Vibecoded](https://img.shields.io/badge/vibecoded-%E2%9C%A8-blueviolet)](#a-word-on-vibe-coding)

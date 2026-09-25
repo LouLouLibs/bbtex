@@ -1,15 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="bbtex">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2873a6"/>
-      <stop offset="1" stop-color="#1b4a6d"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#g)"/>
-  <text x="9" y="36" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="700" fill="#fcfbf8">bb</text>
-  <g font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#f0a06a">
-    <text x="31" y="52">T</text>
-    <text x="38.2" y="55">E</text>
-    <text x="45.4" y="52">X</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="bbtex: BBTeX set like the LaTeX logo, in an editor window">
+  <!-- An editor window: rounded frame, title bar with three dots. -->
+  <rect x="2" y="3" width="60" height="58" rx="9" fill="#fffffc" stroke="#1f2328" stroke-width="2.5"/>
+  <path d="M2 16 H62" stroke="#1f2328" stroke-width="2"/>
+  <circle cx="10" cy="9.6" r="2.2" fill="#ef4444"/>
+  <circle cx="17" cy="9.6" r="2.2" fill="#eab308"/>
+  <circle cx="24" cy="9.6" r="2.2" fill="#22c55e"/>
+  <!-- "BBTeX" typeset like "LaTeX": a small raised B, a lowered E. -->
+  <g font-family="'Latin Modern Roman', 'CMU Serif', 'Times New Roman', Times, serif" fill="#111">
+    <text x="5" y="46" font-size="20">B</text>
+    <text x="16.6" y="37.5" font-size="13">B</text>
+    <text x="26.3" y="46" font-size="18">T</text>
+    <text x="34.6" y="50.3" font-size="18">E</text>
+    <text x="43.6" y="46" font-size="18">X</text>
   </g>
+  <!-- Text cursor. -->
+  <rect x="57.6" y="31" width="1.6" height="18" fill="#22c55e"/>
 </svg>
