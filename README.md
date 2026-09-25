@@ -89,7 +89,7 @@ something looks wrong.
 
 ## Install
 
-**From a release:** grab `bbtex.bbpackage.zip` from
+**From a release:** grab `bbtex-macos-arm64.bbpackage.zip` from
 [Releases](https://github.com/LouLouLibs/bbtex/releases), unzip it, and
 double-click `bbtex.bbpackage`. Then run **Scripts → LaTeX — Doctor** to see
 if anything's missing.

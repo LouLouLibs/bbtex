@@ -53,7 +53,7 @@ Select an equation to see it rendered with the document's preamble:
 
 ## Install
 
-Download `bbtex.bbpackage.zip` from the
+Download `bbtex-macos-arm64.bbpackage.zip` from the
 [releases page](https://github.com/LouLouLibs/bbtex/releases), unzip it,
 double-click `bbtex.bbpackage`, and run **Scripts → LaTeX — Doctor**. You need
 MacTeX (or TinyTeX) and Skim; [Getting started](getting-started.md) covers the

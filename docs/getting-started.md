@@ -32,7 +32,7 @@ Optional:
 
 ### From a release package
 
-1. Download `bbtex.bbpackage.zip` from the
+1. Download `bbtex-macos-arm64.bbpackage.zip` from the
    [Releases page](https://github.com/LouLouLibs/bbtex/releases) and unzip it.
 2. Double-click `bbtex.bbpackage`. BBEdit installs it into
    `~/Library/Application Support/BBEdit/Packages/`.

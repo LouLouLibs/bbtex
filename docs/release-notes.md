@@ -9,7 +9,7 @@ renders as selected; raw text renders as math inside a math selection and as
 a prose paragraph otherwise. The fragment comes from the live buffer, while
 the preamble and dependencies still come from saved files. Enabling it turns
 off Preview on Save, and a full build pauses rendering ("Project busy")
-without cancelling it. See [live selection](selection-preview.md#live-selection).
+without cancelling it. See [live selection](https://louloulibs.github.io/bbtex/selection-preview#live-selection).
 
 The persistent **Project Outline Window** adds an expandable searchable tree,
 automatic saved-source refresh and one window per project. Source jumps retain

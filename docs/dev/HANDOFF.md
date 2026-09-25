@@ -68,9 +68,9 @@ fresh-account/Mac walkthrough and explicit verification boundaries.
 1. Perform the documented fresh-account/Mac acceptance with only the release
    instructions: install, compile, preview, upgrade/rollback and uninstall.
    This needs the user on a clean account; it cannot be automated here.
-2. v0.1.0 is tagged (`5d0e850`, on merge `780bfaa` of PR #35) but has no GitHub
-   release yet: run `scripts/ci.sh --engines --report --release v0.1.0 v0.1.0`
-   for the draft, then publish it by hand.
+2. v0.1.0 is released (tag `5d0e850` on `780bfaa`, 2026-09-25): full engine CI
+   passed and https://github.com/LouLouLibs/bbtex/releases/tag/v0.1.0 has the
+   arm64 package ZIP, checksum and build info.
 3. The GitHub.com repository is public (since 2026-09-25) and the docs are at
    https://louloulibs.github.io/bbtex/ (Pages from `gh-pages`, deployed with
    `scripts/docs-site.sh deploy`). The UMN copy is a secondary remote, `umn`;
