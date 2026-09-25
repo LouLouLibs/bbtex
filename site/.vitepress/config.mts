@@ -78,7 +78,7 @@ export default defineConfig({
         text: 'Reference',
         items: [
           { text: 'Command line', link: '/cli' },
-          { text: 'vs LaTeXTools and AUCTeX', link: '/editor-comparison' },
+          { text: 'vs TeXShop, LaTeXTools, AUCTeX', link: '/editor-comparison' },
           { text: 'Release notes', link: '/changelog' },
         ],
       },

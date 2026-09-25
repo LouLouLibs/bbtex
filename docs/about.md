@@ -57,7 +57,7 @@ What to know before you try it:
   XeLaTeX, LuaLaTeX or Tectonic.
 
 The [release notes](changelog.md) have the details, and
-[how it compares](editor-comparison.md) lists what LaTeXTools and AUCTeX still
+[how it compares](editor-comparison.md) lists what TeXShop, LaTeXTools and AUCTeX still
 do better.
 
 ## Thanks

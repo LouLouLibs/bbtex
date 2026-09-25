@@ -24,7 +24,12 @@ accepted, case-insensitively, as are `program` and TeXShop's `TS-program` alias.
 The supported engine values are `pdflatex`, `xelatex`, `lualatex`, and
 `tectonic`. TeXShop's built-in engine names are accepted too: `pdflatexmk`,
 `latexmk` and `LaTeX` mean pdflatex, `xelatexmk` means xelatex, and `lualatexmk`
-means lualatex. Other TeXShop engine scripts are not supported. A UTF-8
+means lualatex. Other TeXShop engine scripts are not supported.
+No other comments are read: `% !TEX encoding` is parsed but not used, and
+TeXShop's `spellcheck`, `parameter` and `% !BIB TS-program`, and LaTeXTools'
+`options`, `output_directory` and `jobname`, are ignored. Put options and the
+output directory in a `.bbtex` file instead (below). The
+[comparison](editor-comparison.md#magic-comments) lists them side by side. A UTF-8
 byte-order mark before the first directive is ignored. The setup helper
 normalizes these variants when replacing settings, avoiding duplicate directives.
 

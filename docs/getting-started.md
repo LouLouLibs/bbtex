@@ -109,7 +109,8 @@ A silent notification reports the root, engine, duration and diagnostic counts.
 ## Choose the engine and main file
 
 Put TeXShop-style comments near the top of a file (bbtex reads the first 50
-lines):
+lines). Only these two are read; other `% !TEX` lines such as `spellcheck`,
+`options` or `% !BIB` are ignored:
 
 ```latex
 %!TEX program = xelatex
