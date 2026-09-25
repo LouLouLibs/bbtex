@@ -25,6 +25,9 @@ changes in your working folder never affect the result, then runs:
    architecture check, and a check that the binary links only system libraries.
    The package ZIP, its SHA-256 checksum and build information (commit, macOS,
    OCaml, dune and uv versions) are written to `dist/release/`.
+   The ZIP carries no extended attributes except the stationery templates'
+   Finder flags, so its `__MACOSX` folder holds only those seven files;
+   Dropbox and macOS provenance tags on the build tree are left out.
    Staged installation checks also cover renamed package discovery, nested command
    conflicts, attachment receipts, protected upgrades and removal without touching
    the real BBEdit support folder.
