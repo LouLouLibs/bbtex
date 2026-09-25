@@ -9,9 +9,9 @@ vibe coded, so it moves when I have time to try things out.
 
 ## Finishing v0.1.0
 
-v0.1.0 is tagged (2026-09-25) and mirrored, with its docs, to the UMN copy at
-[pages.github.umn.edu/loualiche/bbtex](https://pages.github.umn.edu/loualiche/bbtex/)
-(UMN login required). Still to do:
+v0.1.0 is tagged (2026-09-25). The repository is public and these docs are at
+[louloulibs.github.io/bbtex](https://louloulibs.github.io/bbtex/); a copy is
+mirrored to UMN's GitHub (login required). Still to do:
 
 - **Walk through a clean install** on a fresh macOS account using only the
   release instructions: install, compile, preview, upgrade or roll back,
@@ -19,8 +19,6 @@ v0.1.0 is tagged (2026-09-25) and mirrored, with its docs, to the UMN copy at
 - **Publish the release on GitHub**: run the full engine checks and create the
   draft with the package ZIP, then publish it
   ([release steps](dev/releases.md#prepare-a-release)).
-- **Public docs site**: GitHub Pages on the private GitHub.com repository needs
-  a paid plan; until then the UMN mirror is the published copy.
 
 ## v0.2
 
