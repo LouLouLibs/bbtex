@@ -93,7 +93,23 @@ find "$PKG" -type f | sort | while read -r f; do
 done
 
 # ── Zip for distribution ──────────────────────────────────
-# Preserve Finder's stationery flags and executable permissions in the release.
-ditto -c -k --sequesterRsrc --keepParent "$PKG" "$PROJECT_ROOT/dist/bbtex.bbpackage-new.zip"
-mv "$PROJECT_ROOT/dist/bbtex.bbpackage-new.zip" "$PROJECT_ROOT/dist/bbtex.bbpackage.zip"
+# Keep executable permissions and Finder's stationery flags, and nothing else.
+# Every file also carries Dropbox and macOS provenance attributes (provenance
+# cannot be removed), which would put an AppleDouble entry for each file in
+# the archive's __MACOSX folder. So archive the package without extended
+# attributes, then add back only the stationery templates' metadata.
+STAGE="$(mktemp -d)"
+trap 'rm -rf "$STAGE"' EXIT
+ZIP="$PROJECT_ROOT/dist/bbtex.bbpackage-new.zip"
+rm -f "$ZIP"
+ditto -c -k --noextattr --noacl --keepParent "$PKG" "$ZIP"
+mkdir -p "$STAGE/meta/bbtex.bbpackage/Contents/Stationery"
+for template in "$PKG/Contents/Stationery/"*.tex; do
+    [[ -e "$template" ]] || continue
+    ditto "$template" "$STAGE/meta/bbtex.bbpackage/Contents/Stationery/${template##*/}"
+done
+ditto -c -k --sequesterRsrc --keepParent "$STAGE/meta/bbtex.bbpackage" "$STAGE/meta.zip"
+/usr/bin/unzip -q "$STAGE/meta.zip" '__MACOSX/bbtex.bbpackage/Contents/Stationery/*' -d "$STAGE/rsrc"
+(cd "$STAGE/rsrc" && /usr/bin/zip -q -r -X "$ZIP" __MACOSX)
+mv "$ZIP" "$PROJECT_ROOT/dist/bbtex.bbpackage.zip"
 echo "Zip created: dist/bbtex.bbpackage.zip"
