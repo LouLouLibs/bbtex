@@ -9,16 +9,13 @@ vibe coded, so it moves when I have time to try things out.
 
 ## Finishing v0.1.0
 
-v0.1.0 is tagged (2026-09-25). The repository is public and these docs are at
+v0.1.0 is [released](https://github.com/LouLouLibs/bbtex/releases/tag/v0.1.0) (2026-09-25). The repository is public and these docs are at
 [louloulibs.github.io/bbtex](https://louloulibs.github.io/bbtex/); a copy is
 mirrored to UMN's GitHub (login required). Still to do:
 
 - **Walk through a clean install** on a fresh macOS account using only the
   release instructions: install, compile, preview, upgrade or roll back,
   uninstall ([checklist](setup-troubleshooting.md#fresh-account-or-fresh-mac-acceptance)).
-- **Publish the release on GitHub**: run the full engine checks and create the
-  draft with the package ZIP, then publish it
-  ([release steps](dev/releases.md#prepare-a-release)).
 
 ## v0.2
 
