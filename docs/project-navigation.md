@@ -2,7 +2,7 @@
 
 Use **LaTeX — Project Outline Window** for the persistent tree (described below),
 or the original **Project Outline** dialog described here. Implementation and
-verification details are in [the window notes](outline-window-prototype.md).
+verification details are in [the window notes](dev/outline-window.md).
 
 Choose **Scripts → LaTeX — Project Outline** in a saved TeX document. Enter words
 from a heading, equation, caption, label, or filename; leave the search empty for
@@ -79,11 +79,13 @@ and compile native dialogs. Set `BBTEX_TEST_NATIVE=1` to verify each fixture row
 native mapping/jump and rejection of dirty buffers using disposable files.
 That automated test substitutes the dialog selection; actual keyboard behavior
 was confirmed by the user in BBEdit on 2026-09-21: search and Return-to-navigate work.
-# Persistent outline window
+## Persistent outline window
 
 Choose **Scripts → LaTeX — Project Outline Window** from a saved TeX document.
 It opens an expandable, searchable outline and updates after saved-source changes.
 The original **Project Outline** dialog remains available.
+
+![The Project Outline Window listing sections, equations and labels across included files](images/outline-window.png)
 
 Each window stays pinned to the project shown at its top. Running the command from
 another file in that project reuses its window; running it from a different project

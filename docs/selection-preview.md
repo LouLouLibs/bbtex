@@ -7,6 +7,8 @@ previews reuse its placement. The source retains focus and its selection. If you
 switch documents during rendering, first-window creation is skipped. The helper
 does not activate BBEdit when another app is active.
 
+![The preview window showing a rendered display equation with its source file, line and status](images/preview-window.png)
+
 For right-click access, install the BBEdit-only Quick Action:
 
 ```sh
@@ -103,7 +105,7 @@ watcher shutdown on window close — and measures the latencies in
 [Live selection](#live-selection).
 The actual HTML image refresh still benefits from user visual verification.
 Run all three with `uv run`; their dependencies are declared inline.
-# Refresh on save
+## Refresh on save
 
 Run **LaTeX — Toggle Preview on Save** from BBEdit’s Scripts menu for a saved
 TeX file. With the cursor inside a displayed equation, press **⌘S** to refresh
@@ -175,7 +177,7 @@ macro saves, focus preservation, and a rendering error with disposable documents
 It retains a temporary recovery backup and restores the prior
 tracking flag/image with a fresh publication revision.
 
-# Live selection
+## Live selection
 
 Run **LaTeX — Toggle Live Selection Preview** from BBEdit's Scripts menu in a
 saved TeX file to make the preview window follow the selection. Run the

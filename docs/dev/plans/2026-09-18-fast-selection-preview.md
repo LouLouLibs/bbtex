@@ -61,4 +61,4 @@ time/random-dependent macros can require explicit cache removal.
 - Native inline/popover display only if a supported BBEdit API is established.
 
 RaTeX stays an experimental placeholder; do not install it or change defaults.
-See [selection preview](../selection-preview.md) for usage and verification.
+See [selection preview](../../selection-preview.md) for usage and verification.

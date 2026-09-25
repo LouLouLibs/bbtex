@@ -1,5 +1,27 @@
 # Setup and troubleshooting
 
+## Common problems
+
+**A build fails with no useful message.** Read the menu command's log with
+`cat ~/.local/state/bbtex/last-compile.log`, or run the build in Terminal with
+`bbtex compile --verbose main.tex` for the full output.
+
+**"No document open".** The commands need BBEdit's `BB_DOC_PATH`. Run them from
+a saved document window, not a shell worksheet or an untitled buffer.
+
+**Forward search does nothing.** Skim must be in `/Applications` (or
+`~/Applications`), and the build must produce SyncTeX data, which latexmk does
+by default.
+
+**`latexmk` or `pdflatex` not found.** BBEdit doesn't see your TeX binaries.
+MacTeX adds `/Library/TeX/texbin` to the system path. For TinyTeX or a custom
+location, add its `bin` directory to `/etc/paths.d/` or your shell profile.
+
+**Anything else.** Run **Scripts → LaTeX — Doctor** and read the report as
+described below.
+
+## Doctor
+
 For the supported MacTeX setup, use **Biber ≥ 2.21**, paired with a compatible
 biblatex version. The verified installation is MacTeX 2026 with Biber 2.21.
 Check with `biber --version`; the version alone does not prove the launcher works
@@ -91,7 +113,7 @@ checks. Do not use an existing paper as a test fixture.
 
 The diagnostic report replaces the current home directory with `~`. Other paths
 may remain, including project paths outside your home; review before sharing.
-It does not include raw logs or document contents. See [releases](releases.md)
+It does not include raw logs or document contents. See [releases](dev/releases.md)
 for installation/upgrade instructions and [selection preview](selection-preview.md)
 for optional service/save-hook setup. Preserve a backup before changing an existing
 package; restore that backup to roll back an upgrade.

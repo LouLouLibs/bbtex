@@ -50,3 +50,8 @@ preview-fragment rejects incomplete selections before compiling.
   $ bbtex preview-fragment frag.tex frag
   status: empty
   [6]
+
+The version matches lib/version.ml.
+
+  $ bbtex --version
+  bbtex 0.1.0

@@ -49,16 +49,19 @@ macOS version of the Mac running the checks; older versions are unverified.
 
 ## Prepare a release
 
-1. Update [release notes](release-notes.md), complete the native checks, and
+1. Update [release notes](../release-notes.md), complete the native checks, and
    merge the intended changes into `main`.
-2. Choose the next version, then create and push an annotated tag:
+2. Set the version in `lib/version.ml` (the binary and the docs site read it
+   there; the cram test checks `bbtex --version`), the README version badge,
+   the heading in `docs/changelog.md` and the first line of the release notes.
+   Merge that, then create and push an annotated tag:
 
    ```sh
-   git tag -a v0.2.0 -m 'bbtex v0.2.0'
-   git push origin v0.2.0
+   git tag -a v0.1.0 -m 'bbtex v0.1.0'
+   git push origin v0.1.0
    ```
 
-3. Run `scripts/ci.sh --engines --report --release v0.2.0 v0.2.0`. After every
+3. Run `scripts/ci.sh --engines --report --release v0.1.0 v0.1.0`. After every
    check passes, it creates or updates a **draft** GitHub release with the arm64
    package ZIP, checksum and build information. It refuses to change a release
    that is already published. Publishing the draft is manual.
