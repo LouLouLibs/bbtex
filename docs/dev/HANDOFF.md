@@ -71,22 +71,23 @@ fresh-account/Mac walkthrough and explicit verification boundaries.
 2. v0.1.0 is tagged (`5d0e850`, on merge `780bfaa` of PR #35) but has no GitHub
    release yet: run `scripts/ci.sh --engines --report --release v0.1.0 v0.1.0`
    for the draft, then publish it by hand.
-3. Docs are published on the UMN mirror, not GitHub.com (Pages there needs a paid
-   plan while the repo is private). `scripts/mirror-release.sh vX.Y.Z` pushes a
+3. The GitHub.com repository is public (since 2026-09-25) and the docs are at
+   https://louloulibs.github.io/bbtex/ (Pages from `gh-pages`, deployed with
+   `scripts/docs-site.sh deploy`). The UMN copy is a secondary remote, `umn`;
+   its Pages need a UMN login. `scripts/mirror-release.sh vX.Y.Z` pushes a
    release tag to github.umn.edu/loualiche/bbtex over SSH (`Host github.umn.edu`
    in the chezmoi-managed `~/.ssh/config`, key `github_key`), fast-forwards its
    `main`, and deploys that tag's docs to its `gh-pages`, served at
-   https://pages.github.umn.edu/loualiche/bbtex/ behind UMN login. Run it for
-   every release after tagging.
+   https://pages.github.umn.edu/loualiche/bbtex/. Run it for every release after
+   tagging.
 4. v0.2 and later: see the [roadmap](../roadmap.md). Headline items are Doctor
    and build warnings for ignored magic comments, mapping `options`,
    `parameter`, `output_directory` and `% !BIB`, plain-English error hints
    always prefixed `[bbtex]`, and main-file detection, tracked as issues
    #29–#33 in the v0.2 milestone (#34 is the tracking issue).
 
-Housekeeping 2026-09-24: merged local branches were deleted; 18 merged remote
-branches (and `origin/python-cleanup`, whose content is already in `main`) still
-await deletion by the user. The [editor comparison](../editor-comparison.md) now
+Housekeeping 2026-09-25: all merged branches were deleted locally and on GitHub;
+`origin` has only `main` and `gh-pages`. The [editor comparison](../editor-comparison.md) now
 covers TeXShop, LaTeXTools and AUCTeX against current features.
 
 Smaller follow-ups (unsaved snapshots, outline state, live selection polish,
@@ -99,11 +100,12 @@ User guides in `docs/` build into a VitePress site (`site/`, base `/bbtex/`)
 with `scripts/docs-site.sh build|preview|deploy`. The build fails on dead links;
 links to repository files outside `docs/` become GitHub links. `deploy` pushes
 the built site to the `gh-pages` branch from a throwaway clone. GitHub Pages
-must be enabled once for that branch; the repository is private, so Pages needs
-a paid plan and the published site is public. Screenshots in `docs/images/`
-come from headless Chrome renders of the real preview and outline pages for a
-demo paper. Skim and the LaTeX Results browser still need captures from a live
-screen (`screencapture -l` needs Screen Recording permission).
+serves that branch at https://louloulibs.github.io/bbtex/. The preview and outline
+screenshots in `docs/images/` are headless Chrome renders of the real pages for a
+demo paper; Skim, LaTeX Results and the editor were captured from the screen with
+`screencapture -l` (needs Screen Recording permission). The site's build-only
+dependencies carry Dependabot alerts (Vite 5 and esbuild dev server) with no fix
+short of the VitePress 2 alpha; nothing from `site/` ships.
 
 ## Useful entry points
 

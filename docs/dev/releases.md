@@ -66,6 +66,8 @@ macOS version of the Mac running the checks; older versions are unverified.
    package ZIP, checksum and build information. It refuses to change a release
    that is already published. Publishing the draft is manual.
 
-4. Mirror the release and its docs to the UMN copy:
+4. Publish the docs from the released `main`: `scripts/docs-site.sh deploy`
+   (GitHub Pages serves the `gh-pages` branch at louloulibs.github.io/bbtex).
+5. Mirror the release and its docs to the UMN copy:
    `scripts/mirror-release.sh v0.1.0`. Only the tag, `main` at the tagged
    commit and the tag's docs are pushed there.
