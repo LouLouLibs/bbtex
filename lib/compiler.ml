@@ -49,13 +49,13 @@ let resolve_compilation ?engine:engine_override ?profile path =
       | None -> None
     in
     match root with
-    | None -> file, program
+    | None -> file, program, List.rev (file :: visited)
     | Some (dir, root) ->
       let next = canonical (if Filename.is_relative root then Filename.concat dir root else root) in
-      if next = file then file, program (* Conventional self-root directive. *)
+      if next = file then file, program, List.rev (file :: visited) (* Conventional self-root directive. *)
       else follow (file :: visited) program next
   in
-  let root_file, program = follow [] None source_file in
+  let root_file, program, chain = follow [] None source_file in
   let settings = if initial.file = None then Project.load (Filename.dirname root_file) else initial in
   let profile = match profile with Some _ -> profile | None -> Project.get "default_profile" settings.defaults in
   let fields = match profile with
@@ -82,7 +82,7 @@ let resolve_compilation ?engine:engine_override ?profile path =
     Project.options (Option.value ~default:"" (Project.get "options" fields)) in
   let base = Filename.concat output_directory (Filename.remove_extension (Filename.basename root_file)) in
   let project_dir = match settings.file with None -> root_dir | Some f -> Filename.dirname f in
-  { source_file; root_file; engine; project_dir; output_directory; options; profile;
+  { source_file; root_file; chain; engine; project_dir; output_directory; options; profile;
     log_file = base ^ ".log"; pdf_file = base ^ ".pdf" }
 
 let settings_for path =

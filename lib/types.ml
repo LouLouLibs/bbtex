@@ -99,6 +99,7 @@ let latexmk_flag = function
 type compilation_config = {
   source_file : string;
   root_file : string;
+  chain : string list;  (** source_file, then each %!TEX root file up to root_file *)
   engine : engine;
   project_dir : string;
   output_directory : string;

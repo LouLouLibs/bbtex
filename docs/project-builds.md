@@ -28,7 +28,13 @@ means lualatex. Other TeXShop engine scripts are not supported.
 No other comments are read: `% !TEX encoding` is parsed but not used, and
 TeXShop's `spellcheck`, `parameter` and `% !BIB TS-program`, and LaTeXTools'
 `options`, `output_directory` and `jobname`, are ignored. Put options and the
-output directory in a `.bbtex` file instead (below). The
+output directory in a `.bbtex` file instead (below). bbtex says so rather than
+ignoring them silently: **LaTeX — Doctor** lists every `% !TEX` and `% !BIB`
+comment in the file and its root, marked used or ignored, with what to do
+instead. A build that meets an ignored comment affecting the build names it in
+the notification, and in LaTeX Results (with a `[bbtex]` prefix) when the build
+fails. Editor settings such as `encoding`, `spellcheck` and `% !BIB TS-program`
+(latexmk picks BibTeX or Biber itself) appear only in Doctor. The
 [comparison](editor-comparison.md#magic-comments) lists them side by side. A UTF-8
 byte-order mark before the first directive is ignored. The setup helper
 normalizes these variants when replacing settings, avoiding duplicate directives.

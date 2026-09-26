@@ -22,6 +22,8 @@ bbtex reads **only `root` and `program`** (plus TeXShop's `TS-program`
 spelling). Everything else a TeXShop or LaTeXTools document might carry is
 ignored, and settings like extra options or an output directory go in a
 [`.bbtex` file](project-builds.md#shared-project-settings) instead.
+bbtex doesn't drop the others silently: Doctor lists each one with what to do
+instead, and a build names the ones that would change it.
 
 | Comment | TeXShop | LaTeXTools | bbtex |
 |---------|---------|-----------|-------|
