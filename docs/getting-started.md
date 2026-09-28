@@ -118,8 +118,7 @@ A silent notification reports the root, engine, duration and diagnostic counts.
 ## Choose the engine and main file
 
 Put TeXShop-style comments near the top of a file (bbtex reads the first 50
-lines). Only these two are read; other `% !TEX` lines such as `spellcheck`,
-`options` or `% !BIB` are ignored:
+lines). These two choose the engine and the main file:
 
 ```latex
 %!TEX program = xelatex
@@ -131,6 +130,9 @@ lines). Only these two are read; other `% !TEX` lines such as `spellcheck`,
   BibTeX/Biber; Tectonic runs directly.
 - `root` points an included chapter or table at the main document, relative to
   the file that contains it.
+- LaTeXTools' `options` and `output_directory`, TeXShop's `parameter` and
+  `% !BIB TS-program` are read too; see
+  [build settings in comments](project-builds.md#build-settings-in-comments).
 
 Rather than typing these, press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> and choose
 **Configure Document…**. The same **Compile With…** picker also runs a

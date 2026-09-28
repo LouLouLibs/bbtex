@@ -18,12 +18,13 @@ as-you-type completion and adds its own explicit commands on top.
 ## Magic comments
 
 TeXShop started the `% !TEX` convention; LaTeXTools adopted and extended it.
-bbtex reads **only `root` and `program`** (plus TeXShop's `TS-program`
-spelling). Everything else a TeXShop or LaTeXTools document might carry is
-ignored, and settings like extra options or an output directory go in a
-[`.bbtex` file](project-builds.md#shared-project-settings) instead.
-bbtex doesn't drop the others silently: Doctor lists each one with what to do
-instead, and a build names the ones that would change it.
+bbtex reads `root` and `program` (plus TeXShop's `TS-program` spelling), and
+maps the comments that change the build onto its own settings:
+[build settings in comments](project-builds.md#build-settings-in-comments)
+explains the order, and why shell escape needs a
+[`.bbtex` file](project-builds.md#shared-project-settings). bbtex doesn't drop
+the rest silently: Doctor lists each comment with what to do instead, and a
+build names the ones that don't fully apply.
 
 | Comment | TeXShop | LaTeXTools | bbtex |
 |---------|---------|-----------|-------|
@@ -33,10 +34,10 @@ instead, and a build names the ones that would change it.
 | TeXShop engine names (`pdflatexmk`, `xelatexmk`, …) | Yes (engine scripts) | Unknown | Built-in names map to pdfLaTeX, XeLaTeX, LuaLaTeX; custom engine scripts are not run |
 | `% !TEX encoding = …` | Yes | No | Parsed but not used |
 | `% !TEX spellcheck = …` | Yes | Yes | No |
-| `% !TEX parameter = …` | Yes | No | No |
-| `% !BIB TS-program = …` | Yes | No | No; latexmk picks BibTeX or Biber |
-| `% !TEX options = …` | No | Yes | No; use `options =` in `.bbtex` |
-| `% !TEX output_directory = …` | No | Yes | No; use `output_directory =` in `.bbtex` |
+| `% !TEX parameter = …` | Yes | No | Yes, as extra options; shell escape only from `.bbtex` |
+| `% !BIB TS-program = …` | Yes | No | Checked against what latexmk ran; `bibtex8`, `upbibtex`, `pbibtex` become latexmk's BibTeX |
+| `% !TEX options = …` | No | Yes | Yes, after `.bbtex` options; shell escape only from `.bbtex` |
+| `% !TEX output_directory = …` | No | Yes | Yes, unless `.bbtex` sets one |
 | `% !TEX jobname = …` / `aux_directory` | No | Yes | No |
 | Emacs `TeX-master` / `TeX-engine` | No | No | No (AUCTeX's own format) |
 

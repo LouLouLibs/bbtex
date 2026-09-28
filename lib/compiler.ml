@@ -73,17 +73,34 @@ let resolve_compilation ?engine:engine_override ?profile path =
       in strict_engine name
   in
   let root_dir = Filename.dirname root_file in
-  let output_directory = match Project.get "output_directory" settings.defaults with
-    | None -> root_dir
+  (* The document's comments fill in what .bbtex leaves unset; .bbtex wins. *)
+  let document = Magic_comments.document (Magic_comments.scan chain) in
+  let project_output = match Project.get "output_directory" settings.defaults with
+    | None -> None
     | Some "" -> raise (Bbtex_error "output_directory cannot be empty")
-    | Some dir -> Source_reader.resolve_path ~root_dir dir
+    | Some dir -> Some (Source_reader.resolve_path ~root_dir dir)
   in
-  let options = Project.options (Option.value ~default:"" (Project.get "options" settings.defaults)) @
-    Project.options (Option.value ~default:"" (Project.get "options" fields)) in
+  let output_directory = match project_output, document.output_directory with
+    | Some dir, _ -> dir
+    | None, Some dir -> Source_reader.resolve_path ~root_dir dir
+    | None, None -> root_dir
+  in
+  let project_options = Project.options (Option.value ~default:"" (Project.get "options" settings.defaults)) in
+  let profile_options = Project.options (Option.value ~default:"" (Project.get "options" fields)) in
+  let options = project_options @ document.options @ profile_options in
   let base = Filename.concat output_directory (Filename.remove_extension (Filename.basename root_file)) in
   let project_dir = match settings.file with None -> root_dir | Some f -> Filename.dirname f in
   { source_file; root_file; chain; engine; project_dir; output_directory; options; profile;
+    project_options = project_options @ profile_options; project_output; bibtex = document.bibtex;
     log_file = base ^ ".log"; pdf_file = base ^ ".pdf" }
+
+(** The project's magic comments, judged against its settings and last build. *)
+let comment_statuses config =
+  let context = { Magic_comments.project_options = config.project_options;
+    project_output = config.project_output; root_dir = Filename.dirname config.root_file;
+    latexmk = (match config.engine with Tectonic | Ratex -> false | _ -> true);
+    bib_ran = Magic_comments.bib_ran (Filename.remove_extension config.pdf_file ^ ".blg") } in
+  Magic_comments.statuses ~context (Magic_comments.scan config.chain)
 
 let settings_for path =
   let config = resolve_compilation path in
@@ -135,7 +152,9 @@ let run_compilation job config =
     | Ratex -> "ratex", ["-pdf"; "-interaction=nonstopmode"; "-output-directory=" ^ config.output_directory]
     | Tectonic -> "tectonic", ["--keep-logs"; "--synctex"; "--outdir"; config.output_directory]
     | engine -> "latexmk", [Types.latexmk_flag engine; "-interaction=nonstopmode";
-        "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory]
+        "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory] @
+        (* The name is one of Magic_comments.bibtex_programs, never free text. *)
+        (match config.bibtex with Some program -> ["-e"; "$bibtex=q/" ^ program ^ " %O %S/"] | None -> [])
   in
   let rec run remaining retry =
     let code = Build_job.run job ~cwd:(Filename.dirname config.root_file) command

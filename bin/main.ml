@@ -115,7 +115,7 @@ let cmd_compile ?engine ?profile filename =
     Printf.printf "root: %s\nengine: %s\nduration: %.1f\nbuild_log: %s\n"
       config.root_file (Types.string_of_engine config.engine)
       (Unix.gettimeofday () -. started) (Build_job.log_path config.root_file);
-    let comments = Magic_comments.scan config.chain in
+    let comments = Compiler.comment_statuses config in
     let errors = List.filter (fun e -> e.Types.se_severity = Types.Error) result.search_results in
     let applescript_file =
       (* Successful builds do not open a results window. Full diagnostics remain
@@ -143,7 +143,7 @@ let cmd_compile ?engine ?profile filename =
 let cmd_results filename =
   try
     let result = Compiler.inspect_log filename in
-    let comments = Magic_comments.scan (Compiler.resolve_compilation filename).chain in
+    let comments = Compiler.comment_statuses (Compiler.resolve_compilation filename) in
     let applescript_file =
       Applescript.write_compile_script (Magic_comments.results comments @ result.search_results) in
     List.iter print_endline (Bbedit_format.format_compile_result result ~applescript_file)

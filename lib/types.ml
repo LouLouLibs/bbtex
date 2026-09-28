@@ -104,6 +104,9 @@ type compilation_config = {
   project_dir : string;
   output_directory : string;
   options : string list;
+  project_options : string list;  (** .bbtex and profile options, without the document's *)
+  project_output : string option;  (** .bbtex output_directory, absolute *)
+  bibtex : string option;  (** latexmk's BibTeX program from % !BIB TS-program *)
   profile : string option;
   log_file : string;
   pdf_file : string;

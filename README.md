@@ -151,13 +151,16 @@ Everything else lives in **Scripts → LaTeX —**:
 
 ## Choosing the engine and main file
 
-Put TeXShop-style comments at the top of a file. bbtex reads only these two;
-other `% !TEX` lines (`spellcheck`, `options`, `% !BIB` …) are ignored:
+Put TeXShop-style comments at the top of a file. These two choose the engine
+and the main file:
 
 ```latex
 %!TEX program = xelatex     % pdflatex (default), xelatex, lualatex, tectonic
 %!TEX root = ../main.tex    % in a chapter: build the main document instead
 ```
+
+LaTeXTools' `options` and `output_directory`, and TeXShop's `parameter` and
+`% !BIB TS-program`, are read too; shell escape only ever comes from `.bbtex`.
 
 For project-wide settings, drop a `.bbtex` file next to your main document:
 
