@@ -101,6 +101,7 @@ from a comment is dropped; the BibTeX program reaches latexmk:
   -synctex=1
   -cd
   -outdir=$TESTCASE_ROOT/magic/out
+  -auxdir=$TESTCASE_ROOT/magic/out
   -e
   $bibtex=q/bibtex8 %O %S/
   -8bit
@@ -163,3 +164,35 @@ to Configure Document…:
   root_source: this file; several documents include it: ../paper.tex, ../slides.tex
   $ bbtex compile sections/intro.tex 2>/dev/null | grep '^note:'
   note: [bbtex] Several documents include this file (../paper.tex, ../slides.tex): choose one with Configure Document…
+
+A project latexmkrc is read by latexmk; bbtex names the settings it replaces
+(output folder, auxiliary folder, engine) and leaves the rest alone. The
+auxiliary folder is pinned to the output so results find the log:
+
+  $ export HOME="$PWD/home" XDG_CONFIG_HOME=""
+  $ printf "ensure_path('TEXINPUTS', './styles//');  # \$out_dir = 'no';\n\$out_dir = 'rcout';\n\$aux_dir = \"\$out_dir/aux\";\n\$pdf_mode = 5;\n\$pdflatex = 'pdflatex -shell-escape %%O %%S';\n" > latexmkrc
+  $ bbtex doctor paper.tex | grep latexmkrc | show
+  [INFO] latexmkrc: ./overleaf/latexmkrc: read by latexmk
+  [WARN] latexmkrc: ./overleaf/latexmkrc:2: $out_dir is replaced by bbtex's output folder (next to the root file); set output_directory in .bbtex instead
+  [WARN] latexmkrc: ./overleaf/latexmkrc:3: $aux_dir is replaced by bbtex's output folder (next to the root file): auxiliary files stay with the output so results and SyncTeX find the log
+  [WARN] latexmkrc: ./overleaf/latexmkrc:4: $pdf_mode is replaced by bbtex's engine (pdflatex); choose it with % !TEX program or engine = in .bbtex
+  [INFO] latexmkrc: ./overleaf/latexmkrc:5: turns on shell escape for this project's builds
+  $ bbtex compile paper.tex 2>/dev/null | grep -E '^(status|note):'
+  status: success
+  note: [bbtex] latexmkrc $out_dir, $aux_dir, $pdf_mode replaced by bbtex's settings; see LaTeX — Doctor
+  $ grep -e '^-outdir' -e '^-auxdir' ../args | show
+  -outdir=./overleaf
+  -auxdir=./overleaf
+
+Settings that agree with bbtex's aren't flagged, and a user latexmkrc is read too:
+
+  $ printf "\$out_dir = '.';\n\$pdf_mode = 1;\n" > latexmkrc
+  $ mkdir -p home && printf "\$aux_dir = 'elsewhere';\n" > home/.latexmkrc
+  $ bbtex doctor paper.tex | grep latexmkrc | show
+  [INFO] latexmkrc: ~/.latexmkrc: read by latexmk
+  [WARN] latexmkrc: ~/.latexmkrc:1: $aux_dir is replaced by bbtex's output folder (next to the root file): auxiliary files stay with the output so results and SyncTeX find the log
+  [INFO] latexmkrc: ./overleaf/latexmkrc: read by latexmk
+  [OK] latexmkrc: ./overleaf/latexmkrc:1: $out_dir matches bbtex's output folder
+  [OK] latexmkrc: ./overleaf/latexmkrc:2: $pdf_mode matches bbtex's engine
+  $ bbtex compile paper.tex 2>/dev/null | grep '^note:'
+  note: [bbtex] latexmkrc $aux_dir replaced by bbtex's settings; see LaTeX — Doctor

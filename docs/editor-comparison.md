@@ -54,7 +54,7 @@ build names the ones that don't fully apply.
 | Save before build | Current file | Current file | Asks | Saves modified open project inputs |
 | Cancel a build | Yes (Abort) | Yes | Yes (`TeX-kill-job`) | Yes, whole process group |
 | Clean auxiliary files | Yes (Trash Aux Files) | Yes | Yes (`TeX-clean`) | **Clean** (keeps PDF) / **Clean All Build Output** |
-| Custom build logic | Engine shell scripts | Python builders | Emacs Lisp | No; profiles cover engine and options |
+| Custom build logic | Engine shell scripts | Python builders | Emacs Lisp | A project `latexmkrc` (bbtex keeps the output folder and engine); profiles cover engine and options |
 
 ## Project settings
 

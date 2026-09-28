@@ -116,17 +116,18 @@ let cmd_compile ?engine ?profile filename =
       config.root_file (Types.string_of_engine config.engine)
       (Unix.gettimeofday () -. started) (Build_job.log_path config.root_file);
     let comments = Compiler.comment_statuses config in
+    let rc = Compiler.latexmkrc_findings config in
     let errors = List.filter (fun e -> e.Types.se_severity = Types.Error) result.search_results in
     let applescript_file =
       (* Successful builds do not open a results window. Full diagnostics remain
          available through the explicit results command. Ignored magic comments
          join the errors, since they may explain them (a lost --shell-escape). *)
       Applescript.write_compile_script
-        (if errors = [] then [] else Magic_comments.results comments @ errors)
+        (if errors = [] then [] else Magic_comments.results comments @ Latexmkrc.results rc @ errors)
     in
     let lines = Bbedit_format.format_compile_result result ~applescript_file in
     List.iter print_endline lines;
-    (match List.filter_map Fun.id [Compiler.root_note config; Magic_comments.build_note comments] with
+    (match List.filter_map Fun.id [Compiler.root_note config; Magic_comments.build_note comments; Latexmkrc.build_note rc] with
      | [] -> ()
      | notes -> Printf.printf "note: %s\n" (String.concat " · " notes));
     match result.status with
@@ -145,9 +146,10 @@ let cmd_compile ?engine ?profile filename =
 let cmd_results filename =
   try
     let result = Compiler.inspect_log filename in
-    let comments = Compiler.comment_statuses (Compiler.resolve_compilation filename) in
-    let applescript_file =
-      Applescript.write_compile_script (Magic_comments.results comments @ result.search_results) in
+    let config = Compiler.resolve_compilation filename in
+    let notes = Magic_comments.results (Compiler.comment_statuses config) @
+      Latexmkrc.results (Compiler.latexmkrc_findings config) in
+    let applescript_file = Applescript.write_compile_script (notes @ result.search_results) in
     List.iter print_endline (Bbedit_format.format_compile_result result ~applescript_file)
   with Compiler.Bbtex_error msg ->
     List.iter print_endline (Bbedit_format.format_error_message msg);

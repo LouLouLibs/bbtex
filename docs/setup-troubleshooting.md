@@ -32,9 +32,10 @@ Run `bbtex doctor` for inspection only, or `bbtex doctor --probe` for tool launc
 and version checks. **Scripts → LaTeX — Doctor** includes the launch checks. Supply a saved
 source with `bbtex doctor path/to/main.tex` to resolve its engine and inspect its
 latest bbtex build log. It also lists the `% !TEX` and `% !BIB` comments in the
-source and its root, and says which bbtex ignores and what to do instead. The
-menu uses `BB_DOC_PATH` when BBEdit supplies it; without that value it checks
-the default setup. The report appears as shell output.
+source and its root, and says which bbtex ignores and what to do instead. It lists
+the `latexmkrc` files the build reads, too, and the settings in them bbtex
+replaces. The menu uses `BB_DOC_PATH` when BBEdit supplies it; without that
+value it checks the default setup. The report appears as shell output.
 
 For a relocated or staged BBEdit support folder, pass
 `bbtex doctor --bbedit-support "/path/to/BBEdit Support"`. Doctor scans Scripts
