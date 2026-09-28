@@ -5,7 +5,7 @@ by one small `bbtex` binary. This page gets you from nothing to a compiled PDF
 in about ten minutes, most of it spent waiting for MacTeX to download.
 
 > [!TIP]
-> **Current release: v0.1.0.** This is the first release, and it's
+> **Current release: v0.2.0.** It's early, and it's
 > [totally vibe coded](about.md#totally-vibe-coded). It works well on my Mac;
 > if it doesn't on yours, please
 > [open an issue](https://github.com/LouLouLibs/bbtex/issues).

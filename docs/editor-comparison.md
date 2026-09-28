@@ -5,7 +5,7 @@ say "a good LaTeX setup": [TeXShop](https://pages.uoregon.edu/koch/texshop/)
 (the Mac's own LaTeX editor, with its built-in PDF viewer),
 [LaTeXTools](https://latextools.readthedocs.io/) for Sublime Text, and
 [AUCTeX](https://www.gnu.org/software/auctex/) (with RefTeX and preview-latex)
-for Emacs. It describes bbtex v0.1.0; see the [handoff](dev/HANDOFF.md) for
+for Emacs. It describes bbtex v0.2.0; see the [handoff](dev/HANDOFF.md) for
 open work.
 
 "Yes" means a supported workflow in the stock package; many gaps in the other

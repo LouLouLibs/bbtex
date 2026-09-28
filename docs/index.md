@@ -9,7 +9,7 @@ next: false
 
 LaTeX package for BBEdit {.subtitle}
 
-**Version:** v0.1.0 · **Platform:** macOS, Apple Silicon · **License:** MIT · **Status:** first release, totally vibe coded {.meta}
+**Version:** v0.2.0 · **Platform:** macOS, Apple Silicon · **License:** MIT · **Status:** early, totally vibe coded {.meta}
 
 I write my papers in BBEdit, and bbtex is the set of LaTeX tools I wanted
 there: press <kbd>⌘</kbd><kbd>K</kbd> to build, click an error to land on its

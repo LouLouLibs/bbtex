@@ -5,7 +5,7 @@
 # bbtex
 ### LaTeX package for BBEdit
 
-[![Version](https://img.shields.io/badge/version-0.1.0-1f5f8b)](docs/release-notes.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-1f5f8b)](docs/release-notes.md)
 [![Vibecoded](https://img.shields.io/badge/vibecoded-%E2%9C%A8-blueviolet)](#a-word-on-vibe-coding)
 [![OCaml](https://img.shields.io/badge/OCaml-5.4-EC6813?logo=ocaml&logoColor=white)](bbtex.opam)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon-000000?logo=apple&logoColor=white)](#requirements)
@@ -42,7 +42,7 @@ without compiling the whole paper. bbtex is my attempt to get all of that in
 BBEdit without changing how BBEdit feels.
 
 It's a small OCaml binary plus a handful of scripts in BBEdit's **Scripts**
-menu. This is **v0.1.0**, the first release: it works well on my machine, and
+menu. This is **v0.2.0**: it works well on my machine, and
 I'd love to hear where it breaks on yours.
 
 ## A word on vibe coding
@@ -184,7 +184,7 @@ bbtex compile paper.tex                    # build the main document
 bbtex compile --engine tectonic paper.tex  # try another engine once
 bbtex results paper.tex                    # errors and warnings from the last build
 bbtex doctor --probe                       # check the setup
-bbtex --version                            # bbtex 0.1.0
+bbtex --version                            # bbtex 0.2.0
 ```
 
 See the [command-line reference](docs/cli.md).
