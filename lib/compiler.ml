@@ -160,7 +160,9 @@ let run_compilation job config =
     | Ratex -> "ratex", ["-pdf"; "-interaction=nonstopmode"; "-output-directory=" ^ config.output_directory]
     | Tectonic -> "tectonic", ["--keep-logs"; "--synctex"; "--outdir"; config.output_directory]
     | engine -> "latexmk", [Types.latexmk_flag engine; "-interaction=nonstopmode";
-        "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory] @
+        "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory;
+        (* A latexmkrc $aux_dir would move the log away from results and SyncTeX. *)
+        "-auxdir=" ^ config.output_directory] @
         (* The name is one of Magic_comments.bibtex_programs, never free text. *)
         (match config.bibtex with Some program -> ["-e"; "$bibtex=q/" ^ program ^ " %O %S/"] | None -> [])
   in
@@ -214,7 +216,8 @@ let clean ?(full=false) path =
     if latexmk then
       Build_job.run { job with log = Build_job.log_path config.root_file ^ ".clean" }
         ~cwd:(Filename.dirname config.root_file) "latexmk"
-        [ (if full then "-C" else "-c"); "-cd"; "-outdir=" ^ config.output_directory; config.root_file ]
+        [ (if full then "-C" else "-c"); "-cd"; "-outdir=" ^ config.output_directory;
+          "-auxdir=" ^ config.output_directory; config.root_file ]
     else begin
       let base = Filename.concat config.output_directory
           (Filename.remove_extension (Filename.basename config.root_file)) in
@@ -308,3 +311,10 @@ let root_note config = match config.root_source with
   | Several_mains several -> Some ("[bbtex] Several documents include this file (" ^ mains config several ^
       "): choose one with Configure Document…")
   | This_file | Root_directive | Project_root -> None
+
+(** What the latexmkrc files read for this build set that bbtex replaces. *)
+let latexmkrc_findings config =
+  let home = Option.value ~default:"" (Sys.getenv_opt "HOME") in
+  let config_home = match Sys.getenv_opt "XDG_CONFIG_HOME" with
+    | Some dir when dir <> "" -> dir | _ -> Filename.concat home ".config" in
+  Latexmkrc.inspect ~home ~config_home config

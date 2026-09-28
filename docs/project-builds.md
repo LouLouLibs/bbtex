@@ -156,6 +156,34 @@ Options are passed as separate arguments, never evaluated by a shell. Use
 bbtex and cannot be supplied as extra options. Unknown settings and malformed
 quotes fail before compilation.
 
+### A project `latexmkrc`
+
+Overleaf projects often ship a `latexmkrc`. bbtex runs latexmk from the root
+file's folder, so latexmk reads the project's `latexmkrc` (or `.latexmkrc`)
+there, and your own `~/.latexmkrc`, as it does anywhere else. Settings such as
+`ensure_path('TEXINPUTS', …)`, custom `$pdflatex`/`$xelatex`/`$lualatex`
+commands and extra dependencies apply to ⌘K builds unchanged.
+
+Three settings are bbtex's, because it passes them on the command line:
+
+| latexmkrc | Replaced by | Why |
+|---|---|---|
+| `$out_dir` | `output_directory` in `.bbtex`, a `% !TEX output_directory` comment, or the root's folder | One output folder for results, forward search, previews and cleanup |
+| `$aux_dir` | the same output folder | The log stays where LaTeX Results and SyncTeX look for it |
+| `$pdf_mode` (engine) | bbtex's engine choice | Set it with `% !TEX program` or `engine =` in `.bbtex` |
+
+**LaTeX — Doctor** lists the `latexmkrc` files a build reads and flags each of
+these settings bbtex replaces; a value that already agrees with bbtex (for
+example `$out_dir = 'build';` with `output_directory = build`) is marked OK.
+A build that replaces one says so in the notification, and in LaTeX Results
+when the build fails. bbtex only recognises literal values: a folder computed
+in Perl is always reported as replaced. Tectonic and RaTeX builds don't run
+latexmk, so a `latexmkrc` has no effect on them.
+
+A `latexmkrc` is Perl that latexmk runs, and it can turn on shell escape (for
+example through a custom `$pdflatex`). Doctor mentions it when it does. Treat
+a downloaded project's `latexmkrc` like any other script before building.
+
 ## Running and cancelling
 
 Build notifications show the root and engine, then elapsed time and diagnostics.

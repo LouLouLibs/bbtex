@@ -102,6 +102,8 @@ let inspect ~home ~path ~state ~binary ?source ?support ?(probe=false) () =
         add (match config.root_source with Types.Several_mains _ -> "WARN" | _ -> "INFO")
           "Main file" (Compiler.root_description config);
         comments ~dir:config.project_dir (Compiler.comment_statuses config);
+        List.iter (fun (status, detail) -> add status "latexmkrc" detail)
+          (Latexmkrc.doctor_lines (Compiler.latexmkrc_findings config));
         let log = Filename.concat state ("build-" ^ Digest.to_hex (Digest.string config.root_file) ^ ".log") in
         (try
            if (Unix.stat log).Unix.st_size <= 1024 * 1024 then begin

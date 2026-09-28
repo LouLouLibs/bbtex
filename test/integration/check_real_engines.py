@@ -242,6 +242,29 @@ try:
     bbtex('magic-clean', 'clean-all', magic_source)
     assert not (output / 'main.pdf').exists() and not (magic / 'main.pdf').exists()
     print('Passed: % !BIB TS-program and output_directory comments', flush=True)
+
+    # An Overleaf-style latexmkrc is read (TEXINPUTS), while its output and
+    # auxiliary folders give way to bbtex's, so errors are still found.
+    rc_project = project / 'latexmkrc project'
+    (rc_project / 'styles').mkdir(parents=True)
+    (rc_project / '.bbtex').write_text(f'engine = {args.engine}\n')
+    (rc_project / 'styles/rcstyle.sty').write_text('\\ProvidesPackage{rcstyle}\n\\newcommand\\rcmarker{RcStyleEvidence}\n')
+    (rc_project / 'latexmkrc').write_text("ensure_path('TEXINPUTS', './styles//');\n"
+                                          "$out_dir = 'rcout';\n$aux_dir = 'rcaux';\n")
+    rc_source = rc_project / 'main.tex'
+    rc_text = '\\documentclass{article}\n\\usepackage{rcstyle}\n\\begin{document}\n\\rcmarker\n\\end{document}\n'
+    rc_source.write_text(rc_text)
+    fields = bbtex('latexmkrc-compile', 'compile', rc_source)
+    assert Path(fields['pdf']).samefile(rc_project / 'main.pdf'), fields
+    assert 'RcStyleEvidence' in pdf_details(rc_project / 'main.pdf')[3]
+    assert '$out_dir, $aux_dir' in fields.get('note', ''), fields
+    assert not (rc_project / 'rcout').exists() and not (rc_project / 'rcaux').exists()
+    rc_source.write_text(rc_text.replace('\\rcmarker', '\\rcmarker \\undefinedRcCommand'))
+    fields = bbtex('latexmkrc-error', 'compile', rc_source, expected=1)
+    parsed = command([BINARY, 'parse-log', fields['log']])
+    assert 'Undefined control sequence' in parsed.stdout, parsed.stdout
+    bbtex('latexmkrc-results', 'results', rc_source)
+    print('Passed: project latexmkrc read, output and auxiliary folders kept', flush=True)
     report['status'] = 'success'
 except BaseException as error:
     report['status'] = 'failure'
