@@ -34,11 +34,14 @@ That still doesn't make it bulletproof. Keep your papers in version control,
 and if bbtex does something surprising, please
 [open an issue](https://github.com/LouLouLibs/bbtex/issues).
 
-## Where things stand: v0.1.0
+## Where things stand: v0.2.0
 
-This is the first release. What I'd call solid:
+What I'd call solid:
 
-- builds with latexmk and Tectonic, with errors in the results browser
+- builds with latexmk and Tectonic, with errors in the results browser and
+  plain-English `[bbtex]` hints under the common ones
+- documents from TeXShop, LaTeXTools and Overleaf: their magic comments,
+  `latexmkrc`, and main files found without a root comment
 - SyncTeX with Skim in both directions
 - equation previews, including refresh on save and live selection
 - the project outline, and the citation and reference pickers

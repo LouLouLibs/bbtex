@@ -12,7 +12,10 @@ ROOT = Path(__file__).resolve().parents[2]
 BINARY = ROOT / "_build/default/bin/main.exe"
 with tempfile.TemporaryDirectory(prefix="bbtex-results-") as directory:
     source = Path(directory) / "main.tex"
-    source.write_text("\\documentclass{article}\n\\begin{document}\nx\n\\end{document}\n")
+    source.write_text("% !TEX jobname = draft\n\\documentclass{article}\n\\begin{document}\nx\n\\end{document}\n")
+    # v0.2 entries: an error hint (note_kind), an ignored comment and a latexmkrc
+    # setting, which points BBEdit at a file that isn't .tex.
+    (Path(directory) / "latexmkrc").write_text("$out_dir = 'elsewhere';\n")
     log = source.with_suffix(".log")
     log.write_text("(./main.tex\n! Undefined control sequence.\nl.3 \\oops\n)\n")
     def apply_results():
@@ -23,6 +26,10 @@ with tempfile.TemporaryDirectory(prefix="bbtex-results-") as directory:
         try:
             text = script.read_text().replace('"LaTeX Results"', '"bbtex Test Results"').replace(
                 '"LaTeX Errors"', '"bbtex Test Legacy"')
+            if log.read_text():
+                for expected in ["result_kind:note_kind", "[bbtex] A command isn't defined",
+                                 "[bbtex] % !TEX jobname = draft is ignored", "[bbtex] latexmkrc: $out_dir"]:
+                    assert expected in text, (expected, text)
             subprocess.run(["osascript", "-"], input=text, text=True, check=True)
         finally:
             script.unlink()
@@ -34,6 +41,8 @@ with tempfile.TemporaryDirectory(prefix="bbtex-results-") as directory:
         apply_results()
         assert count() == "1", "Test results browser was not created"
         log.write_text("")
+        source.write_text(source.read_text().split("\n", 1)[1])
+        (Path(directory) / "latexmkrc").unlink()
         apply_results()
         assert count() == "0", "Empty results did not clear the old browser"
     finally:

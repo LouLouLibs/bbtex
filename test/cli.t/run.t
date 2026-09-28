@@ -54,7 +54,7 @@ preview-fragment rejects incomplete selections before compiling.
 The version matches lib/version.ml.
 
   $ bbtex --version
-  bbtex 0.1.0
+  bbtex 0.2.0
 
 parse-log keeps TeX's message and adds a [bbtex] hint under the ones it
 recognises; unrecognised errors get none.
