@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** v0.1.0 · **Next:** v0.2 · **Updated:** 2026-09-28 {.meta}
+**Current:** v0.2.0 · **Next:** after v0.2 · **Updated:** 2026-09-28 {.meta}
 
 What's next for bbtex, roughly in order. v0.2 is about two things: meeting
 documents that come from TeXShop, LaTeXTools or Overleaf where they are, and
@@ -21,7 +21,7 @@ mirrored to UMN's GitHub (login required). Still to do:
 
 ## v0.2
 
-All planned work is merged on `main` and waits for the v0.2 release. Tracked in
+v0.2.0 meets TeXShop, LaTeXTools and Overleaf documents where they are. Tracked in
 the [v0.2 milestone](https://github.com/LouLouLibs/bbtex/milestone/1), with
 [#34](https://github.com/LouLouLibs/bbtex/issues/34) as the tracking issue.
 
