@@ -210,6 +210,38 @@ try:
     cancellation_source.write_text('\\documentclass{article}\n\\begin{document}\nRecovered.\n\\end{document}\n')
     bbtex('cancel-recovery', 'compile', cancellation_source)
     print('Passed: cancellation of a real TeX process and subsequent build', flush=True)
+
+    # TeXShop/LaTeXTools comments: % !BIB and output_directory reach the build,
+    # and results, forward search and cleanup find the output they chose.
+    magic = project / 'magic comments'
+    magic.mkdir()
+    (magic / '.bbtex').write_text(f'engine = {args.engine}\n')
+    (magic / 'refs.bib').write_text('@article{key, author={Ada Author}, title={Magic Evidence},'
+                                    ' journal={Journal}, year={2020}}\n')
+    magic_source = magic / 'main.tex'
+    magic_text = ('% !BIB TS-program = biber\n% !TEX output_directory = comment output\n'
+                  '\\documentclass{article}\n\\usepackage[backend=biber]{biblatex}\n'
+                  '\\addbibresource{refs.bib}\n\\begin{document}\nMagicBody \\cite{key}.\n'
+                  '\\printbibliography\n\\end{document}\n')
+    magic_source.write_text(magic_text)
+    fields = bbtex('magic-compile', 'compile', magic_source)
+    output = magic / 'comment output'
+    assert Path(fields['pdf']).samefile(output / 'main.pdf'), fields
+    assert 'note' not in fields, fields
+    assert 'Magic Evidence' in pdf_details(output / 'main.pdf')[3]
+    assert 'This is Biber' in (output / 'main.blg').read_text(errors='replace')
+    doctor = command([BINARY, 'doctor', magic_source]).stdout
+    assert '(mapped: latexmk runs biber when the document needs it)' in doctor, doctor
+    assert '(mapped: output directory comment output)' in doctor, doctor
+    bbtex('magic-results', 'results', magic_source)
+    located = bbtex('magic-forward', 'forward-search', magic_source, '7')
+    assert located['status'] == 'success' and Path(located['pdf']).samefile(output / 'main.pdf'), located
+    magic_source.write_text(magic_text.replace('biber\n', 'bibtex\n', 1))
+    fields = bbtex('magic-mismatch', 'compile', magic_source)
+    assert fields.get('note', '').startswith('[bbtex] Not fully applied: % !BIB TS-program'), fields
+    bbtex('magic-clean', 'clean-all', magic_source)
+    assert not (output / 'main.pdf').exists() and not (magic / 'main.pdf').exists()
+    print('Passed: % !BIB TS-program and output_directory comments', flush=True)
     report['status'] = 'success'
 except BaseException as error:
     report['status'] = 'failure'

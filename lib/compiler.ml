@@ -37,15 +37,23 @@ let canonical path =
 let resolve_compilation ?engine:engine_override ?profile path =
   let source_file = canonical path in
   let initial = Project.load (Filename.dirname source_file) in
+  let root_source = ref This_file in
   let rec follow visited program file =
     if List.mem file visited then raise (Bbtex_error ("Cyclic %!TEX root directives: " ^ file));
     let directives = Directive_parser.parse_file file in
     let program = match program with Some _ -> program | None ->
       Directive_parser.find_directive Program directives in
     let root = match Directive_parser.find_directive Root directives with
-      | Some value -> Some (Filename.dirname file, value)
-      | None when visited = [] -> Option.map (fun value ->
-          Filename.dirname (Option.get initial.file), value) (Project.get "root" initial.defaults)
+      | Some value -> if visited = [] then root_source := Root_directive; Some (Filename.dirname file, value)
+      | None when visited = [] ->
+        (match Project.get "root" initial.defaults with
+         | Some value -> root_source := Project_root; Some (Filename.dirname (Option.get initial.file), value)
+         (* Nothing names a main document: look for the one including this file. *)
+         | None when Main_file.is_document file -> None
+         | None -> match Main_file.find file with
+           | Main_file.Found main -> root_source := Found_main main; Some (Filename.dirname main, main)
+           | Main_file.Several mains -> root_source := Several_mains mains; None
+           | Main_file.Unknown -> None)
       | None -> None
     in
     match root with
@@ -73,17 +81,34 @@ let resolve_compilation ?engine:engine_override ?profile path =
       in strict_engine name
   in
   let root_dir = Filename.dirname root_file in
-  let output_directory = match Project.get "output_directory" settings.defaults with
-    | None -> root_dir
+  (* The document's comments fill in what .bbtex leaves unset; .bbtex wins. *)
+  let document = Magic_comments.document (Magic_comments.scan chain) in
+  let project_output = match Project.get "output_directory" settings.defaults with
+    | None -> None
     | Some "" -> raise (Bbtex_error "output_directory cannot be empty")
-    | Some dir -> Source_reader.resolve_path ~root_dir dir
+    | Some dir -> Some (Source_reader.resolve_path ~root_dir dir)
   in
-  let options = Project.options (Option.value ~default:"" (Project.get "options" settings.defaults)) @
-    Project.options (Option.value ~default:"" (Project.get "options" fields)) in
+  let output_directory = match project_output, document.output_directory with
+    | Some dir, _ -> dir
+    | None, Some dir -> Source_reader.resolve_path ~root_dir dir
+    | None, None -> root_dir
+  in
+  let project_options = Project.options (Option.value ~default:"" (Project.get "options" settings.defaults)) in
+  let profile_options = Project.options (Option.value ~default:"" (Project.get "options" fields)) in
+  let options = project_options @ document.options @ profile_options in
   let base = Filename.concat output_directory (Filename.remove_extension (Filename.basename root_file)) in
   let project_dir = match settings.file with None -> root_dir | Some f -> Filename.dirname f in
   { source_file; root_file; chain; engine; project_dir; output_directory; options; profile;
+    project_options = project_options @ profile_options; project_output; bibtex = document.bibtex; root_source = !root_source;
     log_file = base ^ ".log"; pdf_file = base ^ ".pdf" }
+
+(** The project's magic comments, judged against its settings and last build. *)
+let comment_statuses config =
+  let context = { Magic_comments.project_options = config.project_options;
+    project_output = config.project_output; root_dir = Filename.dirname config.root_file;
+    latexmk = (match config.engine with Tectonic | Ratex -> false | _ -> true);
+    bib_ran = Magic_comments.bib_ran (Filename.remove_extension config.pdf_file ^ ".blg") } in
+  Magic_comments.statuses ~context (Magic_comments.scan config.chain)
 
 let settings_for path =
   let config = resolve_compilation path in
@@ -135,7 +160,9 @@ let run_compilation job config =
     | Ratex -> "ratex", ["-pdf"; "-interaction=nonstopmode"; "-output-directory=" ^ config.output_directory]
     | Tectonic -> "tectonic", ["--keep-logs"; "--synctex"; "--outdir"; config.output_directory]
     | engine -> "latexmk", [Types.latexmk_flag engine; "-interaction=nonstopmode";
-        "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory]
+        "-file-line-error"; "-synctex=1"; "-cd"; "-outdir=" ^ config.output_directory] @
+        (* The name is one of Magic_comments.bibtex_programs, never free text. *)
+        (match config.bibtex with Some program -> ["-e"; "$bibtex=q/" ^ program ^ " %O %S/"] | None -> [])
   in
   let rec run remaining retry =
     let code = Build_job.run job ~cwd:(Filename.dirname config.root_file) command
@@ -263,3 +290,21 @@ let compile_config config =
   result)
 
 let compile ?engine ?profile path = compile_config (resolve_compilation ?engine ?profile path)
+
+(* ── How the root was chosen ─────────────────────────────────── *)
+
+let mains config names = String.concat ", " (List.map (Main_file.display ~source:config.source_file) names)
+
+let root_description config = match config.root_source with
+  | This_file -> "this file"
+  | Root_directive -> "% !TEX root"
+  | Project_root -> ".bbtex root"
+  | Found_main main -> "found: " ^ mains config [main] ^ " includes this file"
+  | Several_mains several -> "this file; several documents include it: " ^ mains config several
+
+(** A [bbtex] line for the build notification when bbtex chose the root itself. *)
+let root_note config = match config.root_source with
+  | Found_main main -> Some ("[bbtex] Building " ^ mains config [main] ^ ", which includes this file")
+  | Several_mains several -> Some ("[bbtex] Several documents include this file (" ^ mains config several ^
+      "): choose one with Configure Document…")
+  | This_file | Root_directive | Project_root -> None

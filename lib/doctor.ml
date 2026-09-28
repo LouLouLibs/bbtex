@@ -94,12 +94,14 @@ let inspect ~home ~path ~state ~binary ?source ?support ?(probe=false) () =
   let engine = match source with
     | None -> add "INFO" "Project" "No source supplied; checking default pdfLaTeX setup."; "pdflatex"
     | Some source ->
-      let comments ~dir files = List.iter (fun (status, detail) -> add status "Magic comment" detail)
-        (Magic_comments.doctor_lines ~dir (Magic_comments.scan files)) in
+      let comments ~dir statuses = List.iter (fun (status, detail) -> add status "Magic comment" detail)
+        (Magic_comments.doctor_lines ~dir statuses) in
       (try
         let config = Compiler.resolve_compilation source in
         add "OK" "Project" config.root_file;
-        comments ~dir:config.project_dir config.chain;
+        add (match config.root_source with Types.Several_mains _ -> "WARN" | _ -> "INFO")
+          "Main file" (Compiler.root_description config);
+        comments ~dir:config.project_dir (Compiler.comment_statuses config);
         let log = Filename.concat state ("build-" ^ Digest.to_hex (Digest.string config.root_file) ^ ".log") in
         (try
            if (Unix.stat log).Unix.st_size <= 1024 * 1024 then begin
@@ -109,7 +111,7 @@ let inspect ~home ~path ~state ~binary ?source ?support ?(probe=false) () =
          with Sys_error _ | Unix.Unix_error _ -> add "UNVERIFIED" "Build evidence" "No readable build log.");
         Types.string_of_engine config.engine
       with exn -> add "WARN" "Project configuration" (Printexc.to_string exn);
-        comments ~dir:(Filename.dirname source) [source]; "pdflatex") in
+        comments ~dir:(Filename.dirname source) Magic_comments.(statuses (scan [source])); "pdflatex") in
   add "INFO" "Selected engine" engine;
   let required = if engine = "tectonic" || engine = "ratex" then [engine] else ["latexmk"; engine] in
   List.iter (fun name -> match locate path name with

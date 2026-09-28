@@ -25,18 +25,7 @@ The supported engine values are `pdflatex`, `xelatex`, `lualatex`, and
 `tectonic`. TeXShop's built-in engine names are accepted too: `pdflatexmk`,
 `latexmk` and `LaTeX` mean pdflatex, `xelatexmk` means xelatex, and `lualatexmk`
 means lualatex. Other TeXShop engine scripts are not supported.
-No other comments are read: `% !TEX encoding` is parsed but not used, and
-TeXShop's `spellcheck`, `parameter` and `% !BIB TS-program`, and LaTeXTools'
-`options`, `output_directory` and `jobname`, are ignored. Put options and the
-output directory in a `.bbtex` file instead (below). bbtex says so rather than
-ignoring them silently: **LaTeX — Doctor** lists every `% !TEX` and `% !BIB`
-comment in the file and its root, marked used or ignored, with what to do
-instead. A build that meets an ignored comment affecting the build names it in
-the notification, and in LaTeX Results (with a `[bbtex]` prefix) when the build
-fails. Editor settings such as `encoding`, `spellcheck` and `% !BIB TS-program`
-(latexmk picks BibTeX or Biber itself) appear only in Doctor. The
-[comparison](editor-comparison.md#magic-comments) lists them side by side. A UTF-8
-byte-order mark before the first directive is ignored. The setup helper
+A UTF-8 byte-order mark before the first directive is ignored. The setup helper
 normalizes these variants when replacing settings, avoiding duplicate directives.
 
 For guided setup, press ⇧⌘K and choose **Configure Document…**. Choose whether
@@ -54,9 +43,65 @@ For example, `tables/table1.tex` included by `main.tex` can start with:
 ```
 
 The helper generates this relative path, including for main files outside the
-current folder. bbtex does not guess a parent from `\\input`: the same table can
-be included by several documents. Choose the one you want to build. A shared
-`.bbtex` root setting also works for files beneath its directory.
+current folder. A shared `.bbtex` root setting also works for files beneath its
+directory.
+
+#### Without a root comment
+
+An Overleaf download or a fresh clone usually has no `% !TEX root`. When a file
+names no main document (no `% !TEX root`, no `root =` in `.bbtex`) and has no
+`\documentclass` itself, bbtex looks for the document that includes it: a `.tex`
+file in the same folder or one folder up that has `\documentclass` and reaches
+this file through literal `\input`, `\include` or `\subfile` commands.
+
+- **Exactly one** includes it: bbtex builds that one and says so in the build
+  notification ("[bbtex] Building ../main.tex, which includes this file").
+- **Several** do: bbtex doesn't pick, since the same table can belong to more
+  than one paper. It builds the file alone, as before, and the notification
+  points to **Configure Document…** to choose.
+- **None** does: the file is built on its own.
+
+The search reads at most 64 `.tex` files per folder and follows at most 256
+inputs from each candidate, skipping files over 4 MiB. `bbtex paths` and
+Doctor show how the root was chosen (`root_source:`).
+
+#### Build settings in comments
+
+bbtex also reads the comments that change the build, so a document builds the
+same way in TeXShop, LaTeXTools and BBEdit:
+
+| Comment | From | Becomes |
+|---|---|---|
+| `% !TEX options = …` | LaTeXTools | extra compiler options |
+| `% !TEX parameter = …` | TeXShop | extra compiler options, like `options` |
+| `% !TEX output_directory = …` | LaTeXTools | the output folder, relative to the root file |
+| `% !BIB TS-program = …` | TeXShop | checked against what latexmk ran (below) |
+
+- **Order.** Each setting comes from its first comment along the
+  source-to-root chain, as `program` does. Options are appended: `.bbtex`
+  options, then the document's, then the selected profile's.
+- **`.bbtex` wins** for the output folder. A comment naming a different one is
+  reported as ignored. LaTeXTools' special folders (`<<temp>>` and the like)
+  aren't supported.
+- **Shell escape** (`-shell-escape`, `--enable-write18`) is never taken from a
+  comment, since a downloaded document could otherwise run programs. The other
+  options still apply, and bbtex says how to opt in: put the option in `.bbtex`.
+  Options in comments are checked like `.bbtex` options, and a malformed one
+  stops the build with the comment's file and line.
+- **`% !BIB TS-program`**: latexmk runs BibTeX or Biber, whichever the document
+  asks for (biblatex's `backend=` option decides), so `bibtex` and `biber` can't
+  force either. After a build, bbtex checks which one ran and warns when it
+  differs from the comment. `bibtex8`, `upbibtex` and `pbibtex` become
+  latexmk's BibTeX program (not under Tectonic or RaTeX).
+- `jobname`, `aux_directory`, `encoding` and `spellcheck` are not applied.
+
+bbtex never ignores a comment silently: **LaTeX — Doctor** lists every
+`% !TEX` and `% !BIB` comment in the file and its root, marked used, mapped or
+ignored, with what to do instead. A build with a comment that doesn't fully
+apply names it in the notification, and in LaTeX Results (with a `[bbtex]`
+prefix) when the build fails. Editor settings such as `encoding` and
+`spellcheck` appear only in Doctor. The
+[comparison](editor-comparison.md#magic-comments) lists them side by side.
 
 ### Shared project settings
 
@@ -99,6 +144,8 @@ only to that build. Neither the source nor configuration is rewritten.
 
 Engine precedence: explicit engine choice, selected/default profile engine,
 first `%!TEX program` in the source-to-root chain, project engine, pdfLaTeX.
+Options: `.bbtex`, then `% !TEX options` or `parameter`, then the profile.
+Output folder: `.bbtex`, then `% !TEX output_directory`, then the root's folder.
 A source `%!TEX root` takes precedence over the project's `root` setting.
 Root directives can chain through files; a self-root is allowed, cycles and
 missing or non-TeX roots produce an error. Symlinks resolve to the same root.
