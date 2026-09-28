@@ -139,3 +139,27 @@ A document using only root and program gets no warning and no note:
   [OK] Magic comment: main.tex:1 % !TEX program = pdflatex (used)
   $ bbtex compile chapter.tex 2>/dev/null | grep -E '^(status|note):'
   status: success
+
+A file that names no main document builds the one that includes it, as an
+Overleaf project does; with several candidates it's built alone, with a pointer
+to Configure Document…:
+
+  $ cd .. && mkdir overleaf && cd overleaf && : > .bbtex && mkdir sections
+  $ printf '\\documentclass{article}\n\\begin{document}\n\\input{sections/intro}\n\\end{document}\n' > paper.tex
+  $ printf '\\section{Intro}\n' > sections/intro.tex
+  $ bbtex paths sections/intro.tex | grep -E '^(root|root_source):' | show
+  root: ./overleaf/paper.tex
+  root_source: found: ../paper.tex includes this file
+  $ bbtex compile sections/intro.tex 2>/dev/null | grep -E '^(status|note):'
+  status: success
+  note: [bbtex] Building ../paper.tex, which includes this file
+  $ bbtex paths paper.tex | grep '^root_source:'
+  root_source: this file
+  $ bbtex doctor sections/intro.tex | grep 'Main file'
+  [INFO] Main file: found: ../paper.tex includes this file
+  $ cp paper.tex slides.tex
+  $ bbtex paths sections/intro.tex | grep -E '^(root|root_source):' | show
+  root: ./overleaf/sections/intro.tex
+  root_source: this file; several documents include it: ../paper.tex, ../slides.tex
+  $ bbtex compile sections/intro.tex 2>/dev/null | grep '^note:'
+  note: [bbtex] Several documents include this file (../paper.tex, ../slides.tex): choose one with Configure Document…

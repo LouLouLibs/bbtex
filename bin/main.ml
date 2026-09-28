@@ -126,7 +126,9 @@ let cmd_compile ?engine ?profile filename =
     in
     let lines = Bbedit_format.format_compile_result result ~applescript_file in
     List.iter print_endline lines;
-    Option.iter (Printf.printf "note: %s\n") (Magic_comments.build_note comments);
+    (match List.filter_map Fun.id [Compiler.root_note config; Magic_comments.build_note comments] with
+     | [] -> ()
+     | notes -> Printf.printf "note: %s\n" (String.concat " · " notes));
     match result.status with
     | Types.Success -> exit 0
     | Types.Failure -> exit 1
@@ -154,9 +156,9 @@ let cmd_results filename =
 let cmd_paths ?engine ?profile filename =
   try
     let config = Compiler.resolve_compilation ?engine ?profile filename in
-    Printf.printf "status: success\nlog: %s\npdf: %s\nroot: %s\nengine: %s\nproject: %s\nbuild_log: %s\n"
-      config.log_file config.pdf_file config.root_file (Types.string_of_engine config.engine)
-      config.project_dir (Build_job.log_path config.root_file)
+    Printf.printf "status: success\nlog: %s\npdf: %s\nroot: %s\nroot_source: %s\nengine: %s\nproject: %s\nbuild_log: %s\n"
+      config.log_file config.pdf_file config.root_file (Compiler.root_description config)
+      (Types.string_of_engine config.engine) config.project_dir (Build_job.log_path config.root_file)
   with Compiler.Bbtex_error msg ->
     List.iter print_endline (Bbedit_format.format_error_message msg);
     exit 2
