@@ -60,7 +60,7 @@ build names the ones that don't fully apply.
 
 | Feature | TeXShop | LaTeXTools | AUCTeX | bbtex |
 |---------|---------|-----------|--------|-------|
-| Main file for included files | `% !TEX root` | `% !TEX root`, project file | `TeX-master` | `%!TEX root` or `root =` in `.bbtex` |
+| Main file for included files | `% !TEX root` | `% !TEX root`, project file | `TeX-master` | `%!TEX root`, `root =` in `.bbtex`, or the one document nearby that includes the file |
 | Project settings file | No | `.sublime-project` | `.dir-locals.el` | `.bbtex` (root, engine, output, options, profiles) |
 | Guided setup | No | No | Asks for master on first build | **Configure Document…** writes root/program comments |
 | Global user config | Preferences | JSON settings | Emacs Lisp | No |

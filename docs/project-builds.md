@@ -43,9 +43,27 @@ For example, `tables/table1.tex` included by `main.tex` can start with:
 ```
 
 The helper generates this relative path, including for main files outside the
-current folder. bbtex does not guess a parent from `\\input`: the same table can
-be included by several documents. Choose the one you want to build. A shared
-`.bbtex` root setting also works for files beneath its directory.
+current folder. A shared `.bbtex` root setting also works for files beneath its
+directory.
+
+#### Without a root comment
+
+An Overleaf download or a fresh clone usually has no `% !TEX root`. When a file
+names no main document (no `% !TEX root`, no `root =` in `.bbtex`) and has no
+`\documentclass` itself, bbtex looks for the document that includes it: a `.tex`
+file in the same folder or one folder up that has `\documentclass` and reaches
+this file through literal `\input`, `\include` or `\subfile` commands.
+
+- **Exactly one** includes it: bbtex builds that one and says so in the build
+  notification ("[bbtex] Building ../main.tex, which includes this file").
+- **Several** do: bbtex doesn't pick, since the same table can belong to more
+  than one paper. It builds the file alone, as before, and the notification
+  points to **Configure Document…** to choose.
+- **None** does: the file is built on its own.
+
+The search reads at most 64 `.tex` files per folder and follows at most 256
+inputs from each candidate, skipping files over 4 MiB. `bbtex paths` and
+Doctor show how the root was chosen (`root_source:`).
 
 #### Build settings in comments
 

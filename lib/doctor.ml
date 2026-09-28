@@ -99,6 +99,8 @@ let inspect ~home ~path ~state ~binary ?source ?support ?(probe=false) () =
       (try
         let config = Compiler.resolve_compilation source in
         add "OK" "Project" config.root_file;
+        add (match config.root_source with Types.Several_mains _ -> "WARN" | _ -> "INFO")
+          "Main file" (Compiler.root_description config);
         comments ~dir:config.project_dir (Compiler.comment_statuses config);
         let log = Filename.concat state ("build-" ^ Digest.to_hex (Digest.string config.root_file) ^ ".log") in
         (try

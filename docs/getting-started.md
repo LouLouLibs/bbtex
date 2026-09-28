@@ -129,7 +129,10 @@ lines). These two choose the engine and the main file:
   The first three run through latexmk, which handles passes and
   BibTeX/Biber; Tectonic runs directly.
 - `root` points an included chapter or table at the main document, relative to
-  the file that contains it.
+  the file that contains it. Without it, bbtex builds the one document in the
+  same folder or one folder up that includes the file, as in an Overleaf
+  project, and says so in the notification
+  ([details](project-builds.md#without-a-root-comment)).
 - LaTeXTools' `options` and `output_directory`, TeXShop's `parameter` and
   `% !BIB TS-program` are read too; see
   [build settings in comments](project-builds.md#build-settings-in-comments).

@@ -20,7 +20,7 @@ bbtex doctor --probe paper.tex             # setup checks with tool versions
 |---|---|
 | `compile <file.tex>` | Resolve the root, engine and profile, compile, and report diagnostics. |
 | `results <file.tex>` | Show every error, warning and bad box from the project's current log. |
-| `paths <file.tex>` | Print the resolved root, engine, log and PDF paths without compiling. |
+| `paths <file.tex>` | Print the resolved root, how it was chosen (`root_source:`), engine, log and PDF paths without compiling. |
 | `profiles <file.tex>` | List the named profiles in `.bbtex`. |
 | `cancel <file.tex>` | Stop the running build for this project and its child processes. |
 | `clean <file.tex>` | Remove auxiliary files and keep the PDF. |

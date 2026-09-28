@@ -37,15 +37,23 @@ let canonical path =
 let resolve_compilation ?engine:engine_override ?profile path =
   let source_file = canonical path in
   let initial = Project.load (Filename.dirname source_file) in
+  let root_source = ref This_file in
   let rec follow visited program file =
     if List.mem file visited then raise (Bbtex_error ("Cyclic %!TEX root directives: " ^ file));
     let directives = Directive_parser.parse_file file in
     let program = match program with Some _ -> program | None ->
       Directive_parser.find_directive Program directives in
     let root = match Directive_parser.find_directive Root directives with
-      | Some value -> Some (Filename.dirname file, value)
-      | None when visited = [] -> Option.map (fun value ->
-          Filename.dirname (Option.get initial.file), value) (Project.get "root" initial.defaults)
+      | Some value -> if visited = [] then root_source := Root_directive; Some (Filename.dirname file, value)
+      | None when visited = [] ->
+        (match Project.get "root" initial.defaults with
+         | Some value -> root_source := Project_root; Some (Filename.dirname (Option.get initial.file), value)
+         (* Nothing names a main document: look for the one including this file. *)
+         | None when Main_file.is_document file -> None
+         | None -> match Main_file.find file with
+           | Main_file.Found main -> root_source := Found_main main; Some (Filename.dirname main, main)
+           | Main_file.Several mains -> root_source := Several_mains mains; None
+           | Main_file.Unknown -> None)
       | None -> None
     in
     match root with
@@ -91,7 +99,7 @@ let resolve_compilation ?engine:engine_override ?profile path =
   let base = Filename.concat output_directory (Filename.remove_extension (Filename.basename root_file)) in
   let project_dir = match settings.file with None -> root_dir | Some f -> Filename.dirname f in
   { source_file; root_file; chain; engine; project_dir; output_directory; options; profile;
-    project_options = project_options @ profile_options; project_output; bibtex = document.bibtex;
+    project_options = project_options @ profile_options; project_output; bibtex = document.bibtex; root_source = !root_source;
     log_file = base ^ ".log"; pdf_file = base ^ ".pdf" }
 
 (** The project's magic comments, judged against its settings and last build. *)
@@ -282,3 +290,21 @@ let compile_config config =
   result)
 
 let compile ?engine ?profile path = compile_config (resolve_compilation ?engine ?profile path)
+
+(* ── How the root was chosen ─────────────────────────────────── *)
+
+let mains config names = String.concat ", " (List.map (Main_file.display ~source:config.source_file) names)
+
+let root_description config = match config.root_source with
+  | This_file -> "this file"
+  | Root_directive -> "% !TEX root"
+  | Project_root -> ".bbtex root"
+  | Found_main main -> "found: " ^ mains config [main] ^ " includes this file"
+  | Several_mains several -> "this file; several documents include it: " ^ mains config several
+
+(** A [bbtex] line for the build notification when bbtex chose the root itself. *)
+let root_note config = match config.root_source with
+  | Found_main main -> Some ("[bbtex] Building " ^ mains config [main] ^ ", which includes this file")
+  | Several_mains several -> Some ("[bbtex] Several documents include this file (" ^ mains config several ^
+      "): choose one with Configure Document…")
+  | This_file | Root_directive | Project_root -> None

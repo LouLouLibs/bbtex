@@ -96,9 +96,18 @@ let latexmk_flag = function
   | Lualatex -> "-pdflualatex"
   | Tectonic | Ratex -> "-pdflatex"
 
+(** How the root was chosen, for "bbtex paths" and the build notification. *)
+type root_source =
+  | This_file
+  | Root_directive                  (** % !TEX root in the source *)
+  | Project_root                    (** root = in .bbtex *)
+  | Found_main of string            (** the one main document including the source *)
+  | Several_mains of string list    (** several do: the source is built alone *)
+
 type compilation_config = {
   source_file : string;
   root_file : string;
+  root_source : root_source;
   chain : string list;  (** source_file, then each %!TEX root file up to root_file *)
   engine : engine;
   project_dir : string;
