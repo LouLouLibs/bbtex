@@ -13,7 +13,8 @@
 - Use LaTeX — Forward Search to locate the source position in Skim.
   Existing personal key assignments are preserved.
 - Cmd-click in Skim returns to BBEdit when Skim inverse search is configured.
-- Errors appear automatically in LaTeX Results. Warnings and bad boxes are
+- Errors appear automatically in LaTeX Results. Recognised ones are followed by a
+  `[bbtex]` note explaining what they usually mean. Warnings and bad boxes are
   available through LaTeX — Show Build Results without rebuilding.
 - LaTeX — Open Build Log opens the current root's compiler output, or
   its project's LaTeX log. If no project log exists, it shows the latest global

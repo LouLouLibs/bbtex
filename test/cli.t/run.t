@@ -55,3 +55,23 @@ The version matches lib/version.ml.
 
   $ bbtex --version
   bbtex 0.1.0
+
+parse-log keeps TeX's message and adds a [bbtex] hint under the ones it
+recognises; unrecognised errors get none.
+
+  $ printf '(./model.tex\n./model.tex:7: Undefined control sequence.\nl.7 Hello \\foo\n               world.\n\n./model.tex:9: Emergency stop.\nl.9 \\end\n)\n' > model.log
+  $ bbtex parse-log --format bbedit model.log
+  ./model.tex:7: error: Undefined control sequence.
+  ./model.tex:7: note: [bbtex] A command isn't defined: check for a typo, or a missing \usepackage.
+  ./model.tex:9: error: Emergency stop.
+  2 error(s), 0 warning(s), 0 bad box(es)
+  [1]
+  $ bbtex parse-log model.log 2>&1 | sed 's/\x1b\[[0-9;]*m//g'
+  error in ./model.tex:7
+    Undefined control sequence.
+    | Hello \foo
+    [bbtex] A command isn't defined: check for a typo, or a missing \usepackage.
+  error in ./model.tex:9
+    Emergency stop.
+    | \end
+  2 error(s), 0 warning(s), 0 bad box(es)

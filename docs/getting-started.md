@@ -100,7 +100,10 @@ Now ⌘-click in Skim jumps back to the source line in BBEdit.
    project inputs, compiles the root, and opens the PDF in Skim at the cursor.
 3. Errors appear in the **LaTeX Results** browser. Click one to reach its line,
    fix it, and press <kbd>⌘</kbd><kbd>K</kbd> again. A successful build closes
-   old results without opening a window.
+   old results without opening a window. Under errors it recognises, bbtex adds
+   a short explanation starting with `[bbtex]`, such as "A command isn't
+   defined: check for a typo, or a missing \usepackage." TeX's own message is
+   never changed.
 4. Press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>J</kbd> to show the cursor's position in
    the PDF.
 5. **LaTeX — Show Build Results** lists warnings and bad boxes without
