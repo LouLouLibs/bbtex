@@ -19,12 +19,15 @@ let result_kind_of_severity = function
 (** Close only our results browsers, including the former title.
     Empty input clears stale errors without opening a new window. *)
 let compile_script entries =
-  let records = entries |> List.map (fun e ->
-    Printf.sprintf
-      {|{result_kind:%s, result_file:POSIX file "%s" as alias, result_line:%d, message:"%s"}|}
-      (result_kind_of_severity e.se_severity)
-      (escape_applescript e.se_file) e.se_line
-      (escape_applescript e.se_message)
+  let record kind e message = Printf.sprintf
+    {|{result_kind:%s, result_file:POSIX file "%s" as alias, result_line:%d, message:"%s"}|}
+    kind (escape_applescript e.se_file) e.se_line (escape_applescript message) in
+  (* A recognised message is followed by its [bbtex] hint, as a note at the same line. *)
+  let records = entries |> List.concat_map (fun e ->
+    record (result_kind_of_severity e.se_severity) e e.se_message ::
+    (match Error_hints.hint e.se_severity e.se_message with
+     | Some hint -> [record "note_kind" e hint]
+     | None -> [])
   ) |> String.concat ", " in
   let show =
     if entries = [] then ""

@@ -163,9 +163,19 @@ try:
     assert 'Undefined control sequence' in parsed.stdout and 'results.tex' in parsed.stdout, parsed.stdout
     plain_diagnostics = re.sub(r'\x1b\[[0-9;]*m', '', parsed.stdout)
     assert re.search(r'results\.tex:3\b', plain_diagnostics), parsed.stdout
+    assert "[bbtex] A command isn't defined" in plain_diagnostics, parsed.stdout
+    assert "note_kind" in (run_dir / 'diagnostic-failure.applescript').read_text()
     entry.write_text(original_source)
+    root = project / 'article/main.tex'
+    original_root = root.read_text()
+    root.write_text(original_root.replace('\\begin{document}', '\\usepackage{bbtexmissingpackage}\n\\begin{document}', 1))
+    missing = bbtex('missing-package', 'compile', entry, expected=1)
+    parsed = command([BINARY, 'parse-log', missing['log']])
+    (run_dir / 'missing-package.txt').write_text(parsed.stdout + parsed.stderr)
+    assert "[bbtex] bbtexmissingpackage.sty isn't installed" in parsed.stdout, parsed.stdout
+    root.write_text(original_root)
     bbtex('diagnostic-recovery', 'compile', entry)
-    print('Passed: included-file diagnostic line mapping and build recovery', flush=True)
+    print('Passed: included-file diagnostic line mapping, [bbtex] hints and build recovery', flush=True)
 
     # Close a marker file before looping: TeX's piped console output is buffered.
     cancelled_project = project / 'cancellation'

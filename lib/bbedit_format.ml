@@ -29,9 +29,13 @@ let format_bbedit entry =
   in
   Printf.sprintf "%s:%d: %s: %s" file line sev entry.message
 
-(** Format all entries for BBEdit. *)
+(** Format all entries for BBEdit; a recognised message gets a "note" line with
+    its [bbtex] hint at the same place. *)
 let format_bbedit_all entries =
-  List.map format_bbedit entries
+  List.concat_map (fun entry -> format_bbedit entry :: match Error_hints.for_entry entry with
+    | Some hint -> [Printf.sprintf "%s:%d: note: %s" (Option.value ~default:"<unknown>" entry.file)
+        (Option.value ~default:0 entry.line) hint]
+    | None -> []) entries
 
 (* ── Text format (with ANSI colors) ────────────────────────── *)
 
@@ -57,6 +61,8 @@ let format_text_entry entry =
   List.iter (fun ctx ->
     Buffer.add_string buf (dim (Printf.sprintf "  | %s\n" ctx))
   ) entry.context;
+  Option.iter (fun hint -> Buffer.add_string buf (Printf.sprintf "  %s\n" hint))
+    (Error_hints.for_entry entry);
   Buffer.contents buf
 
 let format_text_all entries =

@@ -44,7 +44,7 @@ then the project `engine`, then `pdflatex`. See
 
 | Command | What it does |
 |---|---|
-| `parse-log <file.log>` | Parse a LaTeX log. `--format text` (default) or `--format bbedit`. |
+| `parse-log <file.log>` | Parse a LaTeX log. `--format text` (default) or `--format bbedit`. Recognised messages are followed by a `[bbtex]` hint (a `note:` line in `bbedit` format). |
 | `format-results <file.log>` | Parse a log into BBEdit results-browser format. |
 | `directives <file.tex>` | Print the `%!TEX` directives found in the first 50 lines. |
 
