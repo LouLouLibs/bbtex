@@ -30,7 +30,7 @@ SOURCE_LINE="${BB_DOC_SELSTART_LINE:-1}"
 MODE="${1:-compile}"
 
 parse_output() {
-    STATUS="" SUMMARY="" LOG="" PDF="" APPLESCRIPT_FILE="" MESSAGE="" ROOT="" ENGINE="" DURATION="" BUILD_LOG=""
+    STATUS="" SUMMARY="" LOG="" PDF="" APPLESCRIPT_FILE="" MESSAGE="" ROOT="" ENGINE="" DURATION="" BUILD_LOG="" NOTE=""
     while IFS= read -r line; do
         case "${line%%: *}" in
             root)             ROOT="${line#*: }" ;;
@@ -43,6 +43,7 @@ parse_output() {
             pdf)              PDF="${line#*: }" ;;
             applescript_file) APPLESCRIPT_FILE="${line#*: }" ;;
             message)          MESSAGE="${line#*: }" ;;
+            note)             NOTE="${line#*: }" ;;
         esac
     done <<< "$OUTPUT"
 }
@@ -232,12 +233,15 @@ if [[ "$STATUS" == "success" && -n "$PDF" && -f "$PDF" ]]; then
 fi
 
 # Plain arguments prevent document names/messages from becoming AppleScript code.
-osascript - "$STATUS" "${ROOT##*/} · $ENGINE · ${DURATION}s — $SUMMARY" <<'APPLESCRIPT'
+# NOTE, when set, names %!TEX comments bbtex ignored; it never changes the status.
+osascript - "$STATUS" "${ROOT##*/} · $ENGINE · ${DURATION}s — $SUMMARY" "$NOTE" <<'APPLESCRIPT'
 on run argv
-    if item 1 of argv is "success" then
-        display notification (item 2 of argv) with title "LaTeX: Compiled"
+    set heading to "LaTeX: Build failed"
+    if item 1 of argv is "success" then set heading to "LaTeX: Compiled"
+    if item 3 of argv is "" then
+        display notification (item 2 of argv) with title heading
     else
-        display notification (item 2 of argv) with title "LaTeX: Build failed"
+        display notification (item 2 of argv) with title heading subtitle (item 3 of argv)
     end if
 end run
 APPLESCRIPT

@@ -115,14 +115,18 @@ let cmd_compile ?engine ?profile filename =
     Printf.printf "root: %s\nengine: %s\nduration: %.1f\nbuild_log: %s\n"
       config.root_file (Types.string_of_engine config.engine)
       (Unix.gettimeofday () -. started) (Build_job.log_path config.root_file);
+    let comments = Magic_comments.scan config.chain in
+    let errors = List.filter (fun e -> e.Types.se_severity = Types.Error) result.search_results in
     let applescript_file =
       (* Successful builds do not open a results window. Full diagnostics remain
-         available through the explicit results command. *)
+         available through the explicit results command. Ignored magic comments
+         join the errors, since they may explain them (a lost --shell-escape). *)
       Applescript.write_compile_script
-        (List.filter (fun e -> e.Types.se_severity = Types.Error) result.search_results)
+        (if errors = [] then [] else Magic_comments.results comments @ errors)
     in
     let lines = Bbedit_format.format_compile_result result ~applescript_file in
     List.iter print_endline lines;
+    Option.iter (Printf.printf "note: %s\n") (Magic_comments.build_note comments);
     match result.status with
     | Types.Success -> exit 0
     | Types.Failure -> exit 1
@@ -139,7 +143,9 @@ let cmd_compile ?engine ?profile filename =
 let cmd_results filename =
   try
     let result = Compiler.inspect_log filename in
-    let applescript_file = Applescript.write_compile_script result.search_results in
+    let comments = Magic_comments.scan (Compiler.resolve_compilation filename).chain in
+    let applescript_file =
+      Applescript.write_compile_script (Magic_comments.results comments @ result.search_results) in
     List.iter print_endline (Bbedit_format.format_compile_result result ~applescript_file)
   with Compiler.Bbtex_error msg ->
     List.iter print_endline (Bbedit_format.format_error_message msg);

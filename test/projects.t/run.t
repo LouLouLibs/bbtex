@@ -70,3 +70,30 @@ Clean keeps the PDF; Clean All removes it:
   main.synctex.gz
   $ bbtex clean-all chapter.tex > /dev/null; ls "build output"
   main.synctex.gz
+
+Magic comments bbtex ignores: Doctor lists every one in the source-to-root
+chain, and a build names the ones that matter in a single [bbtex] note.
+
+  $ mkdir magic && cd magic && : > .bbtex
+  $ printf '%% !TEX TS-program = xelatex\n%% !TEX encoding = UTF-8 Unicode\n%% !TEX options = --shell-escape\n%% !BIB TS-program = biber\n' > main.tex
+  $ printf '%%!TEX root = main.tex\n%%!TEX jobname = draft\n' > chapter.tex
+  $ bbtex doctor chapter.tex | grep 'Magic comment'
+  [OK] Magic comment: chapter.tex:1 % !TEX root = main.tex (used)
+  [WARN] Magic comment: chapter.tex:2 % !TEX jobname = draft (ignored: the PDF is named after the root file; rename the root file instead)
+  [OK] Magic comment: main.tex:1 % !TEX TS-program = xelatex (used)
+  [INFO] Magic comment: main.tex:2 % !TEX encoding = UTF-8 Unicode (ignored: BBEdit sets the file's encoding and TeX reads the file as saved)
+  [WARN] Magic comment: main.tex:3 % !TEX options = --shell-escape (ignored: put it in .bbtex as options = --shell-escape)
+  [INFO] Magic comment: main.tex:4 % !BIB TS-program = biber (ignored: latexmk runs BibTeX or Biber, whichever the document needs)
+  $ bbtex compile chapter.tex 2>/dev/null | grep -E '^(status|note):'
+  status: success
+  note: [bbtex] Ignored % !TEX jobname, % !TEX options; see LaTeX — Doctor
+
+A document using only root and program gets no warning and no note:
+
+  $ printf '%%!TEX program = pdflatex\n' > main.tex
+  $ printf '%%!TEX root = main.tex\n' > chapter.tex
+  $ bbtex doctor chapter.tex | grep 'Magic comment'
+  [OK] Magic comment: chapter.tex:1 % !TEX root = main.tex (used)
+  [OK] Magic comment: main.tex:1 % !TEX program = pdflatex (used)
+  $ bbtex compile chapter.tex 2>/dev/null | grep -E '^(status|note):'
+  status: success

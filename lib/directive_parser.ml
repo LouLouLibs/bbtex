@@ -36,9 +36,8 @@ let parse_directive_line line =
         else
           Some { key = directive_key_of_string key_str; value = val_str }
 
-(** Read the first [max_lines] lines from a file and collect all
-    %!TEX directives found. *)
-let parse_file filename =
+(** The first [max_lines] lines of a file, where directives are read. *)
+let read_lines filename =
   let ic = open_in filename in
   Fun.protect ~finally:(fun () -> close_in ic) (fun () ->
     let rec loop n acc =
@@ -49,14 +48,13 @@ let parse_file filename =
           (* A UTF-8 byte-order mark would hide a directive on the first line. *)
           let line = if n = 0 && String.starts_with ~prefix:"\xef\xbb\xbf" line
             then String.sub line 3 (String.length line - 3) else line in
-          let acc' = match parse_directive_line line with
-            | Some d -> d :: acc
-            | None   -> acc
-          in
-          loop (n + 1) acc'
+          loop (n + 1) (line :: acc)
         | exception End_of_file -> List.rev acc
     in
     loop 0 [])
+
+(** Collect all %!TEX directives in the first [max_lines] lines of a file. *)
+let parse_file filename = List.filter_map parse_directive_line (read_lines filename)
 
 (** Convenience: find a specific directive key. *)
 let find_directive key directives =
